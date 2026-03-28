@@ -1,0 +1,136 @@
+/* tutorial.css — Welcome Modal, Full Guide, Nav Locked Panel */
+
+
+   WELCOME MODAL & FULL GUIDE
+   ============================================================ */
+.welcome-modal {
+  background: var(--bg-card);
+  border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 16px;
+  padding: 24px 20px;
+  max-width: 480px;
+  width: 92%;
+  max-height: 88vh;
+  overflow-y: auto;
+  animation: coduyen-appear 0.35s ease;
+}
+.wm-header { text-align:center; margin-bottom:16px; }
+.wm-emoji  { font-size:44px; margin-bottom:8px; }
+.wm-title  { font-size:20px; margin-bottom:4px; }
+.wm-sub    { font-size:12px; color:var(--text-dim); }
+.wm-root-info {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(0,0,0,0.3); border-radius:8px;
+  padding:10px 12px; margin-bottom:14px;
+}
+.wm-root-badge {
+  font-size:13px; font-weight:600;
+  color:var(--gold); white-space:nowrap;
+}
+.wm-root-desc { font-size:11px; color:var(--text-dim); }
+.wm-steps { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.wm-step-title {
+  font-size:11px; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:.06em; margin-bottom:4px;
+}
+.wm-step {
+  display:flex; gap:10px; align-items:flex-start;
+  background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 10px;
+}
+.wm-step-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.wm-step-name { font-size:12px; font-weight:500; color:var(--text-bright); margin-bottom:2px; }
+.wm-step-desc { font-size:11px; color:var(--text-dim); line-height:1.5; }
+.wm-warning {
+  background:rgba(240,212,122,0.08);
+  border:1px solid rgba(240,212,122,0.2);
+  border-radius:8px; padding:10px 12px;
+  font-size:11px; color:var(--text-dim);
+  line-height:1.6; margin-bottom:14px;
+}
+.wm-buttons { display:flex; gap:8px; }
+.wm-btn-guide { flex:1; }
+.wm-btn-start { flex:2; font-size:14px; font-weight:600; }
+
+/* Guide modal */
+.guide-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  padding: 20px;
+  max-width: 500px;
+  width: 92%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.guide-header { margin-bottom:14px; }
+.guide-header h2 { font-size:16px; color:var(--gold); margin-bottom:8px; }
+.guide-progress-wrap { display:flex; align-items:center; gap:10px; }
+.guide-progress-bar {
+  flex:1; height:6px; background:rgba(255,255,255,0.08);
+  border-radius:3px; overflow:hidden;
+}
+.guide-progress-fill { height:100%; background:var(--gold); border-radius:3px; transition:width .4s; }
+.guide-pct { font-size:11px; color:var(--text-dim); white-space:nowrap; }
+.guide-quests { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.guide-quest {
+  display:flex; gap:10px; align-items:flex-start;
+  background:rgba(0,0,0,0.2); border-radius:8px; padding:8px 10px;
+  border:1px solid var(--border);
+}
+.guide-quest-done { opacity:0.55; }
+.gq-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+.gq-title { font-size:12px; font-weight:500; color:var(--text-bright); margin-bottom:2px; }
+.gq-desc  { font-size:11px; color:var(--text-dim); line-height:1.5; }
+.gq-reward{ font-size:10px; color:#56c46a; margin-top:3px; }
+.guide-tips { background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; }
+.guide-tips-title { font-size:11px; color:var(--gold); margin-bottom:8px; font-weight:500; }
+.guide-tip {
+  font-size:11px; color:var(--text-dim);
+  padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+  line-height:1.5;
+}
+.guide-tip:last-child { border-bottom:none; }
+
+/* ============================================================
+   NAV LOCKED STATE & LOCKED PANEL
+   ============================================================ */
+.nav-btn.nav-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  position: relative;
+}
+.nav-btn.nav-locked:hover {
+  background: none !important;
+  color: var(--text-dim) !important;
+}
+.nav-lock-icon {
+  font-size: 9px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Locked panel content */
+.locked-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  min-height: 300px;
+}
+.lp-icon  { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.lp-title { font-size: 18px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
+.lp-desc  {
+  font-size: 13px; color: var(--text-dim);
+  line-height: 1.7; max-width: 280px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+/* ============================================================
+   SPIRIT ROOT REVEAL CINEMATIC
+   ============================================================ */
+.reveal-screen {

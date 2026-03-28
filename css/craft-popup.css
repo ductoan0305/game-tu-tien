@@ -1,0 +1,865 @@
+/* ============================================================
+   craft-popup.css — Popup Nghề Nghiệp + Craft Tab styles
+   ============================================================ */
+
+/* ---- Craft Popup Overlay ---- */
+.craft-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+}
+
+.craft-popup {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 16px 16px 0 0;
+  padding: 16px 16px 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  animation: slideUpCraft 0.22s ease-out;
+}
+
+@keyframes slideUpCraft {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.craft-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.craft-popup-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+
+.craft-popup-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.craft-popup-close:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+.craft-popup-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+/* ---- Profession cards grid ---- */
+.craft-popup-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.craft-prof-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left: 3px solid var(--prof-color, var(--border-glow));
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: all 0.15s;
+}
+
+.craft-prof-card:not(.craft-locked):hover {
+  background: rgba(255,255,255,0.05);
+  border-color: var(--prof-color, var(--border-glow));
+  box-shadow: 0 0 12px var(--prof-color, transparent) 22;
+}
+
+.craft-prof-card.craft-locked {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cpc-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.cpc-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cpc-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-bright);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cpc-cn {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.cpc-rank {
+  font-size: 11px;
+  color: var(--prof-color, var(--gold));
+  margin: 2px 0;
+  font-weight: 600;
+}
+
+.cpc-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.cpc-lock {
+  font-size: 18px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.cpc-enter {
+  flex-shrink: 0;
+  background: var(--prof-color, var(--gold));
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.cpc-enter:hover { filter: brightness(1.15); transform: translateX(1px); }
+
+/* ---- Craft Tab content (Trận Pháp, Phù Chú, etc.) ---- */
+.craft-locked-banner {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-dim);
+}
+.craft-locked-banner h3 { color: var(--text); margin: 8px 0; font-size: 18px; }
+.craft-locked-banner p  { font-size: 13px; line-height: 1.6; }
+
+.craft-intro-box {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.craft-intro-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.craft-tab-level {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.craft-coming-soon {
+  text-align: center;
+  padding: 20px 16px 12px;
+}
+.craft-coming-soon h3 { margin: 0 0 6px; }
+.craft-coming-soon p  { margin: 0; }
+
+.craft-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.craft-feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 10px 10px;
+}
+
+.cfc-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cfc-body { flex: 1; min-width: 0; }
+
+.cfc-name {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.cfc-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.craft-materials-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.cmb-title {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+.cmb-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cmb-item {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* ---- Alchemy tab fixes ---- */
+.aib-warn {
+  color: var(--gold) !important;
+  font-size: 12px;
+}
+
+/* ---- Shop item owned/locked state ---- */
+.shop-item-owned {
+  opacity: 0.7;
+}
+.shop-item-owned .shop-owned-badge {
+  text-align: center;
+  padding: 6px;
+  color: var(--jade);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--jade);
+  border-radius: 6px;
+  margin-top: 6px;
+}
+.shop-item-locked {
+  opacity: 0.55;
+}
+
+/* ---- bnav-craft-btn active state (same as bnav-more-btn) ---- */
+#bnav-craft-btn.active {
+  color: var(--gold);
+  border-top-color: var(--gold);
+  background: rgba(200,168,75,0.06);
+}
+
+/* ============================================================
+   Trang Nghề Nghiệp — 2 cột layout
+   ============================================================ */
+
+.nn-layout {
+  display: flex;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Cột trái — danh sách nghề */
+.nn-sidebar {
+  width: 110px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 8px;
+  overflow-y: auto;
+}
+
+.nn-sidebar-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.nn-prof-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 4px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.15s;
+  position: relative;
+  width: 100%;
+}
+.nn-prof-btn:hover:not([disabled]) {
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.nn-prof-btn.nn-prof-active {
+  background: color-mix(in srgb, var(--prof-color) 12%, transparent);
+  border-color: var(--prof-color);
+  color: var(--prof-color);
+}
+.nn-prof-btn.nn-prof-locked {
+  opacity: 0.4;
+  cursor: default;
+}
+.nn-prof-icon { font-size: 20px; line-height: 1; }
+.nn-prof-name { font-size: 10px; font-weight: 600; text-align: center; line-height: 1.3; }
+.nn-prof-lock { font-size: 10px; position: absolute; top: 4px; right: 4px; }
+.nn-prof-badge {
+  font-size: 9px;
+  font-weight: 700;
+  position: absolute;
+  top: 3px;
+  right: 4px;
+}
+
+/* Cột phải — nội dung + kho */
+.nn-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.nn-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  min-height: 0;
+}
+
+.nn-recipes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.nn-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.nn-warn { color: var(--gold); border-color: var(--gold)44; }
+
+/* Kho Nguyên Liệu */
+.nn-storage {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.15);
+}
+
+.nn-storage-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.nn-storage-empty {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+}
+
+.nn-storage-group { margin-bottom: 8px; }
+.nn-storage-group-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+}
+
+.nn-storage-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.nn-storage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 5px 7px;
+  min-width: 52px;
+  cursor: default;
+}
+.nsi-emoji { font-size: 16px; line-height: 1; }
+.nsi-name  { font-size: 9px; color: var(--text-dim); text-align: center; line-height: 1.2; }
+.nsi-qty   { font-size: 11px; font-weight: 700; }
+
+.nn-storage-total {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* Skeleton nghề chưa phát triển */
+.nn-skeleton { display: flex; flex-direction: column; gap: 10px; }
+.nn-sk-desc {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.7;
+  padding: 10px 12px;
+  border: 1px solid;
+  border-radius: 8px;
+}
+.nn-sk-coming { text-align: center; padding: 6px 0; }
+.nn-sk-coming h3 { margin: 8px 0 4px; }
+.nn-sk-coming p  { margin: 0; }
+.nn-sk-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.nn-sk-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: 7px;
+  padding: 8px 9px;
+  font-size: 20px;
+}
+
+/* ---- Rank Đan Sư bar ---- */
+.nn-rank-bar {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(232,160,32,0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.nn-rank-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.nn-rank-name  { font-size: 13px; font-weight: 700; }
+.nn-rank-count { font-size: 11px; color: var(--text-dim); }
+.nn-danphuong  { font-size: 11px; color: #f0d47a; margin-left: auto; }
+.nn-rank-progress {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.nn-rank-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e8a020, #f0d47a);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.nn-rank-next { font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+.nn-rank-desc { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+/* ---- Durability bar ---- */
+.nn-durability-bar {
+  width: 60px;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.nn-dur-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ---- Craft quantity selector ---- */
+.nn-craft-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+}
+.nn-qty-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nn-qty-btn.active,
+.nn-qty-btn:hover {
+  border-color: #e8a020;
+  color: #e8a020;
+  background: rgba(232,160,32,0.1);
+}
+
+/* ---- Recipe card enhancements ---- */
+.nn-recipe-card { position: relative; }
+.nn-recipe-meta { margin: 6px 0; }
+.nn-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.nn-pham-preview { font-size: 14px; cursor: default; }
+.btn-danger {
+  background: rgba(224,92,74,0.15);
+  border: 1px solid #e05c4a;
+  color: #e05c4a;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-danger:hover { background: rgba(224,92,74,0.25); }
+/* ============================================================ */
+/* Luyện Khí Sư — Forge UI                                      */
+/* ============================================================ */
+
+/* Rank bar */
+.forge-rank-bar {
+  background: rgba(200,168,75,0.06);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.frb-header, .frb-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.frb-rank { font-size: 13px; font-weight: 700; }
+.frb-count { font-size: 11px; color: var(--text-dim); }
+.frb-progress {
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+.frb-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c8a84b, #f0d47a);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.frb-next { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+.frb-desc { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-style: italic; }
+
+/* Tier filter tabs */
+.forge-tier-tabs, .nn-tier-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0 10px;
+}
+.forge-tier-btn, .nn-tier-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--tier-color, #555);
+  background: transparent;
+  color: var(--tier-color, #888);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.forge-tier-btn:hover:not(:disabled), .nn-tier-btn:hover:not(:disabled) {
+  background: rgba(200,168,75,0.1);
+}
+.forge-tier-btn.forge-tier-active, .forge-tier-btn.active,
+.nn-tier-btn.active {
+  background: var(--tier-color, #c8a84b);
+  color: #000;
+  font-weight: 700;
+}
+.forge-tier-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Forge card overrides */
+.nn-recipe-card .recipe-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.nn-recipe-card .recipe-tier {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.nn-fail-badge {
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+.nn-spirit-badge {
+  font-size: 10px;
+  font-style: italic;
+}
+.ing-short { color: #e05c4a; }
+.ingredient { font-size: 11px; }
+
+/* Bễ Rèn info row */
+.nn-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(200,168,75,0.25);
+  background: rgba(200,168,75,0.05);
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.nn-info-row.nn-warn {
+  border-color: rgba(240,105,40,0.3);
+  background: rgba(240,105,40,0.06);
+  color: #f0a050;
+}
+.nn-durability-bar {
+  width: 60px;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+.nn-dur-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ============================================================ */
+/* Linh Thực Sư — Food UI                                        */
+/* ============================================================ */
+
+/* Category tabs */
+.lt-cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 10px;
+}
+.lt-cat-btn {
+  padding: 3px 9px;
+  border-radius: 14px;
+  border: 1px solid rgba(77,184,160,0.35);
+  background: transparent;
+  color: #4db8a0;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lt-cat-btn:hover { background: rgba(77,184,160,0.12); }
+.lt-cat-btn.lt-cat-active {
+  background: #4db8a0;
+  color: #000;
+  font-weight: 700;
+}
+
+/* Active buff strip */
+.lt-active-buffs {
+  background: rgba(77,184,160,0.07);
+  border: 1px solid rgba(77,184,160,0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.lt-buffs-title {
+  font-size: 11px;
+  color: #4db8a0;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.lt-buffs-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.lt-buff-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(77,184,160,0.12);
+  border: 1px solid rgba(77,184,160,0.3);
+  border-radius: 20px;
+  font-size: 11px;
+}
+.lt-buff-timer {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Buff preview tags on recipe cards */
+.lt-buff-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 6px;
+}
+.lt-buff-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+/* Cook button */
+.btn-cook {
+  width: 100%;
+  padding: 7px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+  border: 1px solid;
+}
+.btn-cook:hover:not(:disabled) { filter: brightness(1.2); }
+.btn-cook:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ============================================================ */
+/* Trận Pháp + Phù Chú UI                                       */
+/* ============================================================ */
+
+/* Active array card */
+.tp-active-card {
+  background: rgba(86,196,106,0.06);
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-width: 140px;
+  flex: 1;
+}
+.tp-ac-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* Active recipe highlight */
+.tp-active-recipe {
+  background: rgba(86,196,106,0.04) !important;
+  border-color: rgba(86,196,106,0.35) !important;
+}
+
+/* Draw button */
+.bc-draw-btn {
+  width: 100%;
+  padding: 7px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+  border: 1px solid;
+}
+.bc-draw-btn:hover:not(:disabled) { filter: brightness(1.2); }
+.bc-draw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Activate button */
+.tp-activate-btn {
+  width: 100%;
+  padding: 7px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+  border: 1px solid;
+}
+.tp-activate-btn:hover:not(:disabled) { filter: brightness(1.2); }
+.tp-activate-btn:disabled { opacity: 0.4; cursor: not-allowed; }

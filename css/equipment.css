@@ -1,0 +1,226 @@
+/* equipment.css — Equipment Slots, Bags, Rarity Display */
+
+
+/* ============================================================
+   Equipment Tab
+   ============================================================ */
+.eq-section {
+  margin-bottom: 24px;
+}
+
+.eq-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eq-slot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+
+.eq-slot-filled {
+  border-width: 1px;
+}
+
+.eq-slot-empty {
+  opacity: 0.6;
+}
+
+.eq-slot-icon {
+  font-size: 28px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.eq-slot-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eq-slot-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.eq-slot-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.eq-slot-rarity {
+  font-size: 11px;
+  font-style: italic;
+}
+
+.eq-slot-stats {
+  font-size: 11px;
+  color: var(--jade);
+  margin-top: 2px;
+}
+
+.eq-slot-empty-text {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.btn-unequip {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Bag */
+.eq-bag {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eq-bag-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.eq-bag-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.eq-item-emoji {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.eq-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.eq-item-name {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.eq-item-rarity {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.eq-item-stats {
+  font-size: 11px;
+  color: var(--jade);
+}
+
+.eq-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 70px;
+}
+
+.eq-note {
+  color: var(--text-dim);
+  padding: 12px;
+  background: var(--panel);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .eq-bag-item { flex-wrap: wrap; }
+  .eq-item-actions { flex-direction: row; width: 100%; }
+}
+
+/* btn-sm utility */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   EQUIPMENT TAB — 9 SLOTS (Updated)
+   ============================================================ */
+.eq-stat-bar {
+  padding: 8px 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.eq-stat-total {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.eq-stat-total span {
+  font-size: 12px; font-weight: 600; color: var(--text-bright);
+  background: rgba(0,0,0,0.3); border-radius: 6px; padding: 3px 8px;
+}
+.eq-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.eq-slot-card {
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--bg-card);
+  min-height: 80px;
+}
+.eq-filled { background: rgba(0,0,0,0.2) !important; }
+.eq-empty  { background: rgba(0,0,0,0.05) !important; opacity: 0.7; }
+.eq-slot-header {
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 6px;
+}
+.eq-slot-emoji { font-size: 14px; }
+.eq-slot-label { font-size: 10px; color: var(--text-dim); flex: 1; }
+.eq-slot-rarity { font-size: 9px; font-weight: 500; }
+.eq-slot-item {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 6px;
+}
+.eq-item-icon { font-size: 20px; flex-shrink: 0; }
+.eq-item-body { flex: 1; min-width: 0; }
+.eq-item-name  { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eq-item-stats { font-size: 10px; color: var(--text-dim); }
+.eq-slot-empty-hint {
+  font-size: 9px; color: var(--text-dim); font-style: italic; line-height: 1.4;
+}
+.eq-bag-list { display: flex; flex-direction: column; gap: 6px; }
+.eq-bag-item {
+  display: flex; gap: 8px; align-items: center;
+  border: 1px solid; border-radius: 8px; padding: 8px;
+  background: var(--bg-card);
+}
+.eq-bag-emoji { font-size: 22px; flex-shrink: 0; }
+.eq-bag-body  { flex: 1; min-width: 0; }
+.eq-bag-name  { font-size: 12px; font-weight: 600; }
+.eq-bag-meta  { font-size: 10px; display: flex; gap: 6px; margin: 2px 0; }
+.eq-bag-stats { font-size: 10px; color: var(--text-dim); }
+.eq-bag-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.eq-bag-empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--text-dim); font-size: 13px;
+}

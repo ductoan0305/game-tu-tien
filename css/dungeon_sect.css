@@ -1,0 +1,387 @@
+/* dungeon_sect.css — Dungeon Tab, Sect Tab, Passive Skill Tree */
+
+
+/* ============================================================
+   DUNGEON TAB
+   ============================================================ */
+.dungeon-header {
+  background: rgba(150,50,200,0.08);
+  border: 1px solid rgba(150,50,200,0.25);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.dungeon-stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.dungeon-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 6px 14px;
+  flex: 1;
+}
+.ds-label { font-size: 10px; color: var(--text-dim); }
+.ds-val   { font-size: 18px; font-weight: 700; color: #c084fc; }
+.dungeon-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.dungeon-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9333ea, #c084fc);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.dungeon-flavor {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin: 0;
+}
+.dungeon-enter-panel {
+  background: rgba(150,50,200,0.1);
+  border: 1px solid rgba(150,50,200,0.35);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.dungeon-next-info {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.dungeon-next-emoji {
+  font-size: 36px;
+  flex-shrink: 0;
+}
+.dungeon-next-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #c084fc;
+  margin-bottom: 4px;
+}
+.dungeon-next-lore {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+}
+.dungeon-enter-rewards {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dungeon-enter-actions { display: flex; gap: 8px; align-items: center; }
+.btn-dungeon-enter {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.btn-boss {
+  background: linear-gradient(135deg, #7c3aed, #dc2626) !important;
+  border-color: #c084fc !important;
+  animation: boss-pulse 2s infinite;
+}
+@keyframes boss-pulse {
+  0%,100% { box-shadow: 0 0 8px rgba(192,132,252,0.3); }
+  50%      { box-shadow: 0 0 18px rgba(192,132,252,0.7); }
+}
+.dungeon-complete {
+  text-align: center;
+  padding: 20px;
+  color: #f0d47a;
+  font-size: 16px;
+  font-weight: 700;
+}
+.dungeon-locked-msg {
+  padding: 14px;
+  text-align: center;
+  color: var(--text-dim);
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.dungeon-floor-list { display: flex; flex-direction: column; gap: 4px; }
+.dungeon-floor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.dungeon-floor-cleared  { opacity: 0.5; }
+.dungeon-floor-next     { background: rgba(150,50,200,0.12); border-color: rgba(150,50,200,0.4); }
+.dungeon-floor-locked   { opacity: 0.4; }
+.dungeon-floor-boss     { border-color: rgba(220,38,38,0.4) !important; background: rgba(220,38,38,0.06) !important; }
+.df-num  { width: 22px; text-align: center; color: var(--text-dim); font-weight: 700; }
+.df-emoji { font-size: 18px; flex-shrink: 0; }
+.df-info { flex: 1; min-width: 0; }
+.df-name { display: block; font-weight: 600; color: var(--text-primary); }
+.df-desc { display: block; color: var(--text-dim); font-size: 11px; }
+.df-rewards { display: flex; gap: 6px; flex-shrink: 0; font-size: 11px; color: var(--text-dim); }
+.df-status  { font-size: 16px; flex-shrink: 0; }
+
+
+/* ============================================================
+   SECT NPC LIST & DIALOGUE
+   ============================================================ */
+.sect-npc-list { display: flex; flex-direction: column; gap: 6px; }
+.sect-npc-empty {
+  font-size: 12px; color: var(--text-dim); font-style: italic;
+  text-align: center; padding: 16px 0;
+}
+.sect-npc-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.sect-npc-card:hover { background: rgba(255,255,255,0.04); }
+.snc-emoji { font-size: 24px; flex-shrink: 0; }
+.snc-info  { flex: 1; min-width: 0; }
+.snc-name  { font-size: 13px; font-weight: 600; color: var(--text-bright); }
+.snc-role  { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.snc-talk-btn { flex-shrink: 0; white-space: nowrap; }
+
+/* NPC Dialogue box */
+.sect-npc-dialog {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--border-glow);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 4px;
+}
+.sncd-header {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px;
+}
+.sncd-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+.sncd-name  { font-size: 14px; font-weight: 700; color: var(--text-bright); }
+.sncd-role  { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.sncd-desc  {
+  font-size: 11px; color: var(--text-dim); font-style: italic;
+  line-height: 1.5; margin-bottom: 10px;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+}
+.sncd-text {
+  font-size: 13px; color: var(--text);
+  line-height: 1.7;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.04);
+  border-left: 2px solid var(--border-glow);
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+.sncd-actions { display: flex; gap: 6px; }
+
+/* ---- Dungeon tab additions ---- */
+.ds-val-warn { color: #e05c4a !important; }
+
+.dungeon-active-panel {
+  background: rgba(150,50,200,0.08);
+  border: 1px solid rgba(150,50,200,0.35);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dap-title { font-size: 13px; font-weight: 700; color: #c084fc; }
+.dap-enemy {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(0,0,0,0.2); border-radius: 8px; padding: 8px 10px;
+}
+.dap-enemy-name  { font-size: 13px; font-weight: 600; color: var(--text-bright); }
+.dap-enemy-stats { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.dap-hint { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+.dungeon-next-enemies {
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 6px 0;
+}
+.dne-title { font-size: 11px; color: var(--text-dim); margin-bottom: 7px; }
+.dne-list  { display: flex; flex-direction: column; gap: 5px; }
+.dnep-row  {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dnep-row:last-child { border-bottom: none; }
+.dnep-name  { font-size: 12px; font-weight: 600; color: var(--text-bright); }
+.dnep-stats { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+
+.dungeon-room-hint {
+  font-size: 11px; color: #a89df5; font-style: italic;
+  background: rgba(168,157,245,0.07);
+  border: 1px solid rgba(168,157,245,0.2);
+  border-radius: 6px; padding: 7px 10px;
+}
+
+.dungeon-runs-info {
+  font-size: 12px; color: var(--text-dim);
+  text-align: center;
+}
+
+.df-enemies {
+  display: inline-flex; gap: 3px;
+  font-size: 14px; margin-top: 2px;
+}
+
+/* ============================================================
+   PASSIVE TREE — CUSTOM TOOLTIP
+   ============================================================ */
+.passive-tooltip {
+  position: fixed;
+  display: none;
+  z-index: 9999;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 10px;
+  padding: 12px 14px;
+  width: 220px;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  animation: buff-appear 0.15s ease;
+}
+.ptip-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.ptip-name { font-size: 13px; font-weight: 700; color: var(--text-bright); }
+.ptip-rank { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+.ptip-desc {
+  font-size: 11px; color: var(--text-dim); line-height: 1.5;
+  margin-bottom: 8px; font-style: italic;
+}
+.ptip-effect {
+  font-size: 11px; color: #56c46a; font-weight: 600;
+  margin-bottom: 5px; line-height: 1.6;
+}
+.ptip-cost { font-size: 11px; color: var(--text-dim); }
+.ptip-req  { font-size: 10px; color: #f0d47a; margin-top: 4px; }
+/* ============================================================
+   THÀNH TỰU — Achievement UI (ranking-tab.js)
+   ============================================================ */
+
+/* Header với progress ring */
+.ach-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.ach-ring-wrap { flex-shrink: 0; }
+.ach-header-info { flex: 1; min-width: 120px; }
+.ach-count { font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* Filter buttons */
+.ach-filter-btns {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.ach-filter-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ach-filter-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+.ach-filter-btn.active {
+  background: rgba(200,168,75,0.15);
+  border-color: rgba(200,168,75,0.4);
+  color: var(--gold);
+}
+
+/* Group */
+.ach-group { margin-bottom: 14px; }
+.ach-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+.ach-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+.ach-group-count {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Grid */
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px;
+}
+
+/* Card */
+.ach-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.ach-unlocked {
+  border-color: rgba(86,196,106,0.3);
+  background: rgba(86,196,106,0.04);
+}
+.ach-unlocked:hover {
+  border-color: rgba(86,196,106,0.5);
+  background: rgba(86,196,106,0.07);
+}
+.ach-locked { opacity: 0.5; }
+.ach-emoji  { font-size: 22px; flex-shrink: 0; }
+.ach-info   { flex: 1; min-width: 0; }
+.ach-name   { font-size: 12px; font-weight: 600; color: var(--text); }
+.ach-desc   { font-size: 10px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; }
+.ach-badge  {
+  position: absolute;
+  top: 5px; right: 7px;
+  font-size: 11px;
+  color: #56c46a;
+  font-weight: 700;
+}

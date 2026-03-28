@@ -1,0 +1,163 @@
+/* base.css — CSS Variables, Reset, Base Typography, Scrollbar */
+
+
+/* ============================================================
+   style.css — Tu Tiên Idle v2
+   ============================================================
+
+   MỤC LỤC — Tìm nhanh: Ctrl+G → nhập số dòng
+   ─────────────────────────────────────────────
+   Dòng   6  │ Reset & Base (variables, reset)
+   Dòng  39  │ Layout (#game-container)
+   Dòng  48  │ Header (realm bar, stats bar)
+   Dòng 133  │ Tab Nav (buttons)
+   Dòng 158  │ Main Content (panels)
+   Dòng 170  │ Cultivate Tab (bế quan, actions, portrait)
+   Dòng 258  │ Combat Tab (enemy list, arena cũ)
+   Dòng 383  │ Alchemy Tab
+   Dòng 480  │ Quest Tab
+   Dòng 523  │ Skills Tab
+   Dòng 544  │ Inventory Tab
+   Dòng 571  │ Shop Tab
+   Dòng 590  │ Ranking Tab
+   Dòng 612  │ Log (game log panel)
+   Dòng 638  │ Toasts (thông báo popup)
+   Dòng 671  │ Float text (damage numbers)
+   Dòng 682  │ Buttons (.btn-primary, .btn-sm...)
+   Dòng 740  │ Modals (breakthrough, event)
+   Dòng 772  │ Setup Screen (tạo nhân vật)
+   Dòng 883  │ Rarity Colors
+   Dòng 889  │ Scrollbar
+   Dòng 894  │ Responsive (mobile)
+   Dòng 902  │ Equipment Tab
+   Dòng 1061 │ Combat Arena (rewrite — arena mới)
+   Dòng 1220 │ Character Portrait (#1 feature)
+   Dòng 1271 │ Combat Visual (animations, floats, flash)
+   Dòng 1479 │ Title System (#3 Danh Hiệu)
+   Dòng 1582 │ Dungeon Tab
+   Dòng 1718 │ Sect Tab (Tông Môn)
+   Dòng 1813 │ Passive Skill Tree Tab (Thiên Phú)
+   ─────────────────────────────────────────────
+   Khi thêm section mới: thêm vào cuối file VÀ cập nhật mục lục này
+   ============================================================ */
+
+/* ---- Reset & Base ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep:    #0a0a12;
+  --bg-card:    #13131f;
+  --bg-panel:   #0d0d18;
+  --border:     #2a2a3d;
+  --border-glow:#4a4a6d;
+  --text:       #d0cfe0;
+  --text-dim:   #7a7a9a;
+  --text-bright:#f0eefc;
+  --gold:       #c8a84b;
+  --jade:       #56c46a;
+  --spirit:     #8080e8;
+  --danger:     #e05c4a;
+  --epic:       #c060e0;
+  --legendary:  #f0d47a;
+  --qi-color:   #6060d0;
+  --hp-color:   #d04040;
+  --stamina-color: #40a040;
+  --font: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+
+/* Cloud merge modal */
+#cloud-merge-modal .modal-box {
+  animation: modal-in 0.2s ease;
+}
+
+/* ── Login Gate ──────────────────────────────────────────── */
+#login-gate {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, #0d1a2e 0%, #060a10 100%);
+}
+.lg-box {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 40px 32px; max-width: 360px; width: 90%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow: 0 0 60px rgba(74,158,255,0.08);
+}
+.lg-logo { font-size: 52px; line-height: 1; }
+.lg-title {
+  font-size: 24px; font-weight: 700;
+  background: linear-gradient(135deg, #f0d47a, #c8a84b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+.lg-subtitle { font-size: 13px; color: var(--text-dim); text-align: center; }
+.lg-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; }
+.lg-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.15s; width: 100%;
+}
+.lg-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.lg-btn-google {
+  background: #fff; color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.lg-btn-google:hover:not(:disabled) { background: #f5f5f5; transform: translateY(-1px); }
+.lg-btn-anon {
+  background: rgba(255,255,255,0.07);
+  color: #ccc; border: 1px solid rgba(255,255,255,0.12);
+}
+.lg-btn-anon:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+.lg-divider {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-dim); font-size: 12px;
+}
+.lg-divider::before, .lg-divider::after {
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1);
+}
+.lg-note {
+  font-size: 11px; color: var(--text-dim); text-align: center;
+  line-height: 1.6; margin-top: 4px;
+}
+.lg-logged-in {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 8px; width: 100%;
+  background: rgba(74,158,255,0.08); border: 1px solid #4a9eff33;
+}
+.lg-avatar { font-size: 18px; }
+.lg-logged-name { font-size: 13px; color: #9ecfff; font-weight: 600; }
+/* ============================================================
+   RESPONSIVE MOBILE LANDSCAPE — Login Gate & Setup
+   ============================================================ */
+@media (max-width: 900px) and (orientation: landscape) {
+  /* Login box nhỏ gọn hơn */
+  .lg-box {
+    padding: 16px 20px;
+    gap: 8px;
+    max-width: 420px;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+  .lg-logo { font-size: 32px; }
+  .lg-title { font-size: 18px; }
+  .lg-subtitle { font-size: 11px; }
+  .lg-btn { padding: 9px 16px; font-size: 13px; }
+  .lg-note { font-size: 10px; }
+  .lg-buttons { gap: 7px; margin-top: 4px; }
+
+  /* Setup screen compact */
+  .setup-screen { padding: 10px; gap: 12px; }
+  .setup-header h1 { font-size: 22px; }
+  .setup-card { padding: 14px 16px; }
+}

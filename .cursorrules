@@ -1,0 +1,4 @@
+Quy tắc chung: Luôn ưu tiên sự chính xác và tiết kiệm token.
+Khi tìm lỗi: Chỉ liệt kê danh sách các file cần sửa và dòng code dự kiến thay đổi. KHÔNG giải thích dài dòng, KHÔNG tự ý sửa ngay.
+Thao tác: Chờ lệnh "Confirm" hoặc "Go" từ tôi mới được ghi đè vào file.
+Vibe Coding: Nếu tôi đưa lỗi Console, hãy truy vết các file liên quan nhưng chỉ hiển thị các thay đổi quan trọng nhất.

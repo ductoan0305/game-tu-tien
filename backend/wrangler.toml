@@ -1,0 +1,11 @@
+name = "tu-tien-ky"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "tu_tien_ky_db"
+database_name = "tu-tien-ky-db"
+database_id = "9e351e7f-24de-4710-85e9-628b0418dda8"

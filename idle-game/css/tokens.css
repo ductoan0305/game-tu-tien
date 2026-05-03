@@ -1,0 +1,33 @@
+:root {
+  /* Semantic palette aliases for long-term maintainability */
+  --color-bg-deep: var(--bg-deep);
+  --color-bg-card: var(--bg-card);
+  --color-bg-panel: var(--bg-panel);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-glow);
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-bright: var(--text-bright);
+  --color-accent-gold: var(--gold);
+  --color-accent-jade: var(--jade);
+  --color-accent-danger: var(--danger);
+  --color-accent-epic: var(--epic);
+  --color-accent-legendary: var(--legendary);
+
+  /* Rarity & status tokens */
+  --color-rarity-common: var(--common);
+  --color-rarity-uncommon: var(--uncommon);
+  --color-rarity-rare: var(--rare);
+  --color-rarity-epic: var(--epic-2);
+  --color-rarity-legendary: var(--legendary);
+
+  /* Shared spacing/radius/shadow primitives */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+}

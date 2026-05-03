@@ -1,0 +1,1634 @@
+/* setup.css — Setup Screen, Character Creation, Gender Selection, Spirit Root Cinematic */
+
+
+/* ---- Setup Screen ---- */
+.setup-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 24px;
+}
+
+.setup-header { text-align: center; }
+.setup-header h1 { font-size: 36px; color: var(--gold); }
+.setup-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+
+.setup-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+.setup-card h2 { color: var(--gold); margin-bottom: 10px; }
+.setup-card p  { color: var(--text-dim); font-size: 13px; margin-bottom: 14px; }
+
+.setup-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0d0d18;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-bright);
+  font-size: 16px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.setup-input:focus { outline: none; border-color: var(--spirit); }
+
+.setup-btn {
+  padding: 12px 24px;
+  font-size: 14px;
+  width: 100%;
+  margin-top: 8px;
+}
+.setup-btn.large { font-size: 16px; padding: 14px; }
+.setup-btn.small { width: auto; font-size: 12px; padding: 8px 16px; }
+
+/* ============================================================
+   ĐẠO HIỆU PHASE — Name Input Redesign v12
+   Chỉ áp dụng cho #input-name và #btn-name-confirm
+   Không đụng các setup-input / setup-btn khác
+   ============================================================ */
+
+/* Wrapper card nâng cấp cho name phase */
+.setup-card:has(#input-name) {
+  background: linear-gradient(160deg, rgba(20,18,36,0.98) 0%, rgba(13,12,24,0.99) 100%);
+  border: 1px solid rgba(138, 92, 246, 0.18);
+  border-radius: 16px;
+  padding: 32px 28px 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 40px rgba(80, 40, 140, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Đường gradient ngang ở đỉnh card */
+.setup-card:has(#input-name)::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(138,92,246,0.5) 25%,
+    rgba(200,168,75,0.6) 50%,
+    rgba(138,92,246,0.5) 75%,
+    transparent 100%
+  );
+  border-radius: 16px 16px 0 0;
+}
+
+/* Hào quang mờ nền */
+.setup-card:has(#input-name)::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 50%;
+  transform: translateX(-50%);
+  width: 120%; height: 160px;
+  background: radial-gradient(ellipse 70% 50% at 50% 100%,
+    rgba(80,40,140,0.18) 0%, rgba(40,20,80,0.08) 60%, transparent 85%);
+  pointer-events: none;
+}
+
+/* Tiêu đề h2 trong name card */
+.setup-card:has(#input-name) h2 {
+  font-size: 18px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e8d5a3 0%, #f5c842 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+/* Mô tả phụ */
+.setup-card:has(#input-name) p {
+  font-size: 12px;
+  color: rgba(180, 155, 220, 0.55);
+  letter-spacing: 0.03em;
+  line-height: 1.7;
+  margin-bottom: 22px;
+  font-style: italic;
+}
+
+/* Divider trang trí ── ◆ ── trước input */
+.setup-card:has(#input-name) p::after {
+  content: '── ◆ ──';
+  display: block;
+  margin-top: 14px;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: rgba(138, 92, 246, 0.35);
+  font-style: normal;
+}
+
+/* ---- Input Đạo Hiệu ---- */
+#input-name {
+  width: 100%;
+  padding: 14px 20px;
+  background: rgba(8, 6, 20, 0.85);
+  border: 1px solid rgba(138, 92, 246, 0.25);
+  border-radius: 10px;
+  color: #f5e8c8;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 6px;
+  position: relative;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 0 0 transparent;
+}
+
+#input-name::placeholder {
+  color: rgba(138, 92, 246, 0.3);
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+#input-name:focus {
+  outline: none;
+  background: rgba(10, 8, 26, 0.95);
+  border-color: rgba(200, 168, 75, 0.55);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.5),
+    0 0 0 3px rgba(200, 168, 75, 0.08),
+    0 0 20px rgba(200, 168, 75, 0.15);
+  color: #fdf4dc;
+}
+
+/* Hint chữ ký dưới input */
+#input-name + .setup-name-hint,
+.setup-name-hint {
+  font-size: 10px;
+  color: rgba(138, 92, 246, 0.35);
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* ---- Nút Xác Nhận Đạo Hiệu ---- */
+#btn-name-confirm {
+  display: block;
+  width: 100%;
+  padding: 13px 0;
+  margin-top: 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.18s ease,
+    opacity 0.3s ease;
+
+  /* Trạng thái mặc định — chưa nhập */
+  background: rgba(60, 50, 90, 0.45);
+  color: rgba(180, 160, 220, 0.38);
+  opacity: 0.55;
+}
+
+/* Khi đã có nội dung (class active thêm bởi JS, hoặc dùng :not(:placeholder-shown)) */
+#btn-name-confirm.active,
+#btn-name-confirm:not([disabled]) {
+  background: linear-gradient(135deg, #c8a84b 0%, #f0d47a 45%, #c8a84b 100%);
+  color: #1a1200;
+  opacity: 1;
+  cursor: pointer;
+  box-shadow:
+    0 0 24px rgba(200, 168, 75, 0.4),
+    0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+#btn-name-confirm:not([disabled]):hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 36px rgba(200, 168, 75, 0.55),
+    0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+#btn-name-confirm:not([disabled]):active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 18px rgba(200, 168, 75, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Hiệu ứng shimmer trên nút */
+#btn-name-confirm:not([disabled])::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -90%;
+  width: 55%; height: 100%;
+  background: linear-gradient(
+    108deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 80%
+  );
+  animation: name-btn-shimmer 2.8s ease-in-out infinite 0.6s;
+}
+
+@keyframes name-btn-shimmer {
+  0%   { left: -90%; }
+  100% { left: 150%; }
+}
+
+/* ---- Header animation cho name phase ---- */
+.setup-screen .setup-header h1 {
+  animation: name-header-in 0.7s ease both;
+}
+.setup-screen .setup-header .setup-sub {
+  animation: name-header-in 0.7s 0.12s ease both;
+}
+.setup-screen .setup-card:has(#input-name) {
+  animation: name-card-in 0.75s 0.18s ease both;
+}
+
+@keyframes name-header-in {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes name-card-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Mobile responsive ---- */
+@media (max-width: 600px) {
+  .setup-card:has(#input-name) { padding: 22px 16px 20px; }
+  #input-name {
+    font-size: 16px;
+    padding: 12px 16px;
+    letter-spacing: 1px;
+  }
+  #btn-name-confirm { font-size: 13px; padding: 12px 0; letter-spacing: 2px; }
+}
+
+.setup-buttons { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 14px; }
+
+.root-result {
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: rgba(0,0,0,0.2);
+}
+.root-emoji    { font-size: 40px; margin-bottom: 8px; }
+.root-rarity   { font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
+.root-desc     { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+.root-bonus    { font-size: 12px; color: var(--jade); margin-bottom: 8px; }
+.root-prophecy { font-size: 12px; color: var(--text-dim); font-style: italic; }
+
+.setup-sects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 900px;
+  width: 100%;
+}
+
+.sect-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.sect-card:hover, .sect-card.selected { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+.sect-card.favored { box-shadow: 0 0 12px rgba(200,168,75,0.3); }
+.favored-badge {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.sect-emoji   { font-size: 32px; margin: 6px 0; }
+.sect-namecn  { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.sect-desc    { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.sect-bonus   { font-size: 11px; color: var(--jade); }
+
+.confirm-card .confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.confirm-label { color: var(--text-dim); }
+.confirm-value { font-weight: 700; }
+.confirm-prophecy { margin: 16px 0; font-style: italic; color: var(--text-dim); font-size: 13px; }
+
+/* ---- Rarity colors ---- */
+
+/* ============================================================
+   GENDER SELECTION — REDESIGN v12
+   ============================================================ */
+
+/* Font serif Hán — dự phòng SimSun/serif nếu Google Fonts bị chặn */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+:root {
+  --gender-font:      'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --gender-bg:        #0a0612;
+  --gender-male:      #7ec8f5;
+  --gender-female:    #ff85c8;
+  --gender-gold-a:    #e8d5a3;
+  --gender-gold-b:    #f5c842;
+  --gender-confirm-a: #6a3de8;
+  --gender-confirm-b: #4a1fa8;
+}
+
+/* Màn hình nền bọc ngoài (thay thế .setup-screen cho phase gender) */
+.gender-setup-screen {
+  position: fixed; inset: 0;
+  background-color: var(--gender-bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden; z-index: 100;
+  font-family: var(--gender-font);
+}
+
+/* Lớp sao */
+.gender-stars { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.gender-star {
+  position: absolute; border-radius: 50%; background: #fff;
+  animation: g-twinkle var(--dur,3s) ease-in-out infinite;
+  animation-delay: var(--delay,0s);
+}
+@keyframes g-twinkle {
+  0%,100% { opacity: var(--mn,.1); transform: scale(1); }
+  50%      { opacity: var(--mx,.8); transform: scale(1.3); }
+}
+
+/* Mist tím phía dưới */
+.gender-mist {
+  position: absolute; bottom: -60px; left: 50%;
+  transform: translateX(-50%);
+  width: 130%; height: 280px;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%,
+    rgba(90,30,160,.22) 0%, rgba(60,10,120,.10) 50%, transparent 80%);
+  pointer-events: none; z-index: 1;
+  animation: g-mist 8s ease-in-out infinite;
+}
+@keyframes g-mist {
+  0%,100% { transform: translateX(-50%) translateY(0); opacity:.8; }
+  50%      { transform: translateX(-50%) translateY(-16px); opacity:1; }
+}
+
+/* Header */
+.gender-header {
+  position: relative; z-index: 10; text-align: center;
+  margin-bottom: 16px;
+  animation: g-fadeDown .8s ease both;
+}
+.gender-han {
+  font-size: 12px; letter-spacing: 6px;
+  color: rgba(200,170,240,.5); margin-bottom: 3px;
+}
+.gender-game-title {
+  font-size: 26px; font-weight: 700;
+  background: linear-gradient(135deg, var(--gender-gold-a), var(--gender-gold-b));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; letter-spacing: 2px;
+}
+.gender-sub {
+  font-size: 11px; color: rgba(180,155,220,.45);
+  letter-spacing: 3px; margin-top: 3px;
+}
+@keyframes g-fadeDown {
+  from { opacity:0; transform:translateY(-20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Divider ── ◆ ── */
+.gender-divider {
+  display: flex; align-items: center; gap: 10px;
+  position: relative; z-index: 10;
+  color: rgba(138,92,246,.4); font-size: 10px; letter-spacing: 4px;
+  margin-bottom: 16px;
+  animation: g-fadeDown .8s .1s ease both;
+}
+.gender-divider::before, .gender-divider::after {
+  content: ''; height: 1px; width: 50px;
+  background: linear-gradient(90deg, transparent, rgba(138,92,246,.35), transparent);
+}
+
+/* Panel chính */
+.gender-panel {
+  position: relative; z-index: 10;
+  background: linear-gradient(145deg,rgba(30,20,50,.95),rgba(15,10,30,.98));
+  border: 1px solid rgba(138,92,246,.18);
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(90,30,160,.18), 0 8px 32px rgba(0,0,0,.5),
+              inset 0 1px 0 rgba(255,255,255,.04);
+  padding: 24px 22px 20px;
+  width: min(540px, calc(100vw - 28px));
+  animation: g-fadeUp .8s .2s ease both;
+  overflow: hidden;
+  font-family: var(--gender-font);
+}
+/* Đường gradient ngang ở top panel */
+.gender-panel::before {
+  content: ''; position: absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, rgba(138,92,246,.6) 30%,
+    rgba(245,200,66,.5) 50%, rgba(138,92,246,.6) 70%, transparent);
+  border-radius: 16px 16px 0 0;
+}
+/* 4 bracket góc */
+.gender-panel .g-corner {
+  position: absolute; width: 18px; height: 18px;
+  border-color: rgba(138,92,246,.28); border-style: solid;
+}
+.g-corner.tl { top:7px; left:7px;   border-width:1px 0 0 1px; }
+.g-corner.tr { top:7px; right:7px;  border-width:1px 1px 0 0; }
+.g-corner.bl { bottom:7px; left:7px;  border-width:0 0 1px 1px; }
+.g-corner.br { bottom:7px; right:7px; border-width:0 1px 1px 0; }
+
+@keyframes g-fadeUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Grid 2 cards */
+.gender-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+/* Card cơ bản */
+.gender-card {
+  position: relative;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+  padding: 18px 14px 14px;
+  cursor: pointer; text-align: center;
+  transition: transform .28s ease, border-color .28s, opacity .28s,
+              background .28s, box-shadow .28s;
+  overflow: hidden;
+  font-family: var(--gender-font);
+}
+/* Hover glow từ top */
+.gender-card::before {
+  content: ''; position: absolute; top:-40px; left:50%;
+  transform: translateX(-50%); width:120px; height:80px;
+  border-radius: 50%; opacity:0; transition:opacity .3s; pointer-events:none;
+}
+.gender-card[data-gender="male"]::before   { background: radial-gradient(circle,rgba(126,200,245,.22),transparent 70%); }
+.gender-card[data-gender="female"]::before { background: radial-gradient(circle,rgba(255,133,200,.22),transparent 70%); }
+.gender-card:hover { transform: translateY(-3px); }
+.gender-card:hover::before { opacity:1; }
+.gender-card[data-gender="male"]:hover   { border-color: rgba(126,200,245,.38); }
+.gender-card[data-gender="female"]:hover { border-color: rgba(255,133,200,.38); }
+
+/* Dimming card không được chọn khi card kia đã selected */
+.gender-grid.has-selection .gender-card:not(.selected) {
+  opacity: .45;
+  transform: scale(.97);
+}
+
+/* Selected male → viền vàng */
+.gender-card[data-gender="male"].selected {
+  border-color: var(--gender-gold-b);
+  background: rgba(245,200,66,.06);
+  box-shadow: 0 0 20px rgba(245,200,66,.2), 0 4px 16px rgba(0,0,0,.4);
+  transform: translateY(-2px); opacity: 1 !important;
+}
+/* Selected female → viền hồng */
+.gender-card[data-gender="female"].selected {
+  border-color: var(--gender-female);
+  background: rgba(255,133,200,.06);
+  box-shadow: 0 0 20px rgba(255,133,200,.24), 0 4px 16px rgba(0,0,0,.4);
+  transform: translateY(-2px); opacity: 1 !important;
+}
+
+/* Badge ✓ góc phải */
+.gender-badge {
+  position: absolute; top:7px; right:7px;
+  width:18px; height:18px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; opacity:0; transform:scale(.4);
+  transition: opacity .25s, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.gender-card[data-gender="male"]   .gender-badge { background: var(--gender-gold-b); color: #1a1000; }
+.gender-card[data-gender="female"] .gender-badge { background: var(--gender-female); color: #3a0020; }
+.gender-card.selected .gender-badge { opacity:1; transform:scale(1); }
+
+/* Avatar wrapper */
+.gender-avatar-wrap { position:relative; display:inline-block; margin-bottom:12px; }
+.gender-emoji {
+  font-size: 40px; line-height:1; display:block;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  margin-bottom: 0;
+}
+.gender-card.selected .gender-emoji { transform: scale(1.08); }
+
+/* Ring xoay quanh avatar khi selected */
+.gender-avatar-ring {
+  position:absolute; inset:-6px; border-radius:50%;
+  border:1.5px solid transparent; opacity:0; transition:opacity .3s;
+}
+.gender-card[data-gender="male"].selected .gender-avatar-ring {
+  border-color: rgba(245,200,66,.5); opacity:1;
+  animation: g-ring 3s linear infinite;
+}
+.gender-card[data-gender="female"].selected .gender-avatar-ring {
+  border-color: rgba(255,133,200,.5); opacity:1;
+  animation: g-ring 3s linear infinite reverse;
+}
+@keyframes g-ring { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+/* Tên card */
+.gender-name {
+  font-size: 14px; font-weight:600; letter-spacing:1px;
+  transition: color .25s;
+}
+.gender-card[data-gender="male"]   .gender-name           { color: var(--gender-male); }
+.gender-card[data-gender="female"] .gender-name           { color: var(--gender-female); }
+.gender-card[data-gender="male"].selected   .gender-name  { color: var(--gender-gold-b); }
+.gender-card[data-gender="female"].selected .gender-name  { color: var(--gender-female); }
+
+/* Traits list */
+.gender-traits {
+  list-style: none; padding:0; margin:0; text-align:left;
+}
+.gender-traits li {
+  font-size: 10px; color: rgba(180,160,210,.6);
+  padding: 2px 0; display:flex; align-items:center; gap:4px; line-height:1.4;
+}
+.gender-traits li::before { content:'◆'; font-size:6px; opacity:.5; flex-shrink:0; }
+
+/* Quote phía trên 2 card */
+.gender-quote {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(200,175,230,.65);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+/* Tương thích ngược: .gender-desc vẫn hoạt động nếu code khác dùng */
+.gender-desc { font-size: 10px; color: rgba(180,160,210,.6); line-height:1.5; text-align:left; }
+
+/* Particles */
+.gender-particles {
+  position: absolute; inset:0; pointer-events:none;
+  overflow:hidden; border-radius:12px;
+}
+.g-particle {
+  position:absolute; width:2px; height:2px; border-radius:50%; opacity:0;
+}
+.gender-card[data-gender="male"]   .g-particle { background: rgba(126,200,245,.8); }
+.gender-card[data-gender="female"] .g-particle { background: rgba(255,133,200,.8); }
+.gender-card.selected .g-particle {
+  animation: g-pfloat var(--pd,2.4s) ease-in var(--pdel,0s) infinite;
+}
+@keyframes g-pfloat {
+  0%   { opacity:0;   transform:translateY(0) translateX(var(--px,0px)) scale(1); }
+  20%  { opacity:.9; }
+  100% { opacity:0;   transform:translateY(-55px) translateX(var(--px,0px)) scale(.5); }
+}
+
+/* Nút Xác Nhận — inactive */
+#btn-gender-confirm {
+  display:block; width:100%; padding:11px 0;
+  border:none; border-radius:10px;
+  font-family: var(--gender-font);
+  font-size:14px; font-weight:600; letter-spacing:2px;
+  cursor:not-allowed; position:relative; overflow:hidden;
+  transition: background .3s, opacity .3s, box-shadow .3s, transform .18s;
+  background: rgba(80,70,100,.4);
+  color: rgba(180,160,210,.35);
+  opacity: .5;
+}
+/* Nút Xác Nhận — active (sau khi chọn card) */
+#btn-gender-confirm:not([disabled]) {
+  background: linear-gradient(135deg, var(--gender-confirm-a), var(--gender-confirm-b));
+  color: rgba(255,255,255,.92);
+  cursor: pointer; opacity:1;
+  box-shadow: 0 0 24px rgba(106,61,232,.45), 0 4px 12px rgba(0,0,0,.35);
+}
+#btn-gender-confirm:not([disabled]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgba(106,61,232,.6), 0 6px 16px rgba(0,0,0,.4);
+}
+#btn-gender-confirm:not([disabled]):active { transform: translateY(0); }
+/* Shimmer animation */
+#btn-gender-confirm:not([disabled])::after {
+  content:''; position:absolute; top:0; left:-80%;
+  width:60%; height:100%;
+  background: linear-gradient(105deg,transparent 20%,rgba(255,255,255,.18) 50%,transparent 80%);
+  animation: g-shimmer 2.5s ease-in-out infinite .5s;
+}
+@keyframes g-shimmer { 0%{left:-80%} 100%{left:140%} }
+
+/* Mobile: giảm sao xuống 50%, tắt particle */
+@media (max-width:600px) {
+  .gender-panel { padding:18px 14px 16px; }
+  .gender-grid  { gap:10px; }
+  .gender-card  { padding:14px 10px 12px; }
+  .gender-emoji { font-size:34px; }
+  .gender-star:nth-child(2n) { display:none; }
+  .g-particle   { display:none; }
+}
+
+/* ============================================================
+   CHARACTER POPUP
+   ============================================================ */
+.char-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+.char-popup {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  padding: 0;
+  width: 380px;
+  max-width: 98vw;
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.char-popup-full { width: 400px; }
+
+/* Header */
+.char-popup-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.cp-portrait-mini { width: 64px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+.cp-portrait-mini svg { width: 100%; height: 100%; }
+.cp-header-info { flex: 1; min-width: 0; }
+.char-popup-name  { font-size: 16px; font-weight: 700; color: var(--gold); }
+.char-popup-realm { font-size: 12px; color: var(--spirit); margin-top: 2px; }
+.char-popup-sect  { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.char-popup-direction { font-size: 11px; margin-top: 2px; }
+
+/* Scrollable body */
+.char-popup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Section */
+.cp-section {
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.cp-section-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Stats grid */
+.cps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.cps-item {
+  background: rgba(0,0,0,0.25);
+  border-radius: 7px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cps-wide { grid-column: 1/-1; flex-direction: row; align-items: center; justify-content: space-between; }
+.cps-label { font-size: 10px; color: var(--text-dim); }
+.cps-val   { font-size: 13px; font-weight: 600; color: var(--text-bright); }
+
+/* Spirit root elements row */
+.cpi-elem-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cpi-elem { font-size: 11px; background: rgba(0,0,0,0.3); border-radius: 5px; padding: 3px 7px; }
+.cpi-elem strong { font-size: 13px; font-weight: 700; }
+
+/* Stat bars */
+.cp-stat-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.csb-label { font-size: 10px; color: var(--text-dim); width: 130px; flex-shrink: 0; }
+.csb-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.csb-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.csb-val { font-size: 10px; color: var(--text-dim); width: 45px; text-align: right; flex-shrink: 0; }
+.cp-khi-van-note { font-size: 10px; margin-top: 4px; text-align: center; padding: 3px; border-radius: 5px; }
+
+/* Close button */
+.char-popup-close {
+  width: 100%;
+  margin: 0;
+  border-radius: 0 0 14px 14px;
+  padding: 10px;
+  flex-shrink: 0;
+}
+
+/* Char popup scrollbar */
+.char-popup-body::-webkit-scrollbar { width: 4px; }
+.char-popup-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Home button special */
+.home-btn {
+  background: rgba(200,168,75,0.1) !important;
+  border-left-color: var(--gold) !important;
+  color: var(--gold) !important;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+/* ============================================================
+   SPIRIT ROOT REVEAL CINEMATIC
+   ============================================================ */
+.reveal-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.reveal-stage {
+  width: 100%;
+  max-width: 500px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+}
+
+/* will-change hint để GPU tạo layer sẵn trước animation */
+.reveal-phase {
+  width: 100%;
+  text-align: center;
+  will-change: opacity, transform;
+}
+/* Dùng cho rp-text / rp-details — vẫn dùng display:none để không chiếm không gian khi chờ */
+.reveal-phase.hidden { display: none; }
+
+/* animation-fill-mode: both = backwards (giữ from-state trong delay) + forwards */
+.reveal-fade-in { animation: reveal-fadein 0.8s ease both; }
+@keyframes reveal-fadein {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Orb zone: container cố định height để charging + orb không gây layout reflow ---- */
+/* cả 2 phase dùng position:absolute, tránh height-diff shift */
+.reveal-orb-zone {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+/* ---- Phase 1: Charging — fade out dần theo --rd (CSS, không cần JS width) ---- */
+.rp-charge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: rp-charge-out var(--rd, 1500ms) linear forwards;
+}
+@keyframes rp-charge-out {
+  0%, 90% { opacity: 1; }
+  100%     { opacity: 0; pointer-events: none; }
+}
+
+/* Charging bar */
+.reveal-charge-text {
+  font-size: 16px; color: rgba(255,255,255,0.6);
+  margin-bottom: 24px; letter-spacing: 2px;
+  animation: pulse 1s infinite;
+}
+.reveal-charge-bar {
+  width: 280px; height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px; margin: 0 auto;
+  overflow: hidden;
+}
+/* GPU: transform:scaleX thay vì width — không trigger layout per frame */
+.reveal-charge-fill {
+  height: 100%; width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, #4040a0, #f0d47a);
+  border-radius: 2px;
+  animation: charge-fill-grow var(--rd, 1500ms) linear forwards;
+}
+@keyframes charge-fill-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ---- Phase 2: Orb — xuất hiện sau --rd, cùng vị trí với charging ---- */
+.rp-orb-phase {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rp-orb-appear 0.55s var(--rd, 1500ms) ease both;
+}
+/* Bỏ bottom margin khi dùng trong absolute context */
+.rp-orb-phase .reveal-orb-wrap { margin-bottom: 0; }
+@keyframes rp-orb-appear {
+  from { opacity: 0; transform: scale(0.28); }
+  60%  { opacity: 1; transform: scale(1.1); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---- reveal-instant: skip animation khi back từ confirm ---- */
+#reveal-stage.reveal-instant .rp-charge      { animation: none; opacity: 0; pointer-events: none; }
+#reveal-stage.reveal-instant .reveal-charge-fill { animation: none; }
+#reveal-stage.reveal-instant .rp-orb-phase   { animation: none; opacity: 1; transform: none; }
+
+/* Orb */
+.reveal-orb-wrap {
+  position: relative;
+  width: 200px; height: 200px;
+  margin: 0 auto 24px;
+  display: flex; align-items: center; justify-content: center;
+}
+.reveal-orb-bg {
+  position: absolute; inset: -30px; border-radius: 50%;
+  animation: orb-pulse 2s ease-in-out infinite;
+}
+@keyframes orb-pulse {
+  0%,100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+.reveal-orb-core {
+  position: relative; z-index: 10;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  border: 2px solid var(--root-color, #f0d47a);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 30px var(--root-color, #f0d47a),
+              0 0 60px var(--root-color, #f0d47a)44,
+              inset 0 0 20px var(--root-color, #f0d47a)22;
+}
+.reveal-orb-icon { font-size: 40px; }
+
+/* Particles */
+.reveal-particle {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform-origin: 0 0;
+  opacity: 0;
+}
+@keyframes particle-float {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-10px); }
+}
+@keyframes particle-fade {
+  from { opacity: 0; }
+  to   { opacity: 0.8; }
+}
+
+/* Reveal explosion */
+.reveal-explode { animation: reveal-explode 0.5s ease forwards; }
+@keyframes reveal-explode {
+  0%  { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100%{ transform: scale(1);   opacity: 1; }
+}
+
+/* Screen shake */
+.screen-shake { animation: screen-shake 0.5s ease; }
+@keyframes screen-shake {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-8px,4px); }
+  40% { transform: translate(8px,-4px); }
+  60% { transform: translate(-4px,8px); }
+  80% { transform: translate(4px,-8px); }
+}
+
+/* ============================================================
+   REVEAL STAGE — Text reveals redesign v12
+   ============================================================ */
+
+/* Rarity badge — angular, solemn, glowing */
+.reveal-rarity-badge {
+  font-size: 10px;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 5px 18px;
+  display: inline-block;
+  margin-bottom: 18px;
+  background: rgba(0,0,0,0.38);
+  text-shadow: 0 0 14px currentColor;
+  box-shadow:
+    0 0 10px rgba(0,0,0,0.5),
+    inset 0 0 12px rgba(255,255,255,0.02);
+}
+
+/* Root name — responsive, graceful wrap */
+.reveal-root-name {
+  font-size: clamp(20px, 5.5vw, 28px);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px currentColor, 0 0 40px rgba(255,255,255,0.08);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  letter-spacing: 1px;
+  padding: 0 12px;
+}
+
+/* Main element row — spacious, atmospheric */
+.reveal-element {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 6px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+}
+
+/* Prophecy — solemn tu tiên blockquote, centered */
+.reveal-prophecy {
+  position: relative;
+  font-style: italic;
+  color: rgba(210, 192, 245, 0.75);
+  font-size: 13px;
+  line-height: 1.9;
+  max-width: 360px;
+  margin: 0 auto 22px;
+  text-align: center;
+  padding: 6px 20px 6px;
+  letter-spacing: 0.04em;
+}
+/* Ornamental divider above */
+.reveal-prophecy::before {
+  content: '── ✦ ──';
+  display: block;
+  font-size: 9px;
+  letter-spacing: 6px;
+  color: rgba(200, 168, 75, 0.3);
+  font-style: normal;
+  margin-bottom: 12px;
+}
+/* Ornamental divider below */
+.reveal-prophecy::after {
+  content: '── ✦ ──';
+  display: block;
+  font-size: 9px;
+  letter-spacing: 6px;
+  color: rgba(200, 168, 75, 0.3);
+  font-style: normal;
+  margin-top: 12px;
+}
+
+/* Element point badges — thống nhất kích thước, màu theo hệ */
+.reveal-bonuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.reveal-bonus-item {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  padding: 5px 13px;
+  min-width: 100px;
+  text-align: center;
+  letter-spacing: 0.2px;
+  box-shadow:
+    inset 0 0 0 100px rgba(255,255,255,0.03),
+    0 1px 4px rgba(0,0,0,0.45);
+}
+
+.reveal-invite-hint {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+  animation: pulse 1.5s infinite;
+}
+
+/* Action buttons — Thử Lại và Chấp Nhận */
+.reveal-next-btn {
+  min-width: 140px;
+  border: 1px solid;
+  padding: 11px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  border-radius: 8px;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, opacity 0.2s;
+}
+.reveal-next-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* ============================================================
+   KHAI LINH CĂN — Roll Phase Redesign v12
+   Chỉ sửa visual, không đụng logic roll
+   ============================================================ */
+
+/* ---- Card wrapper ---- */
+.setup-card.roll-card {
+  background: linear-gradient(160deg, rgba(14,10,28,0.98) 0%, rgba(8,6,18,0.99) 100%);
+  border: 1px solid rgba(138,92,246,0.22);
+  border-radius: 16px;
+  padding: 60px 28px 24px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  box-shadow:
+    0 0 60px rgba(80,40,160,0.2),
+    0 8px 40px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  animation: roll-card-in 0.75s ease both;
+}
+
+@keyframes roll-card-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Đường gradient tím-vàng-tím đỉnh card */
+.setup-card.roll-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(138,92,246,0.55) 20%,
+    rgba(200,168,75,0.65) 50%,
+    rgba(138,92,246,0.55) 80%,
+    transparent 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+/* Ambient background glow phía sau orb */
+.setup-card.roll-card::after {
+  content: '';
+  position: absolute;
+  top: 8%; left: 50%; transform: translateX(-50%);
+  width: 340px; height: 300px;
+  background: radial-gradient(ellipse 55% 50% at 50% 38%,
+    rgba(100,50,220,0.18) 0%,
+    rgba(70,25,160,0.07) 50%,
+    transparent 72%);
+  pointer-events: none;
+  z-index: 0;
+  animation: roll-ambient-breathe 5s ease-in-out infinite;
+}
+
+@keyframes roll-ambient-breathe {
+  0%,100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* ---- Orb vòng tròn năng lượng ---- */
+.roll-orb {
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  border: none;
+  margin: 0 auto 50px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+  animation: roll-orb-glow 3.2s ease-in-out infinite;
+}
+
+/* Glow xung quanh orb pulsing */
+@keyframes roll-orb-glow {
+  0%,100% {
+    filter: drop-shadow(0 0 8px rgba(138,92,246,0.4))
+            drop-shadow(0 0 20px rgba(100,50,200,0.15));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(138,92,246,0.65))
+            drop-shadow(0 0 40px rgba(100,50,200,0.28));
+  }
+}
+
+/* Gradient border ring (conic-gradient + mask) — xoay chậm */
+.roll-orb::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(138,92,246,0.9)  0deg,
+    rgba(200,168,75,0.75) 100deg,
+    rgba(80,30,200,0.5)   200deg,
+    rgba(138,92,246,0.9)  360deg
+  );
+  animation: roll-border-spin 5s linear infinite;
+  mask: radial-gradient(farthest-side,
+    transparent calc(100% - 2px),
+    black        calc(100% - 2px));
+  -webkit-mask: radial-gradient(farthest-side,
+    transparent calc(100% - 2px),
+    black        calc(100% - 2px));
+}
+
+@keyframes roll-border-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---- Inner sphere ---- */
+.roll-orb-inner {
+  width: 104px; height: 104px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%,
+    rgba(130,70,255,0.22) 0%,
+    rgba(55,20,110,0.65)  40%,
+    rgba(8,5,20,0.95)     80%);
+  border: 1px solid rgba(138,92,246,0.35);
+  box-shadow:
+    inset 0 0 16px rgba(138,92,246,0.25),
+    inset 0 0 4px  rgba(200,168,75,0.1),
+    0 0 10px rgba(138,92,246,0.2);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+/* Highlight nhỏ phía trên trái của sphere */
+.roll-orb-inner::before {
+  content: '';
+  position: absolute;
+  top: 14%; left: 18%;
+  width: 30%; height: 18%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  transform: rotate(-30deg);
+  pointer-events: none;
+}
+
+/* ---- Symbol ✦ trung tâm ---- */
+.roll-orb-emoji {
+  font-size: 38px;
+  opacity: 1;
+  display: block;
+  text-shadow:
+    0 0 8px  rgba(200,168,75,0.9),
+    0 0 20px rgba(200,168,75,0.5),
+    0 0 48px rgba(138,92,246,0.6);
+  animation: roll-symbol-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes roll-symbol-breathe {
+  0%,100% { transform: scale(1);    opacity: 0.72; }
+  50%     { transform: scale(1.14); opacity: 1; }
+}
+
+/* ---- Vòng tròn quỹ đạo (rings) ---- */
+.roll-orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: ring-spin 3s linear infinite;
+}
+
+/* Ring 1 — tím, gần nhất, nhanh nhất */
+.ring1 {
+  width: 194px; height: 194px;
+  border: 1px solid rgba(138,92,246,0.50);
+  box-shadow:
+    0 0 8px  rgba(138,92,246,0.22),
+    inset 0 0 6px rgba(138,92,246,0.12);
+  animation-duration: 4s;
+}
+
+/* Ring 2 — vàng, ngược chiều */
+.ring2 {
+  width: 226px; height: 226px;
+  border: 1px solid rgba(200,168,75,0.28);
+  box-shadow: 0 0 6px rgba(200,168,75,0.12);
+  animation-duration: 7s;
+  animation-direction: reverse;
+}
+
+/* Ring 3 — tím mờ, nét đứt, chậm nhất */
+.ring3 {
+  width: 254px; height: 254px;
+  border: 1px dashed rgba(138,92,246,0.16);
+  animation-duration: 12s;
+}
+
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---- Text mô tả ---- */
+.roll-desc {
+  font-size: 14px;
+  color: rgba(200,180,240,0.62);
+  line-height: 1.85;
+  margin-bottom: 28px;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Nút Khai Linh Căn ---- */
+#btn-roll {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  padding: 14px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  background: linear-gradient(135deg, #4a22c8 0%, #6b3ae8 45%, #4818b8 100%);
+  color: rgba(240,235,255,0.93);
+  box-shadow:
+    0 0 26px rgba(100,50,220,0.48),
+    0 4px 18px rgba(0,0,0,0.48);
+  transition: transform 0.18s ease, box-shadow 0.26s ease;
+}
+
+#btn-roll:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 40px rgba(138,92,246,0.62),
+    0 6px 24px rgba(0,0,0,0.52);
+}
+
+#btn-roll:active {
+  transform: translateY(0);
+  box-shadow:
+    0 0 18px rgba(100,50,220,0.38),
+    0 2px 8px rgba(0,0,0,0.42);
+}
+
+/* Shimmer ban đầu — sau 1s bắt đầu quét */
+#btn-roll::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -95%;
+  width: 55%; height: 100%;
+  background: linear-gradient(108deg,
+    transparent 20%,
+    rgba(255,255,255,0.22) 50%,
+    transparent 80%);
+  animation: roll-btn-shimmer 3.2s ease-in-out infinite 1.2s;
+}
+
+@keyframes roll-btn-shimmer {
+  0%   { left: -95%; }
+  100% { left: 155%; }
+}
+
+/* ---- Hiển thị kết quả roll nhanh ---- */
+.roll-result-quick {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(138,92,246,0.16);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  position: relative; z-index: 1;
+}
+
+.roll-action-btns {
+  display: flex; gap: 10px; justify-content: center;
+  position: relative; z-index: 1;
+}
+
+.roll-btn { min-width: 160px; }
+
+.roll-reroll-info {
+  font-size: 11px;
+  color: rgba(138,92,246,0.42);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  position: relative; z-index: 1;
+}
+
+/* ---- Mobile responsive ---- */
+@media (max-width: 600px) {
+  .setup-card.roll-card { padding: 28px 16px 26px; }
+  .roll-orb        { width: 130px; height: 130px; margin-bottom: 24px; }
+  .roll-orb-inner  { width: 84px;  height: 84px; }
+  .roll-orb-emoji  { font-size: 30px; }
+  .ring1 { width: 158px; height: 158px; }
+  .ring2 { width: 184px; height: 184px; }
+  .ring3 { width: 208px; height: 208px; }
+  #btn-roll { font-size: 13px; padding: 12px 0; letter-spacing: 2px; }
+}
+
+/* Sect invite */
+.invite-legendary-banner {
+  background: rgba(123,104,238,0.15);
+  border: 1px solid rgba(123,104,238,0.4);
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 12px; color: #c084fc;
+  line-height: 1.6; margin-bottom: 14px;
+  animation: pulse 2s infinite;
+}
+.invite-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.invite-card {
+  display: flex; gap: 10px; align-items: center;
+  border: 1px solid; border-radius: 8px; padding: 10px 12px;
+  background: rgba(0,0,0,0.2);
+}
+.invite-emoji { font-size: 20px; flex-shrink: 0; }
+.invite-name  { font-size: 13px; font-weight: 600; }
+.invite-msg   { font-size: 11px; color: var(--text-dim); }
+.invite-badge { margin-left: auto; font-size: 16px; }
+.invite-note  {
+  font-size: 11px; color: var(--text-dim);
+  background: rgba(0,0,0,0.2); border-radius: 6px;
+  padding: 8px 10px; line-height: 1.6; margin-bottom: 14px;
+}
+
+/* Roll result card */
+.roll-result-card {
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 0 0 12px;
+  text-align: left;
+}
+.rrc-name   { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+.rrc-rarity { font-size: 10px; letter-spacing: 2px; margin-bottom: 10px; }
+.rrc-points {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.rrc-pt {
+  font-size: 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.rrc-rate   { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.rrc-prophecy {
+  font-size: 11px; color: var(--text-dim);
+  font-style: italic; line-height: 1.6;
+  border-left: 2px solid rgba(255,255,255,0.1);
+  padding-left: 10px;
+}
+
+/* Village bonus badge */
+.village-bonus {
+  font-size: 11px; font-weight: 500;
+  line-height: 1.45;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+/* Spirit root display in char popup */
+.sr-elems { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.sr-elem-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.sr-elem-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sr-elem-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.sr-prophecy {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  border-left: 2px solid var(--border);
+  margin-top: 4px;
+}
+/* ============================================================
+   CHARACTER POPUP — TU LUYỆN SECTION
+   ============================================================ */
+.cp-cultivate-section {
+  background: rgba(200,168,75,0.04);
+}
+.cp-realm-display {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.cp-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.cp-bar-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  width: 80px;
+  flex-shrink: 0;
+}
+.cp-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.cp-bar-val {
+  font-size: 11px;
+  color: var(--text-dim);
+  width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.cp-bar-full {
+  color: #f0d47a !important;
+  font-weight: 700;
+}
+.cp-cultivate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 8px 0;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+}
+.cp-bt-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(240,212,74,0.4);
+  background: rgba(240,212,74,0.08);
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.cp-bt-ready {
+  color: #f0d47a !important;
+  border-color: var(--gold) !important;
+  background: rgba(240,212,74,0.15) !important;
+  animation: bt-pulse 1.5s ease-in-out infinite;
+}
+.cp-bt-ready:hover {
+  background: rgba(240,212,74,0.25) !important;
+  box-shadow: 0 0 16px rgba(240,212,74,0.4);
+}
+.cp-bt-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  padding: 6px;
+  margin-top: 4px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.cp-meditate-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(86,196,106,0.3);
+  background: rgba(86,196,106,0.06);
+  color: var(--text-dim);
+  margin-top: 6px;
+  transition: all 0.15s;
+}
+.cp-meditate-btn:hover {
+  background: rgba(86,196,106,0.12);
+  color: #56c46a;
+}
+.cp-med-active {
+  border-color: rgba(86,196,106,0.5) !important;
+  background: rgba(86,196,106,0.12) !important;
+  color: #56c46a !important;
+}
+/* ============================================================
+   RESPONSIVE MOBILE LANDSCAPE — Character Creation
+   ============================================================ */
+@media (max-width: 900px) and (orientation: landscape) {
+  .setup-screen {
+    padding: 8px 12px;
+    gap: 10px;
+    justify-content: flex-start;
+    overflow-y: auto;
+    min-height: 100vh;
+  }
+  .setup-header h1 { font-size: 20px; }
+  .setup-sub { font-size: 12px; }
+  .setup-card {
+    padding: 12px 14px;
+    max-width: 100%;
+  }
+  .setup-card h2 { font-size: 15px; margin-bottom: 6px; }
+  .setup-card p  { font-size: 12px; margin-bottom: 10px; }
+  .setup-input   { padding: 8px 12px; font-size: 14px; margin-bottom: 10px; }
+  .setup-btn     { padding: 10px; font-size: 13px; }
+  .setup-btn.large { font-size: 14px; padding: 12px; }
+}

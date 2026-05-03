@@ -1,1 +1,5 @@
-/.firebase
+.firebaserc
+.cursorrules
+.cursorignore
+.claudeignore
+/backend/.wrangler

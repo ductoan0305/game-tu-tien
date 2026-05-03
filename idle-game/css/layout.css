@@ -18,26 +18,16 @@ html, body { height: 100%; overflow: hidden; }
   background: var(--bg-deep);
 }
 
-/* ========== GAME LAYOUT — 3 cột, không top-bar ========== */
+/* ========== GAME LAYOUT — Full-screen canvas (Session 13) ========== */
+/* Phá 3-cột, biến màn hình thành canvas + popup system */
 .game-layout {
-  display: grid;
-  grid-template-columns: 170px 1fr 220px;
-  flex: 1;
-  overflow: hidden;
-  gap: 0;
-  /* chừa chỗ cho bottom nav */
-  height: calc(100vh - 52px);
+  position: fixed;
+  inset: 0;
 }
 
-/* ========== LEFT PANEL — Compact character panel ========== */
+/* ========== LEFT PANEL — hidden, content migrated to popups later ========== */
 .panel-left {
-  background: var(--bg-card);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
+  display: none;
 }
 
 /* Character card */
@@ -169,8 +159,12 @@ html, body { height: 100%; overflow: hidden; }
   padding: 4px 0;
 }
 
-/* ========== BOTTOM NAV ========== */
+/* ========== BOTTOM NAV — fixed at bottom (Session 13) ========== */
 .bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 52px;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
@@ -243,17 +237,20 @@ html, body { height: 100%; overflow: hidden; }
 /* compat — nav-btn giữ lại cho JS vẫn dùng */
 .nav-btn { display: none; }
 
-/* ========== CENTER PANEL ========== */
+/* ========== CENTER PANEL — full canvas (Session 13) ========== */
 .panel-center {
-  display: flex;
-  flex-direction: column;
+  position: fixed;
+  inset: 0;
+  padding: 0;
   overflow: hidden;
   background: var(--bg-panel);
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .center-panel {
   padding: 16px;
+  padding-bottom: 68px; /* 52px bottom-nav + 16px breathing room */
   display: block;
   height: 100%;
   overflow-y: auto;
@@ -350,14 +347,9 @@ html, body { height: 100%; overflow: hidden; }
 .action-btn-new:active { transform: scale(0.97); }
 .action-btn-new:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ========== RIGHT PANEL ========== */
+/* ========== RIGHT PANEL — hidden, content migrated to popups later ========== */
 .panel-right {
-  background: var(--bg-card);
-  border-left: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  display: none;
 }
 
 .right-section {
@@ -643,29 +635,14 @@ html, body { height: 100%; overflow: hidden; }
    ============================================================ */
 
 /* ── Tablet (iPad: 768px – 1024px) ──────────────────────────
-   Ẩn panel phải, giữ panel trái + center                     */
+   Session 13: panels đã ẩn toàn bộ — không cần override     */
 @media (max-width: 1024px) {
-  .game-layout {
-    grid-template-columns: 150px 1fr;
-  }
-  .panel-right {
-    display: none;
-  }
+  /* panels handled by base rules */
 }
 
 /* ── Mobile (≤ 767px) ────────────────────────────────────────
-   Chỉ hiện center, panel trái ẩn                             */
+   Session 13: panels đã ẩn toàn bộ — chỉ override bottom-nav */
 @media (max-width: 767px) {
-  .game-layout {
-    grid-template-columns: 1fr;
-    height: calc(100vh - 56px); /* bottom nav cao hơn chút trên mobile */
-  }
-  .panel-left {
-    display: none;
-  }
-  .panel-right {
-    display: none;
-  }
 
   /* Bottom nav to hơn, dễ bấm hơn trên mobile */
   .bottom-nav {

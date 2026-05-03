@@ -3,3 +3,4 @@
 .cursorignore
 .claudeignore
 /backend/.wrangler
+/idle-game/.firebase

@@ -938,3 +938,71 @@
 }
 .lp-dmg-you   { color: #56c46a; }
 .lp-dmg-enemy { color: #e05c1a; }
+
+/* ============================================================
+   POPUP MANAGER — Session 13: Layout Collapse foundation
+   popup-manager.js → PopupManager singleton
+   ============================================================ */
+
+#popup-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+}
+#popup-layer .pm-popup {
+  pointer-events: all;
+}
+
+.pm-popup {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+  min-height: 120px;
+}
+
+.pm-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.pm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.pm-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.pm-close:hover {
+  color: var(--text);
+}
+
+.pm-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+.pm-body::-webkit-scrollbar { width: 4px; }
+.pm-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

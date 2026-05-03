@@ -73,6 +73,9 @@ import { LINH_THU_DATA, tryTame, pickupEgg,
          feedBeast, buyLinhThuEgg, releaseBeast,
          SHOP_EGGS }                                                from './core/linh-thu-engine.js';
 
+// ---- Popup Manager (Session 13: Layout Collapse) ----
+import PopupManager             from './ui/popup-manager.js';
+
 // ---- Popups (tách từ main.js cũ) ----
 import { showCharPopup }        from './app/popups/char-popup.js';
 import { showGameOverScreen }   from './app/popups/gameover-popup.js';

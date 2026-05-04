@@ -247,15 +247,11 @@ function _buildTier1Html(G, ctx = {}) {
               <feGaussianBlur stdDeviation="3" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
-            <radialGradient id="map-bg-grad${suf}" cx="50%" cy="50%" r="60%">
-              <stop offset="0%" stop-color="#0d1828"/>
-              <stop offset="100%" stop-color="#060810"/>
-            </radialGradient>
             <pattern id="grid-pat${suf}" width="50" height="50" patternUnits="userSpaceOnUse">
               <path d="M50 0L0 0 0 50" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.5"/>
             </pattern>
           </defs>
-          <rect width="560" height="500" fill="url(#map-bg-grad${suf})"/>
+          <!-- Không có <rect> bg — background đến từ CSS .map-svg-t1, tránh double background -->
           <rect width="560" height="500" fill="url(#grid-pat${suf})"/>
           <text x="280" y="20" text-anchor="middle" font-size="10" fill="rgba(200,168,75,0.5)" letter-spacing="4">✦ PHÀM NHÂN GIỚI ✦</text>
           ${connSvg}

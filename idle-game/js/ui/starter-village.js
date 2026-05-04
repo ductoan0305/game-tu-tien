@@ -179,12 +179,8 @@ export function renderStarterVillage(G, actions) {
         </svg>
       </div>
       <div class="map-side-t2 starter-village-side" data-sv-accent="${village.color}">
-        <div class="starter-side-kicker">Lĩnh vực mở đầu</div>
         <div class="mst2-zone-name starter-side-title sv-zone-name">${village.emoji} ${village.name}</div>
         <div class="mst2-zone-desc">${village.desc}</div>
-        <div class="village-bonus sv-zone-bonus">
-          ✦ ${village.bonusDesc}
-        </div>
         <div class="village-map-hint">Bấm <strong>Bản Đồ</strong> dưới thanh điều hướng để xem toàn Phàm Nhân Giới.</div>
         <div class="mst2-loc-info" id="mst2-loc-info">
           <div class="starter-village-side-hint">Chọn địa điểm trên sơ đồ để tương tác</div>

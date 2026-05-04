@@ -1,10 +1,9 @@
 // ============================================================
-// ui/hud.js — Minimal HUD System
-// Session 14: Left strip + right status pill + nav badges
+// ui/hud.js — Minimal HUD System (Session 14 rev2)
 //
 // API:
-//   initHUD()   — tạo DOM, append to body, start 2s update loop
-//   updateHUD() — sync tất cả HUD values từ window._G
+//   initHUD()   — tạo DOM, append to body, start 2s interval
+//   updateHUD() — sync values từ window._G
 //
 // Constraints:
 //   - Chỉ đọc gameState (window._G), không write
@@ -16,29 +15,36 @@ import { SPIRIT_ELEMENTS } from '../core/spirit-root.js';
 import { WORLD_NODES }     from './map-data.js';
 import { calcMaxQi }       from '../core/state.js';
 
-// ---- Realm abbreviations (tương ứng realmIdx 0-4) ----
+// Tên viết tắt cảnh giới (realmIdx 0-4)
 const REALM_SHORT = ['LK', 'TC', 'KĐ', 'NA', 'HT'];
 
-// ---- Khởi tạo HUD ----
+// Tên tân thủ thôn (hardcode tránh import thêm)
+const STARTER_VILLAGE_NAMES = {
+  thanh_phong_thon: 'Thanh Phong Thôn',
+  hoa_diem_thon:    'Hỏa Diệm Thôn',
+  han_bang_thon:    'Hàn Băng Thôn',
+  lam_hai_thon:     'Lam Hải Thôn',
+};
+
+// ============================================================
+// PUBLIC API
+// ============================================================
+
 export function initHUD() {
   _buildLeftHUD();
   _buildRightHUD();
-
-  // 2s interval cho right pill + nav badges (ít quan trọng hơn, update chậm là được)
+  // 2s interval — right pill + nav badges (ít quan trọng, chậm được)
   setInterval(updateHUD, 2000);
 }
 
-// ---- Update tất cả HUD — gọi từ tick loop lẫn setInterval ----
 export function updateHUD() {
   const G = window._G;
   if (!G || !G.setupDone) return;
-
   try {
-    _updateLeftBars(G);
+    _updateLeftHUD(G);
     _updateRightPill(G);
     _updateNavBadges(G);
   } catch (e) {
-    // Silent — HUD không được crash game
     console.warn('[hud] updateHUD error:', e);
   }
 }
@@ -53,32 +59,51 @@ function _buildLeftHUD() {
   const el = document.createElement('div');
   el.id = 'hud-left';
   el.innerHTML = `
-    <div id="hud-avatar" title="Xem thông tin nhân vật" aria-label="Nhân vật">
-      <span id="hud-avatar-icon">🧘</span>
+    <div id="hud-left-header" class="hud-panel-header">
+      <span class="hud-drag-hint">⠿</span>
     </div>
-    <div id="hud-realm-badge">
-      <span id="hud-realm-text">LK1</span>
-    </div>
-    <div class="hud-bar-v" id="hud-bar-hp" data-tooltip="HP: —">
-      <div class="hud-bar-v-fill" id="hud-bar-hp-fill"></div>
-    </div>
-    <div class="hud-bar-v" id="hud-bar-mp" data-tooltip="Linh lực: —">
-      <div class="hud-bar-v-fill" id="hud-bar-mp-fill"></div>
-    </div>
-    <div class="hud-bar-v hud-bar-exp-v" id="hud-bar-exp" data-tooltip="Kinh nghiệm: —">
-      <div class="hud-bar-v-fill" id="hud-bar-exp-fill"></div>
+    <div class="hud-panel-body">
+      <div id="hud-avatar" title="Xem thông tin nhân vật">
+        <span id="hud-avatar-icon">🧘</span>
+      </div>
+      <div class="hud-info-col">
+        <div id="hud-name">—</div>
+        <div id="hud-realm-text">LK1</div>
+      </div>
+      <div class="hud-bars-col">
+        <div class="hud-bar-row">
+          <span class="hud-bar-lbl" style="color:#e05c4a">HP</span>
+          <span class="hud-bar-val" id="hud-val-hp">—</span>
+          <div class="hud-bar-h">
+            <div class="hud-bar-h-fill" id="hud-bar-hp-fill" style="background:#e05c4a"></div>
+          </div>
+        </div>
+        <div class="hud-bar-row">
+          <span class="hud-bar-lbl" style="color:var(--spirit,#7b9ef0)">气</span>
+          <span class="hud-bar-val" id="hud-val-mp">—</span>
+          <div class="hud-bar-h">
+            <div class="hud-bar-h-fill" id="hud-bar-mp-fill" style="background:var(--spirit,#7b9ef0)"></div>
+          </div>
+        </div>
+        <div class="hud-bar-row">
+          <span class="hud-bar-lbl" style="color:var(--jade,#56c46a)">EXP</span>
+          <span class="hud-bar-val" id="hud-val-exp">—</span>
+          <div class="hud-bar-h">
+            <div class="hud-bar-h-fill" id="hud-bar-exp-fill" style="background:var(--jade,#56c46a)"></div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
   document.body.appendChild(el);
 
-  // Avatar → toggle char popup
+  // Avatar click → mở char popup
   document.getElementById('hud-avatar')?.addEventListener('click', () => {
-    // Trigger existing char-popup button để tái dụng toàn bộ logic
-    const btn = document.getElementById('btn-char-popup');
-    if (btn) {
-      btn.click();
-    }
+    document.getElementById('btn-char-popup')?.click();
   });
+
+  // Drag theo header
+  _makeDraggable(el, document.getElementById('hud-left-header'));
 }
 
 function _buildRightHUD() {
@@ -100,44 +125,42 @@ function _buildRightHUD() {
 // UPDATE FUNCTIONS
 // ============================================================
 
-function _updateLeftBars(G) {
-  // ── Avatar border color theo hệ ngũ hành ──
-  const mainEl  = G.spiritData?.mainElement;
-  const elColor = (mainEl && SPIRIT_ELEMENTS[mainEl]?.color) || 'var(--border)';
+function _updateLeftHUD(G) {
+  // ── Avatar: border color theo hệ ngũ hành ──
+  const mainEl   = G.spiritData?.mainElement;
+  const elColor  = (mainEl && SPIRIT_ELEMENTS[mainEl]?.color) || 'var(--border)';
   const avatarEl = document.getElementById('hud-avatar');
   if (avatarEl) avatarEl.style.borderColor = elColor;
 
-  // ── Realm badge ──
-  const realmTextEl = document.getElementById('hud-realm-text');
-  if (realmTextEl) {
+  // ── Tên nhân vật ──
+  const nameEl = document.getElementById('hud-name');
+  if (nameEl) nameEl.textContent = G.name || '—';
+
+  // ── Cảnh giới ──
+  const realmEl = document.getElementById('hud-realm-text');
+  if (realmEl) {
     const ri    = G.realmIdx ?? 0;
     const stage = G.stage    ?? 1;
-    realmTextEl.textContent = (REALM_SHORT[ri] || 'LK') + stage;
+    realmEl.textContent = (REALM_SHORT[ri] || 'LK') + stage;
   }
 
   // ── HP bar ──
   const hp    = G.hp    ?? 0;
   const maxHp = G.maxHp ?? 1;
-  _setVBarFill('hud-bar-hp-fill', hp, maxHp);
-
-  const hpBar = document.getElementById('hud-bar-hp');
-  if (hpBar) hpBar.dataset.tooltip = `HP: ${_fmt(hp)} / ${_fmt(maxHp)}`;
+  _setHBarFill('hud-bar-hp-fill', hp, maxHp);
+  _setText('hud-val-hp', `${_fmtShort(hp)}/${_fmtShort(maxHp)}`);
 
   // ── MP / Linh lực bar ──
   const qi    = G.qi ?? 0;
-  const maxQi = _safeCalcMaxQi(G);
-  _setVBarFill('hud-bar-mp-fill', qi, maxQi);
-
-  const mpBar = document.getElementById('hud-bar-mp');
-  if (mpBar) mpBar.dataset.tooltip = `Linh lực: ${_fmt(qi)} / ${_fmt(maxQi)}`;
+  const maxQi = _safeMaxQi(G);
+  _setHBarFill('hud-bar-mp-fill', qi, maxQi);
+  _setText('hud-val-mp', `${_fmtShort(qi)}/${_fmtShort(maxQi)}`);
 
   // ── EXP bar ──
   const exp    = G.exp    ?? 0;
   const maxExp = G.maxExp ?? 1;
-  _setVBarFill('hud-bar-exp-fill', exp, maxExp);
-
-  const expBar = document.getElementById('hud-bar-exp');
-  if (expBar) expBar.dataset.tooltip = `Kinh nghiệm: ${_fmt(exp)} / ${_fmt(maxExp)}`;
+  _setHBarFill('hud-bar-exp-fill', exp, maxExp);
+  _setText('hud-val-exp', `${_fmtShort(exp)}/${_fmtShort(maxExp)}`);
 }
 
 function _updateRightPill(G) {
@@ -145,60 +168,117 @@ function _updateRightPill(G) {
   const stoneEl = document.getElementById('hud-stone');
   if (stoneEl) stoneEl.textContent = `💰 ${_fmtShort(G.stone ?? 0)}`;
 
-  // ── Trạng thái tu luyện ──
+  // ── Tu luyện ──
   const cultEl = document.getElementById('hud-cultivate');
   if (cultEl) cultEl.textContent = G.meditating ? '⚗️ 🟢' : '⚗️ ⚫';
 
-  // ── Vị trí ──
+  // ── Vị trí: ưu tiên tân thủ thôn nếu chưa rời ──
   const locEl = document.getElementById('hud-location');
   if (locEl) {
-    const nodeId = G.worldMap?.currentNodeId || '';
-    const node   = WORLD_NODES.find(n => n.id === nodeId);
-    locEl.textContent = `🗺️ ${node?.name || '—'}`;
+    let locName;
+    if (!G.worldMap?.leftStarter) {
+      // Còn trong tân thủ thôn → dùng tên thôn thật
+      const svId = G.worldMap?.starterVillageId || '';
+      locName = STARTER_VILLAGE_NAMES[svId] || 'Tân Thủ Thôn';
+    } else {
+      const nodeId = G.worldMap?.currentNodeId || '';
+      const node   = WORLD_NODES.find(n => n.id === nodeId);
+      locName = node?.name || '—';
+    }
+    locEl.textContent = `🗺️ ${locName}`;
   }
 }
 
 function _updateNavBadges(G) {
-  // Quests: có daily quest completed chưa nhận thưởng?
   const hasQuestBadge = _hasClaimableQuest(G);
   _applyBadge('quests', hasQuestBadge);
+}
+
+// ============================================================
+// DRAG HELPER
+// ============================================================
+
+function _makeDraggable(panelEl, handleEl) {
+  if (!handleEl || !panelEl) return;
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+
+  function startDrag(cx, cy) {
+    const rect  = panelEl.getBoundingClientRect();
+    // Đóng băng vị trí hiện tại theo left/top tuyệt đối
+    panelEl.style.right  = 'auto';
+    panelEl.style.bottom = 'auto';
+    panelEl.style.left   = rect.left + 'px';
+    panelEl.style.top    = rect.top  + 'px';
+    ox = rect.left; oy = rect.top;
+    sx = cx; sy = cy;
+    dragging = true;
+  }
+
+  function moveDrag(cx, cy) {
+    if (!dragging) return;
+    const W  = panelEl.offsetWidth;
+    const H  = panelEl.offsetHeight;
+    const nx = Math.max(0, Math.min(window.innerWidth  - W, ox + (cx - sx)));
+    const ny = Math.max(0, Math.min(window.innerHeight - H, oy + (cy - sy)));
+    panelEl.style.left = nx + 'px';
+    panelEl.style.top  = ny + 'px';
+  }
+
+  handleEl.style.cursor = 'grab';
+
+  handleEl.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+    handleEl.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup',   ()  => {
+    dragging = false;
+    handleEl.style.cursor = 'grab';
+  });
+
+  handleEl.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
 }
 
 // ============================================================
 // HELPERS
 // ============================================================
 
-/** Set chiều cao fill của vertical bar theo tỷ lệ value/max */
-function _setVBarFill(fillId, value, max) {
+function _setHBarFill(fillId, value, max) {
   const el = document.getElementById(fillId);
   if (!el) return;
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
-  el.style.height = pct.toFixed(1) + '%';
+  el.style.width = pct.toFixed(1) + '%';
 }
 
-/** Gọi calcMaxQi an toàn — fallback 1 nếu lỗi */
-function _safeCalcMaxQi(G) {
-  try {
-    return calcMaxQi(G) || 1;
-  } catch (_) {
-    return G.qi || 1;
-  }
+function _setText(id, text) {
+  const el = document.getElementById(id);
+  if (el && el.textContent !== text) el.textContent = text;
 }
 
-/** Kiểm tra có quest daily nào completed và chưa claim không */
+function _safeMaxQi(G) {
+  try { return calcMaxQi(G) || 1; }
+  catch (_) { return G.qi || 1; }
+}
+
 function _hasClaimableQuest(G) {
   const q = G.quests;
   if (!q) return false;
-  // Daily quests: completed = true, chưa claimed
-  const daily = Array.isArray(q.daily) ? q.daily : [];
-  if (daily.some(d => d.completed && !d.claimed)) return true;
-  // Active quests: đã đủ điều kiện nhưng chưa claim
+  const daily  = Array.isArray(q.daily)  ? q.daily  : [];
   const active = Array.isArray(q.active) ? q.active : [];
-  if (active.some(a => a.status === 'completed')) return true;
-  return false;
+  return daily.some(d => d.completed && !d.claimed)
+      || active.some(a => a.status === 'completed');
 }
 
-/** Thêm/xóa nav-dot trên tất cả nav buttons có data-tab="tabId" */
 function _applyBadge(tabId, show) {
   document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(btn => {
     let dot = btn.querySelector('.hud-nav-badge');
@@ -215,12 +295,10 @@ function _applyBadge(tabId, show) {
   });
 }
 
-/** Format số nguyên đẹp (dùng cho tooltip) */
 function _fmt(n) {
   return Math.floor(n ?? 0).toLocaleString('vi-VN');
 }
 
-/** Format số ngắn gọn cho right pill */
 function _fmtShort(n) {
   n = Math.floor(n ?? 0);
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';

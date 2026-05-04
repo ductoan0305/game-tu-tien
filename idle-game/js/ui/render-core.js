@@ -520,6 +520,9 @@ function _setBarColor(barId, color) {
 // Key cache để tránh re-render mỗi tick
 let _lastBuffKey = '';
 
+// Status-notif dismiss tracking
+let _notifDismissedKey = '';  // key bị người dùng đóng
+
 function renderActiveBuffs(G) {
   const buffsEl = el('active-buffs');
   if (!buffsEl) return;
@@ -536,8 +539,7 @@ function renderActiveBuffs(G) {
     pills.push({ icon:'⚡', label:`Tu tốc +${G.eventRateBonus}%`, timer: Math.ceil(G.eventRateTimer), color:'#56c46a' });
   if (G.eventExpTimer > 0)
     pills.push({ icon:'📈', label:`EXP +${G.eventExpBonus}%`, timer: Math.ceil(G.eventExpTimer), color:'#a89df5' });
-  if (G.meditating)
-    pills.push({ icon:'🧘', label:'Bế Quan ×1.6', timer: 0, color:'#7bcf8a' });
+  // Bỏ "Bế Quan ×1.6" — không có mechanic nào như vậy trong game
 
   // Tạo key: chỉ re-render khi danh sách buff hoặc timer (mỗi 5s) thay đổi
   const key = pills.map(p => `${p.label}:${p.timer > 0 ? Math.floor(p.timer/5) : 0}`).join('|');
@@ -826,13 +828,31 @@ function _renderStatusNotifs(G) {
   if (shown.length === 0) {
     bar.innerHTML = '';
     bar.style.display = 'none';
+    _notifDismissedKey = ''; // reset khi không còn notif
     return;
+  }
+
+  // Tính content key (không tính timer — tránh re-show liên tục)
+  const contentKey = shown.map(n => n.icon + n.text).join('|');
+
+  // Nếu đang dismiss và content chưa thay đổi → giữ ẩn
+  if (contentKey === _notifDismissedKey) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  // Content mới → bỏ dismiss, hiển thị lại
+  if (_notifDismissedKey && contentKey !== _notifDismissedKey) {
+    _notifDismissedKey = '';
   }
 
   bar.style.display = 'flex';
 
   // Chỉ update DOM khi nội dung thực sự thay đổi — tránh chớp liên tục
-  const newHtml = shown.map(n => {
+  if (bar.dataset.notifKey === contentKey) return;
+  bar.dataset.notifKey = contentKey;
+
+  const itemsHtml = shown.map(n => {
     const clickable = n.tab ? ' sn-clickable' : '';
     const arrow     = n.tab ? ' <span class="sn-arrow">›</span>' : '';
     return `<div class="sn-item${clickable}" style="border-left-color:${n.color}" ${n.tab ? `data-tab="${n.tab}"` : ''}>
@@ -841,16 +861,21 @@ function _renderStatusNotifs(G) {
     </div>`;
   }).join('');
 
-  if (bar.innerHTML === newHtml) return; // không thay đổi → không render lại
+  bar.innerHTML = itemsHtml + `<button class="sn-close-btn" title="Ẩn thông báo">✕</button>`;
 
-  bar.innerHTML = newHtml;
-
-  // Wire clicks
-  bar.querySelectorAll('.sn-clickable').forEach(el => {
-    el.addEventListener('click', () => {
-      const tabId = el.dataset.tab;
+  // Wire tab clicks
+  bar.querySelectorAll('.sn-clickable').forEach(item => {
+    item.addEventListener('click', () => {
+      const tabId = item.dataset.tab;
       if (tabId) switchTab(tabId, G);
     });
+  });
+
+  // Wire close button — lưu key để không re-show cùng nội dung
+  bar.querySelector('.sn-close-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _notifDismissedKey = contentKey;
+    bar.style.display = 'none';
   });
 }
 
@@ -1211,24 +1236,41 @@ function _fmtGameTime(years) {
 }
 
 // ---- Tutorial objective panel + age warning modal ----
+// Tutorial panel dismiss + drag state (module-level để tồn tại qua các lần render)
+let _tutDismissed  = false;
+let _tutLastStep   = -1;
+
 export function renderTutorialObjectivePanel(G) {
-  const t = G?.tutorial;
+  const t    = G?.tutorial;
   const root = document.getElementById('game-container');
   if (!root) return;
 
   let panel = document.getElementById('tutorial-objective-panel');
+
   if (!t || !G.setupDone || !t.enabled || t.completed) {
     panel?.remove();
+    _tutDismissed = false;
+    _tutLastStep  = -1;
     return;
   }
 
-  const maxQi = calcMaxQi(G);
-  const qi = G.qi ?? 0;
-  const qiNeedPct = Math.max(0, 100 - Math.floor((qi / Math.max(1, maxQi)) * 100));
-  const threshold = calcPurityThreshold(G);
-  const purity = G.purity ?? 0;
+  // Bước mới → bỏ dismiss, hiện lại tự động
+  if (t.step !== _tutLastStep) {
+    _tutLastStep  = t.step;
+    _tutDismissed = false;
+    if (panel) panel.style.display = '';
+  }
+
+  if (_tutDismissed) return;
+
+  // ── Tính nội dung body ──
+  const maxQi       = calcMaxQi(G);
+  const qi          = G.qi ?? 0;
+  const qiNeedPct   = Math.max(0, 100 - Math.floor((qi / Math.max(1, maxQi)) * 100));
+  const threshold   = calcPurityThreshold(G);
+  const purity      = G.purity ?? 0;
   const purityNeedPct = Math.max(0, 50 - Math.floor((purity / Math.max(1, threshold)) * 100));
-  const age = Math.floor(G.gameTime?.currentYear ?? 10);
+  const age         = Math.floor(G.gameTime?.currentYear ?? 10);
 
   const textMap = {
     0: `Bế quan 10 giây để cảm nhận linh lực (${Math.floor(t.progress?.meditateSec || 0)}/10s).`,
@@ -1243,7 +1285,7 @@ export function renderTutorialObjectivePanel(G) {
     5: `Tuổi hiện tại: ${age}. Đọc cảnh báo tuổi tu luyện trước khi đi tiếp.`,
     6: 'Con đường tu tiên đã mở. Từ đây, thất bại là bình thường.',
   };
-  const text = textMap[t.step] || '';
+  const text     = textMap[t.step] || '';
   const rootType = G.spiritData?.type;
   const rootHint = rootType === 'NGU'
     ? 'Ngũ linh căn: sống sót và chờ cơ duyên lớn.'
@@ -1255,19 +1297,100 @@ export function renderTutorialObjectivePanel(G) {
           ? 'Linh căn hiếm: tiềm năng cao, nhưng vẫn có thể thất bại nếu chủ quan.'
           : 'Tán tu: chậm mà chắc, tránh đổi mạng lấy lợi nhỏ.';
 
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'tutorial-objective-panel';
-    panel.style.cssText = 'position:fixed;right:10px;bottom:86px;z-index:1200;max-width:320px;background:rgba(8,14,24,0.96);border:1px solid #2a3b55;border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,0.35)';
-    root.appendChild(panel);
-  }
-
-  const html = `
+  const bodyHtml = `
     <div style="font-size:11px;color:#7aa2d6;letter-spacing:.5px;margin-bottom:4px">MỤC TIÊU HIỆN TẠI · Bước ${t.step + 1}/7</div>
     <div style="font-size:13px;color:#d7e3f5;line-height:1.5">${text}</div>
     <div style="margin-top:6px;font-size:11px;color:#9fb4d6;opacity:0.95">✦ ${rootHint}</div>
   `;
-  if (panel.innerHTML !== html) panel.innerHTML = html;
+
+  // ── Tạo panel lần đầu ──
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'tutorial-objective-panel';
+    panel.style.cssText = [
+      'position:fixed',
+      'right:10px',
+      'bottom:86px',
+      'z-index:1200',
+      'max-width:320px',
+      'width:max-content',
+      'background:rgba(8,14,24,0.96)',
+      'border:1px solid #2a3b55',
+      'border-radius:10px',
+      'box-shadow:0 6px 24px rgba(0,0,0,0.35)',
+      'overflow:hidden',
+    ].join(';');
+
+    panel.innerHTML = `
+      <div id="tut-panel-header" style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px 4px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(42,59,85,0.7);cursor:grab;">
+        <span style="font-size:9px;color:#4a6a9a;letter-spacing:.4px;user-select:none">⠿ CẨM NANG</span>
+        <button id="tut-panel-close" title="Ẩn (tự động hiện lại ở bước tiếp theo)" style="background:none;border:none;color:#4a6a9a;font-size:14px;line-height:1;cursor:pointer;padding:0 0 0 8px;transition:color .15s">✕</button>
+      </div>
+      <div id="tut-panel-body" style="padding:10px 12px"></div>
+    `;
+    root.appendChild(panel);
+
+    // Wire close
+    document.getElementById('tut-panel-close')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      _tutDismissed = true;
+      panel.style.display = 'none';
+    });
+
+    // Wire drag trên header
+    _makePanelDraggable(panel, document.getElementById('tut-panel-header'));
+  }
+
+  // ── Update body (chỉ khi thay đổi, tránh re-render liên tục) ──
+  const bodyEl = document.getElementById('tut-panel-body');
+  if (bodyEl && bodyEl.innerHTML !== bodyHtml) bodyEl.innerHTML = bodyHtml;
+}
+
+/** Làm một phần tử trở nên draggable bằng handle */
+function _makePanelDraggable(panelEl, handleEl) {
+  if (!handleEl || !panelEl) return;
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+
+  function startDrag(cx, cy) {
+    const rect = panelEl.getBoundingClientRect();
+    // Chuyển từ right/bottom sang left/top tuyệt đối
+    panelEl.style.right  = 'auto';
+    panelEl.style.bottom = 'auto';
+    panelEl.style.left   = rect.left + 'px';
+    panelEl.style.top    = rect.top  + 'px';
+    ox = rect.left; oy = rect.top;
+    sx = cx; sy = cy;
+    dragging = true;
+  }
+
+  function moveDrag(cx, cy) {
+    if (!dragging) return;
+    const W  = panelEl.offsetWidth;
+    const H  = panelEl.offsetHeight;
+    const nx = Math.max(0, Math.min(window.innerWidth  - W, ox + (cx - sx)));
+    const ny = Math.max(0, Math.min(window.innerHeight - H, oy + (cy - sy)));
+    panelEl.style.left = nx + 'px';
+    panelEl.style.top  = ny + 'px';
+  }
+
+  handleEl.addEventListener('mousedown', (e) => {
+    if (e.target.id === 'tut-panel-close') return;
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+    handleEl.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', (e) => { moveDrag(e.clientX, e.clientY); });
+  window.addEventListener('mouseup',   ()  => { dragging = false; handleEl.style.cursor = 'grab'; });
+
+  handleEl.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', () => { dragging = false; });
 }
 
 export function showTutorialAgeWarningModal(onAcknowledge) {

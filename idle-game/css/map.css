@@ -271,7 +271,7 @@
 }
 .map-svg-t1 {
   overflow: hidden;
-  background: #060810; /* solid — gradient đến từ SVG <rect> bên trong, tránh 2 nền chồng */
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, #0d1828 0%, #060810 100%);
   display: flex; align-items: center; justify-content: center;
   position: relative; /* cho particles */
 }

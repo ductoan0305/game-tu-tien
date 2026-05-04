@@ -93,6 +93,9 @@ import { ensureTutorialState, updateTutorialStep,
          trackBreakthroughAttempt, trackTabOpen,
          acknowledgeAgeWarning }                                      from './core/tutorial-engine.js';
 
+// ---- HUD (Session 14) ----
+import { initHUD, updateHUD }                                         from './ui/hud.js';
+
 // ---- Global state ----
 let G              = null;
 
@@ -250,6 +253,8 @@ function tick() {
     renderCultivateStats(G);
     renderCombatStatus(G);
     if (G.activeTab === 'cultivate') updateMapStats(G);
+    // HUD bars update mỗi 20 ticks (≈2s) để tránh DOM churn
+    if (G._tickCount % 20 === 0) updateHUD();
     if (G._tickCount % 30 === 0) {
       renderNav(G);
       checkAndNotifyUnlocks(G, showToast, appendLog);
@@ -830,6 +835,10 @@ function wireEvents() {
   import('./core/title-data.js').then(m => { window._titleData = m; });
   import('./core/thuong-hoi-engine.js').then(m => { window._thuongHoiData = m; });
   window._setActiveTitle = (titleId) => { const r=setActiveTitle(G,titleId); if (r.ok) renderAll(); };
+
+  // ── HUD (Session 14) ──
+  // initHUD idempotent — gọi nhiều lần vẫn an toàn
+  initHUD();
 }
 
 function safeClick(id, handler) {

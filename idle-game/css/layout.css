@@ -749,6 +749,163 @@ html, body { height: 100%; overflow: hidden; }
 }
 
 /* ============================================================
+   HUD — Left strip + Right pill (Session 14)
+   ============================================================ */
+
+/* ── LEFT HUD STRIP (#hud-left) ─────────────────────────────
+   48px dải dọc bên trái, chứa avatar + bars
+   z-index: 90 (dưới popup-layer z:200, trên canvas z:0)      */
+#hud-left {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 52px; /* chiều cao bottom-nav */
+  width: 48px;
+  z-index: 90;
+  background: linear-gradient(180deg, rgba(6,8,16,0.92) 0%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0 8px;
+  gap: 8px;
+  pointer-events: none; /* strip không block click xuyên qua */
+}
+
+/* Avatar nhỏ 32x32 */
+#hud-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  pointer-events: auto;
+  background: rgba(6,8,16,0.85);
+  transition: border-color 0.35s ease, background 0.15s;
+  flex-shrink: 0;
+}
+#hud-avatar:hover {
+  background: rgba(255,255,255,0.06);
+}
+#hud-avatar:active {
+  transform: scale(0.93);
+}
+
+/* Realm badge — text dọc */
+#hud-realm-badge {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+#hud-realm-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--spirit, #7b9ef0);
+  white-space: nowrap;
+  display: block;
+}
+
+/* ── Vertical bars ───────────────────────────────────────── */
+.hud-bar-v {
+  width: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.08);
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: default;
+  flex-shrink: 0;
+}
+.hud-bar-v-fill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  border-radius: 3px;
+  transition: height 0.4s ease;
+}
+
+/* Chiều cao mặc định từng bar */
+#hud-bar-hp  { height: 60px; }
+#hud-bar-hp  .hud-bar-v-fill { background: #e05c4a; }
+
+#hud-bar-mp  { height: 60px; }
+#hud-bar-mp  .hud-bar-v-fill { background: var(--spirit, #7b9ef0); }
+
+#hud-bar-exp { height: 80px; }
+#hud-bar-exp .hud-bar-v-fill { background: var(--jade, #56c46a); }
+
+/* Tooltip hover (CSS-only) */
+.hud-bar-v[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(6,8,16,0.96);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 10px;
+  color: var(--text);
+  white-space: nowrap;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* ── RIGHT STATUS PILL (#hud-right) ─────────────────────────
+   Pill cố định góc trên phải, hiện stone / cultivate / location */
+#hud-right {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 90;
+  background: rgba(6,8,16,0.85);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none; /* thông tin thuần — không block click */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+#hud-stone    { color: var(--gold, #c8a84b); font-weight: 600; }
+#hud-location { color: var(--text-dim); }
+
+.hud-pill-sep {
+  color: var(--border);
+  opacity: 0.6;
+}
+
+/* ── Mobile adjustments ──────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Pill nhỏ hơn một chút trên mobile */
+  #hud-right {
+    font-size: 10px;
+    padding: 4px 8px;
+    gap: 6px;
+    top: 6px;
+    right: 6px;
+  }
+  /* Bỏ location trên màn hình nhỏ để không bị chật */
+  #hud-location { display: none; }
+}
+
+/* ============================================================
    ROTATE OVERLAY — Yêu cầu xoay màn hình trên mobile portrait
    ============================================================ */
 #rotate-overlay {

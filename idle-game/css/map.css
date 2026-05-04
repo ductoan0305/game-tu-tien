@@ -271,8 +271,9 @@
 }
 .map-svg-t1 {
   overflow: hidden;
-  background: #060810;
+  background: #060810; /* solid — gradient đến từ SVG <rect> bên trong, tránh 2 nền chồng */
   display: flex; align-items: center; justify-content: center;
+  position: relative; /* cho particles */
 }
 .map-svg-t1 svg { display:block; overflow:visible; }
 .map-world-svg {
@@ -287,6 +288,19 @@
 .wnode.wnode-locked {
   cursor: not-allowed;
   opacity: 0.3;
+}
+/* ---- Wnode visual upgrade ---- */
+.wnode circle:first-child {
+  filter: drop-shadow(0 0 8px var(--node-color, #4a9eff));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: filter 0.2s, transform 0.2s;
+}
+/* pointer-events only — KHÔNG set fill/font-size vì SVG attributes có màu riêng per node */
+.wnode text { pointer-events: none; }
+.wnode:not(.wnode-locked):hover circle:first-child {
+  filter: drop-shadow(0 0 16px var(--node-color, #4a9eff));
+  transform: scale(1.1);
 }
 .map-side-t1 {
   background: var(--bg-card);
@@ -346,9 +360,9 @@
 
 /* Popup bản đồ thế giới (bottom nav) */
 .world-map-modal-box {
-  max-width: min(920px, 96vw);
-  width: 92vw;
-  max-height: 90vh;
+  max-width: min(1160px, 97vw);
+  width: 95vw;
+  max-height: 95vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -372,8 +386,8 @@
   overflow: auto;
 }
 #modal-world-map-body .map-wrap-t1 {
-  min-height: 280px;
-  height: min(62vh, 520px);
+  min-height: 380px;
+  height: min(78vh, 680px);
 }
 .wm-starter-banner {
   font-size: 10px;
@@ -780,6 +794,46 @@
   padding: 14px 16px;
 }
 
+
+/* ============================================================
+   MAP FULLSCREEN + PANEL HIDE (visual upgrade)
+   ============================================================ */
+/* Panel mode: side panel ẩn → SVG chiếm toàn bộ chiều ngang */
+.center-panel.map-panel .map-wrap-t1 {
+  grid-template-columns: 1fr;
+}
+.center-panel.map-panel .map-side-t1 {
+  display: none;
+}
+/* Fullscreen wrapper: tính bottom-nav 52px */
+.map-wrap-fullscreen {
+  position: absolute;
+  inset: 0 0 52px 0;
+}
+.map-svg-t1.fs {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================
+   AMBIENT PARTICLES
+   ============================================================ */
+.map-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(160,140,255,0.4);
+  animation: particle-drift 8s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+@keyframes particle-drift {
+  0%   { transform: translateY(0)     translateX(0);              opacity: 0;   }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.3; }
+  100% { transform: translateY(-120px) translateX(var(--px, 20px)); opacity: 0; }
+}
 
 /* Breakthrough button on world map */
 .btn-breakthrough-map {

@@ -10,6 +10,7 @@ import { calcMaxQi, calcQiRate } from '../core/state.js';
 import { getAvailableEnemies } from '../combat/combat-engine.js';
 import { checkAmbush, getAvailableTargets, robTarget, getNghiepLucPenalty } from '../core/kiep-tu-engine.js';
 import { _showLocationPopup, _setupDrag } from './location-popup.js';
+import PopupManager from './popup-manager.js';
 import { renderStarterVillage, rollStarterVillage } from './starter-village.js';
 // Re-export để backward compat (các file khác import từ world-map.js)
 export { renderStarterVillage, rollStarterVillage };
@@ -182,8 +183,18 @@ function _buildTier1Html(G, ctx = {}) {
     (n.connections||[]).map(toId => {
       const to = WORLD_NODES.find(x=>x.id===toId);
       if (!to || to.id < n.id) return '';
-      return `<line x1="${n.x}" y1="${n.y}" x2="${to.x}" y2="${to.y}"
-        stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="5,4"/>`;
+      // Bezier control point — curve rõ lên giữa
+      const mx = (n.x + to.x) / 2;
+      const my = (n.y + to.y) / 2 - 55;
+      // Kiểm tra đường đã unlock (cả 2 node accessible)
+      const lockedN  = G.realmIdx < (n.unlockRealm||0)  || (n.unlockStage  && G.stage < n.unlockStage);
+      const lockedTo = G.realmIdx < (to.unlockRealm||0) || (to.unlockStage && G.stage < to.unlockStage);
+      const pathUnlocked = !lockedN && !lockedTo;
+      return `<path d="M${n.x},${n.y} Q${mx},${my} ${to.x},${to.y}"
+        fill="none"
+        stroke="${pathUnlocked ? 'rgba(74,158,255,0.3)' : 'rgba(255,255,255,0.08)'}"
+        stroke-width="1.5"
+        ${pathUnlocked ? '' : 'stroke-dasharray="4 6"'}/>`;
     })
   ).join('');
 
@@ -264,11 +275,12 @@ function _buildTier1Html(G, ctx = {}) {
           🚶 Vào ${curNode?.name||'vùng đất'} →
         </button>
         ${extra}
+        ${!isModal ? `
         <div class="mst1-stats">
           <div class="mst1-s"><span>⚡ Tu tốc</span><strong id="map-stat-rate${statSuf}">--</strong></div>
           <div class="mst1-s"><span>⏳ Tuổi</span><strong id="map-stat-age${statSuf}">--</strong></div>
           <div class="mst1-s"><span>💎</span><strong id="map-stat-stone${statSuf}">--</strong></div>
-        </div>
+        </div>` : ''}
         <div class="mst1-hint">${hint}</div>
       </div>
     </div>`;
@@ -288,6 +300,16 @@ function _wireTier1Handlers(rootEl, G, actions, opts = {}) {
 
   _setupDrag(svgId.replace(/^#/, ''));
 
+  // Set --node-color CSS variable per wnode để glow đúng màu từng địa điểm
+  rootEl.querySelectorAll('.wnode').forEach(g => {
+    const nid  = g.dataset.nid;
+    const node = WORLD_NODES.find(n => n.id === nid);
+    if (node?.color) g.style.setProperty('--node-color', node.color);
+  });
+
+  // Star field cho cả modal + panel; particles chỉ panel mode
+  _addMapAtmosphere(svgId.replace(/^#/, ''), rootEl, { particlesEnabled: !isModal });
+
   const onNode = (g) => {
     g.addEventListener('click', () => {
       if (starterLocked) {
@@ -295,8 +317,8 @@ function _wireTier1Handlers(rootEl, G, actions, opts = {}) {
         return;
       }
       if (g.classList.contains('wnode-locked')) return;
-      const nid = g.dataset.nid;
-      const node = WORLD_NODES.find(n=>n.id===nid);
+      const nid  = g.dataset.nid;
+      const node = WORLD_NODES.find(n => n.id === nid);
       if (!node) return;
       if (node.entryCost > 0 && (G.stone||0) < node.entryCost) {
         actions.toast(`Cần ${node.entryCost}💎 để vào ${node.name}`, 'danger'); return;
@@ -319,6 +341,9 @@ function _wireTier1Handlers(rootEl, G, actions, opts = {}) {
         openWorldMapModal(G, actions);
       } else {
         renderTier1(G, actions);
+        // Sau re-render, mở popup với nội dung side panel
+        const freshPanel = document.getElementById('panel-cultivate');
+        if (freshPanel) _openNodeInfoPopup(freshPanel, G, actions, node);
       }
     });
   };
@@ -359,6 +384,114 @@ function _wireTier1Handlers(rootEl, G, actions, opts = {}) {
   }
 
   updateMapStats(G);
+}
+
+// ============================================================
+// ATMOSPHERE — star field + ambient particles
+// ============================================================
+
+/**
+ * Append star field vào SVG (z-order dưới cùng) và spawn particles vào .map-svg-t1.
+ * Gọi sau khi HTML đã được insert vào DOM.
+ * @param {string} svgId  — id của <svg> element (không có #)
+ * @param {Element} rootEl — container chứa .map-svg-t1
+ */
+function _addMapAtmosphere(svgId, rootEl, opts = {}) {
+  const { particlesEnabled = true } = opts;
+  // ---- Star field ----
+  const svgEl = document.getElementById(svgId);
+  if (svgEl && !svgEl.querySelector('.star-field-g')) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const g  = document.createElementNS(NS, 'g');
+    g.classList.add('star-field-g');
+    // 70 ngôi sao kích thước/độ sáng ngẫu nhiên
+    for (let i = 0; i < 70; i++) {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', (Math.random() * 560).toFixed(1));
+      c.setAttribute('cy', (Math.random() * 500).toFixed(1));
+      c.setAttribute('r',  (Math.random() < 0.25 ? 1.2 : 0.55).toFixed(2));
+      c.setAttribute('fill', `rgba(255,255,255,${(Math.random() * 0.35 + 0.08).toFixed(2)})`);
+      g.appendChild(c);
+    }
+    // Insert NGAY SAU rect đầu tiên (bg gradient), trước grid rect và nodes
+    // z-order: bg → stars → grid → paths → nodes (tự nhiên nhất)
+    const firstRect = svgEl.querySelector(':scope > rect');
+    svgEl.insertBefore(g, firstRect ? firstRect.nextSibling : svgEl.firstChild);
+  }
+
+  // ---- Ambient particles (panel only) ----
+  const mapArea = rootEl.querySelector('.map-svg-t1');
+  if (particlesEnabled && mapArea && !mapArea.querySelector('.map-particle')) {
+    for (let i = 0; i < 12; i++) {
+      const p       = document.createElement('div');
+      p.className   = 'map-particle';
+      const px      = (Math.random() * 80 - 40).toFixed(0);
+      const delay   = (Math.random() * 8).toFixed(1);
+      const left    = (Math.random() * 90 + 5).toFixed(0);
+      const top     = (Math.random() * 70 + 15).toFixed(0);
+      p.style.cssText = `--px:${px}px;animation-delay:${delay}s;left:${left}%;top:${top}%;`;
+      mapArea.appendChild(p);
+    }
+  }
+}
+
+// ============================================================
+// NODE POPUP — copy side panel HTML → PopupManager popup
+// ============================================================
+
+/**
+ * Mở/cập nhật popup 'map-node' với nội dung từ .map-side-t1 đang ẩn.
+ * Rewire các button tương tác trong popup body.
+ */
+function _openNodeInfoPopup(panelEl, G, actions, node) {
+  const sidePanel = panelEl.querySelector('.map-side-t1');
+  if (!sidePanel) return;
+
+  const content = sidePanel.innerHTML;
+  PopupManager.close('map-node');
+  PopupManager.open('map-node', {
+    title: `${node.emoji || ''} ${node.name}`,
+    content,
+    width: 300,
+    x: Math.max(10, window.innerWidth - 325),
+    y: 64,
+  });
+
+  // Rewire các button bên trong popup (chúng là bản sao innerHTML, chưa có listeners)
+  const popup = document.querySelector('[data-popup-id="map-node"]');
+  if (!popup) return;
+
+  // Nút "Vào vùng đất"
+  popup.querySelector('[id^="btn-enter-zone"]')?.addEventListener('click', () => {
+    PopupManager.close('map-node');
+    _mapLevel = 2;
+    _currentZoneId = G.worldMap?.currentNodeId || 'thanh_van_son';
+    actions.switchTab?.('cultivate');
+    renderTier2(G, actions, _currentZoneId);
+  });
+
+  // Nút Đột Phá
+  const btBtn = popup.querySelector('#btn-breakthrough:not([disabled])');
+  btBtn?.addEventListener('click', () => {
+    actions.breakthrough?.();
+    PopupManager.close('map-node');
+  });
+
+  // Nút Kiếp Tu cướp (robTarget đã import static ở đầu file)
+  popup.querySelectorAll('.btn-kieptu-rob').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.targetId;
+      const result   = robTarget(G, targetId);
+      if (result.ok) {
+        actions.toast(result.msg, result.expelled ? 'danger' : 'gold');
+        if (result.expelled) actions.toast('⚠ Bị trục xuất tông môn!', 'danger');
+      } else {
+        actions.toast(result.msg, 'danger');
+      }
+      PopupManager.close('map-node');
+      renderTier1(G, actions);
+    });
+  });
 }
 
 function renderTier1(G, actions) {

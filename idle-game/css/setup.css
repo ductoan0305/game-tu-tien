@@ -670,31 +670,16 @@
 }
 
 /* ============================================================
-   CHARACTER POPUP
+   CHARACTER POPUP body styles
+   Nội dung bên trong .pm-popup[data-popup-id="char-info"]
+   (PopupManager xử lý wrapper, drag, resize)
    ============================================================ */
-.char-popup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: var(--z-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
 .char-popup {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glow);
-  border-radius: 14px;
-  padding: 0;
-  width: 380px;
-  max-width: 98vw;
-  max-height: 88vh;
-  overflow: hidden;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
-.char-popup-full { width: 400px; }
+.char-popup-full { width: 100%; }
 
 /* Header */
 .char-popup-header {

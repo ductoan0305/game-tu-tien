@@ -1,5 +1,7 @@
 // ============================================================
 // app/popups/char-popup.js — Character Info Popup
+// Session 17: dùng PopupManager (drag + resize + header đẹp)
+//             Xóa overlay kiểu cũ, xóa CSS char-popup-overlay riêng
 // ============================================================
 import { REALMS }                from '../../core/data.js';
 import { REALM_NAMES }           from '../../core/constants.js';
@@ -7,10 +9,16 @@ import { calcMaxQi, calcQiRate } from '../../core/state.js';
 import { getDanhVongTier }       from '../../core/danh-vong.js';
 import { getSpiritDisplayName, getSpiritMainColor, getSpiritProphecy,
          calcSpiritRateMulti, SPIRIT_ROOT_TYPES, SPIRIT_ELEMENTS } from '../../core/spirit-root.js';
+import PopupManager              from '../../ui/popup-manager.js';
+
+const POPUP_ID = 'char-info';
 
 export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab }) {
-  const existing = document.getElementById('modal-char-popup');
-  if (existing) { existing.remove(); return; }
+  // Toggle: nếu đang mở thì đóng
+  if (PopupManager.isOpen(POPUP_ID)) {
+    PopupManager.close(POPUP_ID);
+    return;
+  }
 
   const GENDER_EMOJI = { male:'♂', female:'♀' };
   const SECT_NAMES   = { kiem_tong:'Thanh Vân Kiếm Tông ⚔', dan_tong:'Vạn Linh Đan Tông ⚗', tran_phap:'Huyền Cơ Trận Tông 🔮', the_tu:'Thiết Cốt Thể Tu 💪' };
@@ -88,113 +96,119 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
   const dv   = G.danhVong ?? 0;
   const tier = getDanhVongTier(dv);
 
-  const overlay = document.createElement('div');
-  overlay.id        = 'modal-char-popup';
-  overlay.className = 'char-popup-overlay';
-  overlay.innerHTML = `
-    <div class="char-popup char-popup-full">
-      <div class="char-popup-header">
-        <div class="cp-portrait-mini" id="cp-portrait-mini"></div>
-        <div class="cp-header-info">
-          <div class="char-popup-name">${G.name} <span style="font-size:12px;color:#888">${GENDER_EMOJI[G.gender||'male']}</span></div>
-          <div class="char-popup-realm" style="color:var(--gold)">${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage}</div>
-          <div class="char-popup-sect">${SECT_NAMES[G.sectId]||'🌿 Tán Tu'}</div>
-          <div class="char-popup-direction" style="color:#7b9ef0">${HUONG_TU[G.huongTu]||'— Chưa xác định hướng tu'}</div>
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'char-popup char-popup-full';
+  bodyEl.innerHTML = `
+    <div class="char-popup-header">
+      <div class="cp-portrait-mini" id="cp-portrait-mini"></div>
+      <div class="cp-header-info">
+        <div class="char-popup-name">${G.name} <span style="font-size:12px;color:#888">${GENDER_EMOJI[G.gender||'male']}</span></div>
+        <div class="char-popup-realm" style="color:var(--gold)">${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage}</div>
+        <div class="char-popup-sect">${SECT_NAMES[G.sectId]||'🌿 Tán Tu'}</div>
+        <div class="char-popup-direction" style="color:#7b9ef0">${HUONG_TU[G.huongTu]||'— Chưa xác định hướng tu'}</div>
+      </div>
+    </div>
+    <div class="char-popup-body">
+      <div class="cp-section cp-cultivate-section" style="border-color:${realm?.color||'#c8a84b'}44">
+        <div class="cp-section-title">🧘 Tu Luyện</div>
+        <div class="cp-realm-display" style="color:${realm?.color||'#c8a84b'}">${realm?.emoji||'⚡'} ${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage} / ${realm?.stages||9}</div>
+        <div class="cp-bar-row"><span class="cp-bar-label">Linh Lực</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${qiPct}%;background:${qiFull?'#f0d47a':'#4a9eff'}"></div></div><span class="cp-bar-val ${qiFull?'cp-bar-full':''}">${qiPct}%</span></div>
+        <div class="cp-bar-row"><span class="cp-bar-label">Kinh Nghiệm</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${expPct}%;background:#56c46a"></div></div><span class="cp-bar-val">${G.exp||0} / ${G.maxExp||200}</span></div>
+        <div class="cp-bar-row"><span class="cp-bar-label">💎 Linh Thạch</span><div class="cp-bar-track" style="background:transparent;flex:unset"></div><span class="cp-bar-val" style="color:var(--gold);width:auto">${_fmtStone(G)}</span></div>
+        <div class="cp-cultivate-meta"><span>⚡ Tu tốc: <strong>${qiRate}/s</strong></span><span>📍 ${pdName}</span><span>${G.meditating?'🧘 Đang bế quan':'⚠ Chưa bế quan'}</span></div>
+        ${qiFull
+          ? `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough">⚡ ĐỦ LINH LỰC — ẤN ĐỂ ĐỘT PHÁ!</button>`
+          : `<div class="cp-bt-hint">Tích lũy đủ linh lực (${qiPct}%) để đột phá.</div>`}
+        <button class="cp-meditate-btn ${G.meditating?'cp-med-active':''}" id="cp-btn-meditate">
+          ${G.meditating ? '⏹ Xuất Quan' : '🧘 Bế Quan'}
+        </button>
+        <div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;line-height:1.5">
+          ${G.meditating
+            ? '🧘 Đang bế quan — đóng cửa tu luyện. Linh lực tích lũy, thuần thục công pháp tăng dần, tiêu thể năng. Không thể chiến đấu hay di chuyển.'
+            : 'Bế quan: đóng cửa tập trung tu luyện. Linh lực mới tích lũy, thuần thục công pháp tăng. Không thể chiến đấu hay di chuyển.'}
         </div>
       </div>
-      <div class="char-popup-body">
-        <div class="cp-section cp-cultivate-section" style="border-color:${realm?.color||'#c8a84b'}44">
-          <div class="cp-section-title">🧘 Tu Luyện</div>
-          <div class="cp-realm-display" style="color:${realm?.color||'#c8a84b'}">${realm?.emoji||'⚡'} ${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage} / ${realm?.stages||9}</div>
-          <div class="cp-bar-row"><span class="cp-bar-label">Linh Lực</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${qiPct}%;background:${qiFull?'#f0d47a':'#4a9eff'}"></div></div><span class="cp-bar-val ${qiFull?'cp-bar-full':''}">${qiPct}%</span></div>
-          <div class="cp-bar-row"><span class="cp-bar-label">Kinh Nghiệm</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${expPct}%;background:#56c46a"></div></div><span class="cp-bar-val">${G.exp||0} / ${G.maxExp||200}</span></div>
-          <div class="cp-bar-row"><span class="cp-bar-label">💎 Linh Thạch</span><div class="cp-bar-track" style="background:transparent;flex:unset"></div><span class="cp-bar-val" style="color:var(--gold);width:auto">${_fmtStone(G)}</span></div>
-          <div class="cp-cultivate-meta"><span>⚡ Tu tốc: <strong>${qiRate}/s</strong></span><span>📍 ${pdName}</span><span>${G.meditating?'🧘 Đang bế quan':'⚠ Chưa bế quan'}</span></div>
-          ${qiFull
-            ? `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough">⚡ ĐỦ LINH LỰC — ẤN ĐỂ ĐỘT PHÁ!</button>`
-            : `<div class="cp-bt-hint">Tích lũy đủ linh lực (${qiPct}%) để đột phá.</div>`}
-          <button class="cp-meditate-btn ${G.meditating?'cp-med-active':''}" id="cp-btn-meditate">
-            ${G.meditating
-              ? '⏹ Xuất Quan'
-              : '🧘 Bế Quan'}
-          </button>
-          <div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;line-height:1.5">
-            ${G.meditating
-              ? '🧘 Đang bế quan — đóng cửa tu luyện. Linh lực tích lũy, thuần thục công pháp tăng dần, tiêu thể năng. Không thể chiến đấu hay di chuyển.'
-              : 'Bế quan: đóng cửa tập trung tu luyện. Linh lực mới tích lũy, thuần thục công pháp tăng. Không thể chiến đấu hay di chuyển.'}
-          </div>
-        </div>
-        ${spiritHtml}
-        <div class="cp-section">
-          <div class="cp-section-title">⚔ Chiến Lực</div>
-          <div class="cps-grid">
-            <div class="cps-item"><span class="cps-label">⚔ Công Kích</span><span class="cps-val">${Math.floor(G.atk||0)}</span></div>
-            <div class="cps-item"><span class="cps-label">🛡 Phòng Thủ</span><span class="cps-val">${Math.floor(G.def||0)}</span></div>
-            <div class="cps-item"><span class="cps-label">❤ HP Tối Đa</span><span class="cps-val">${Math.floor(G.maxHp||0)}</span></div>
-            <div class="cps-item"><span class="cps-label">⚡ Linh Lực/giây</span><span class="cps-val">${qiRate}</span></div>
-          </div>
-        </div>
-        <div class="cp-section">
-          <div class="cp-section-title">🌟 Chỉ Số Tu Tiên</div>
-          ${statBar('🌟 Ngộ Tính', ngoTinh, 100, '#c8a84b', 'Thiên phú học hỏi — ảnh hưởng luyện đan, thuần thục công pháp, cơ duyên')}
-          ${statBar('💪 Căn Cốt',  canCot,  100, '#e05c1a', 'Thể chất tự nhiên')}
-          ${statBar('🌀 Khí Vận',  khiVan,  100, khiVanColor, 'Cơ duyên gặp kỳ ngộ')}
-          ${statBar('🧠 Tâm Cảnh', tamCanh, 100, '#7b9ef0', 'Ảnh hưởng tỉ lệ đột phá')}
-          <div style="font-size:10px;color:${khiVanColor};text-align:center;margin-top:4px;padding:3px;background:rgba(0,0,0,0.2);border-radius:4px">${khiVanStatus}</div>
-        </div>
-        ${(() => {
-          const at = G.amThuong;
-          if (!at || at.points <= 0) return '';
-          const c = at.points>=50?'#e05c4a':at.points>=25?'#e07030':'#f0d47a';
-          return `<div class="cp-section" style="border-color:${c}44">
-            <div class="cp-section-title" style="color:${c}">🩸 Ám Thương</div>
-            ${statBar('Mức Độ', at.points, 100, c, 'Tích lũy từ chiến đấu')}
-            ${at.canCotPenalty>0?`<div class="cps-item"><span class="cps-label">Căn Cốt bị ảnh hưởng</span><span class="cps-val" style="color:${c}">-${at.canCotPenalty}</span></div>`:''}
-            <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Tự hồi ~1 điểm/3 ngày · Dùng Tái Sinh Đan để hồi nhanh</div>
-          </div>`;
-        })()}
-        ${G.realmIdx===0 ? (() => {
-          const h = G.hunger; const days=h?.hungerDays??0; const linh_me=h?.linhMeCount??0; const ichCoc=Math.ceil(h?.ichCocDanDays??0); const danDoc=G.danDoc??0;
-          const color=days>0?'#e05c4a':'#56c46a';
-          return `<div class="cp-section" style="border-color:${color}33">
-            <div class="cp-section-title" style="color:${color}">🌾 Lương Thực</div>
-            <div class="cps-item"><span class="cps-label">Linh Mễ kho</span><span class="cps-val">${linh_me} phần</span></div>
-            ${ichCoc>0?`<div class="cps-item"><span class="cps-label">💊 Ích Cốc Đan</span><span class="cps-val">còn ${ichCoc} ngày</span></div>`:''}
-            ${days>0?`<div style="font-size:11px;color:#e05c4a;margin-top:4px">⚠ Đang đói ${days.toFixed(1)} ngày!</div>`:''}
-            ${danDoc>40?`<div class="cps-item"><span class="cps-label">⚠ Đan Độc</span><span class="cps-val" style="color:${danDoc>70?'#e05c4a':'#f0d47a'}">${danDoc.toFixed(0)}/100</span></div>`:''}
-          </div>`;
-        })() : ''}
-        <div class="cp-section">
-          <div class="cp-section-title">📊 Thành Tích</div>
-          <div class="cps-grid">
-            <div class="cps-item"><span class="cps-label">⏳ Tuổi</span><span class="cps-val">${Math.floor(G.gameTime?.currentYear||0)}</span></div>
-            <div class="cps-item"><span class="cps-label">🔥 Đột Phá</span><span class="cps-val">${G.breakthroughs||0}</span></div>
-            <div class="cps-item"><span class="cps-label">🏆 Quái Đã Giết</span><span class="cps-val">${G.totalKills||0}</span></div>
-            <div class="cps-item"><span class="cps-label">⚗ Đan Đã Luyện</span><span class="cps-val">${G.alchemySuccess||0}</span></div>
-            <div class="cps-item"><span class="cps-label">📜 Nhiệm Vụ</span><span class="cps-val">${G.totalQuestsCompleted||0}</span></div>
-          </div>
-          <div class="cp-danhvong-row" style="margin-top:10px;padding:8px;background:${tier.color}15;border:1px solid ${tier.color}44;border-radius:8px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px;color:var(--text-dim)">🌟 Danh Vọng</span>
-            <span style="font-size:13px;font-weight:700;color:${tier.color}">${dv} · ${tier.label}</span>
-            ${tier.discountPct>0?`<span style="font-size:11px;color:#56c46a">-${tier.discountPct}% shop</span>`:''}
-          </div>
+      ${spiritHtml}
+      <div class="cp-section">
+        <div class="cp-section-title">⚔ Chiến Lực</div>
+        <div class="cps-grid">
+          <div class="cps-item"><span class="cps-label">⚔ Công Kích</span><span class="cps-val">${Math.floor(G.atk||0)}</span></div>
+          <div class="cps-item"><span class="cps-label">🛡 Phòng Thủ</span><span class="cps-val">${Math.floor(G.def||0)}</span></div>
+          <div class="cps-item"><span class="cps-label">❤ HP Tối Đa</span><span class="cps-val">${Math.floor(G.maxHp||0)}</span></div>
+          <div class="cps-item"><span class="cps-label">⚡ Linh Lực/giây</span><span class="cps-val">${qiRate}</span></div>
         </div>
       </div>
-      <button class="btn-secondary char-popup-close" onclick="document.getElementById('modal-char-popup').remove()">✕ Đóng</button>
-    </div>`;
+      <div class="cp-section">
+        <div class="cp-section-title">🌟 Chỉ Số Tu Tiên</div>
+        ${statBar('🌟 Ngộ Tính', ngoTinh, 100, '#c8a84b', 'Thiên phú học hỏi — ảnh hưởng luyện đan, thuần thục công pháp, cơ duyên')}
+        ${statBar('💪 Căn Cốt',  canCot,  100, '#e05c1a', 'Thể chất tự nhiên')}
+        ${statBar('🌀 Khí Vận',  khiVan,  100, khiVanColor, 'Cơ duyên gặp kỳ ngộ')}
+        ${statBar('🧠 Tâm Cảnh', tamCanh, 100, '#7b9ef0', 'Ảnh hưởng tỉ lệ đột phá')}
+        <div style="font-size:10px;color:${khiVanColor};text-align:center;margin-top:4px;padding:3px;background:rgba(0,0,0,0.2);border-radius:4px">${khiVanStatus}</div>
+      </div>
+      ${(() => {
+        const at = G.amThuong;
+        if (!at || at.points <= 0) return '';
+        const c = at.points>=50?'#e05c4a':at.points>=25?'#e07030':'#f0d47a';
+        return `<div class="cp-section" style="border-color:${c}44">
+          <div class="cp-section-title" style="color:${c}">🩸 Ám Thương</div>
+          ${statBar('Mức Độ', at.points, 100, c, 'Tích lũy từ chiến đấu')}
+          ${at.canCotPenalty>0?`<div class="cps-item"><span class="cps-label">Căn Cốt bị ảnh hưởng</span><span class="cps-val" style="color:${c}">-${at.canCotPenalty}</span></div>`:''}
+          <div style="font-size:10px;color:var(--text-dim);margin-top:4px">Tự hồi ~1 điểm/3 ngày · Dùng Tái Sinh Đan để hồi nhanh</div>
+        </div>`;
+      })()}
+      ${G.realmIdx===0 ? (() => {
+        const h = G.hunger; const days=h?.hungerDays??0; const linh_me=h?.linhMeCount??0; const ichCoc=Math.ceil(h?.ichCocDanDays??0); const danDoc=G.danDoc??0;
+        const color=days>0?'#e05c4a':'#56c46a';
+        return `<div class="cp-section" style="border-color:${color}33">
+          <div class="cp-section-title" style="color:${color}">🌾 Lương Thực</div>
+          <div class="cps-item"><span class="cps-label">Linh Mễ kho</span><span class="cps-val">${linh_me} phần</span></div>
+          ${ichCoc>0?`<div class="cps-item"><span class="cps-label">💊 Ích Cốc Đan</span><span class="cps-val">còn ${ichCoc} ngày</span></div>`:''}
+          ${days>0?`<div style="font-size:11px;color:#e05c4a;margin-top:4px">⚠ Đang đói ${days.toFixed(1)} ngày!</div>`:''}
+          ${danDoc>40?`<div class="cps-item"><span class="cps-label">⚠ Đan Độc</span><span class="cps-val" style="color:${danDoc>70?'#e05c4a':'#f0d47a'}">${danDoc.toFixed(0)}/100</span></div>`:''}
+        </div>`;
+      })() : ''}
+      <div class="cp-section">
+        <div class="cp-section-title">📊 Thành Tích</div>
+        <div class="cps-grid">
+          <div class="cps-item"><span class="cps-label">⏳ Tuổi</span><span class="cps-val">${Math.floor(G.gameTime?.currentYear||0)}</span></div>
+          <div class="cps-item"><span class="cps-label">🔥 Đột Phá</span><span class="cps-val">${G.breakthroughs||0}</span></div>
+          <div class="cps-item"><span class="cps-label">🏆 Quái Đã Giết</span><span class="cps-val">${G.totalKills||0}</span></div>
+          <div class="cps-item"><span class="cps-label">⚗ Đan Đã Luyện</span><span class="cps-val">${G.alchemySuccess||0}</span></div>
+          <div class="cps-item"><span class="cps-label">📜 Nhiệm Vụ</span><span class="cps-val">${G.totalQuestsCompleted||0}</span></div>
+        </div>
+        <div class="cp-danhvong-row" style="margin-top:10px;padding:8px;background:${tier.color}15;border:1px solid ${tier.color}44;border-radius:8px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;color:var(--text-dim)">🌟 Danh Vọng</span>
+          <span style="font-size:13px;font-weight:700;color:${tier.color}">${dv} · ${tier.label}</span>
+          ${tier.discountPct>0?`<span style="font-size:11px;color:#56c46a">-${tier.discountPct}% shop</span>`:''}
+        </div>
+      </div>
+    </div>
+  `;
 
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  const w = Math.min(window.innerWidth - 40, 480);
+  const h = Math.min(window.innerHeight - 80, 700);
+  PopupManager.open(POPUP_ID, {
+    title:      `👤 ${G.name} — Thông Tin Nhân Vật`,
+    content:    bodyEl,
+    width:      w,
+    height:     h,
+    x:          Math.max(10, (window.innerWidth - w) / 2),
+    y:          Math.max(10, (window.innerHeight - h) / 2),
+    extraClass: 'pm-char-info',
+  });
 
-  overlay.querySelector('#cp-btn-breakthrough')?.addEventListener('click', () => {
-    overlay.remove();
+  // Wire buttons
+  document.getElementById('cp-btn-breakthrough')?.addEventListener('click', () => {
+    PopupManager.close(POPUP_ID);
     cultivateActions.breakthrough();
   });
-  overlay.querySelector('#cp-btn-meditate')?.addEventListener('click', () => {
+  document.getElementById('cp-btn-meditate')?.addEventListener('click', () => {
     cultivateActions.meditate();
-    overlay.remove();
+    PopupManager.close(POPUP_ID);
   });
 
+  // Load portrait
   import('../../ui/portrait.js').then(({ buildPortraitSVG }) => {
     const el = document.getElementById('cp-portrait-mini');
     if (el) el.innerHTML = buildPortraitSVG(G);

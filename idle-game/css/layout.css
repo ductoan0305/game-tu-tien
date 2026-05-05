@@ -584,47 +584,10 @@ html, body { height: 100%; overflow: hidden; }
   animation: bt-purity-pulse 1.6s ease-in-out infinite;
 }
 /* ============================================================
-   STATUS NOTIFICATION BAR — render-core.js _renderStatusNotifs
+   STATUS NOTIFICATION BAR
+   Styles moved to Session 17 block at end of file (restyle)
    ============================================================ */
-#status-notif-bar {
-  position: fixed;
-  left: 0;
-  top: 20px;
-  width: 100%;
-  z-index: var(--z-notification);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-}
-.sn-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 9px;
-  background: rgba(255,255,255,0.6);
-  border-radius: 6px;
-  font-size: 12px;
-  animation: sn-fadein 0.25s ease;
-}
-@keyframes sn-fadein {
-  from { opacity:0; transform:translateX(-6px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-.sn-icon { font-size: 14px; flex-shrink: 0; }
-.sn-text { font-weight: 600; line-height: 1.3; }
-.sn-clickable {
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-}
-.sn-clickable:hover {
-}
-.sn-clickable:active { transform: translateX(0); }
-.sn-arrow {
-  font-size: 14px; opacity: 0.6; margin-left: 2px;
-  transition: opacity 0.15s;
-}
-.sn-clickable:hover .sn-arrow { opacity: 1; }
+/* #status-notif-bar styles relocated to bottom of file */
 /* ── Playtime display ────────────────────────────────────── */
 .playtime-display {
   margin-top: 8px;
@@ -670,15 +633,7 @@ html, body { height: 100%; overflow: hidden; }
     padding: 10px;
   }
 
-  /* Status notif bar gọn hơn */
-  #status-notif-bar {
-    padding: 4px 6px;
-    gap: 3px;
-  }
-  .sn-item {
-    font-size: 11px;
-    padding: 4px 7px;
-  }
+  /* Status notif bar styles — see Session 17 block at bottom of file */
 
   /* "Thêm" panel full width trên mobile */
   .bnav-more-panel {
@@ -939,23 +894,7 @@ html, body { height: 100%; overflow: hidden; }
 .hud-pill-sep { color: var(--border); opacity: 0.55; }
 
 /* ── Status-notif close button ───────────────────────────── */
-.sn-close-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px 4px;
-  flex-shrink: 0;
-  align-self: flex-start;
-
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  transform: translateY(-50%);
-  right: 10px;
-}
+/* sn-close-btn styles moved to Session 17 block at end of file */
 
 /* ── Mobile adjustments ──────────────────────────────────── */
 @media (max-width: 767px) {
@@ -967,7 +906,6 @@ html, body { height: 100%; overflow: hidden; }
     right: 6px;
   }
   #hud-location { display: none; }
-  #hud-left { min-width: 200px; }
 }
 
 /* ============================================================
@@ -1029,4 +967,179 @@ html, body { height: 100%; overflow: hidden; }
   #game-container, #login-gate, #setup-container {
     display: none !important;
   }
+}
+
+/* ============================================================
+   SESSION 17 — char-compact-popup (PopupManager replacement)
+   #hud-left deprecated, replaced by pm-popup[data-popup-id="char-compact"]
+   ============================================================ */
+
+/* #hud-left: deprecated, hidden via safety rule */
+#hud-left { display: none !important; }
+
+/* char-compact popup body layout */
+.pm-char-compact .pm-body {
+  padding: 8px 10px;
+}
+.char-compact-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* cc-avatar = avatar trong compact popup */
+.cc-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: rgba(6,8,16,0.7);
+  transition: border-color 0.35s ease, background 0.15s;
+}
+.cc-avatar:hover  { background: rgba(255,255,255,0.07); }
+.cc-avatar:active { transform: scale(0.93); }
+
+/* ============================================================
+   SESSION 17 — #status-notif-bar restyle
+   Position fixed, z-index cao, nền tối + text rõ ràng
+   Màu priority chỉ dùng cho border-left + icon, text trung tính
+   ============================================================ */
+#status-notif-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 60px; /* trên bottom-nav 52px desktop / 56px mobile + gap */
+  z-index: var(--z-critical); /* 1000 — cao hơn popup, modal, notification */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px 8px;
+  pointer-events: none; /* click xuyên qua khu vực rỗng */
+}
+#status-notif-bar .sn-item,
+#status-notif-bar .sn-close-btn {
+  pointer-events: all;
+}
+
+.sn-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 34px 7px 12px;
+  background: linear-gradient(135deg,
+    rgba(14,22,38,0.96),
+    rgba(8,14,26,0.96));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-left-width: 3px; /* border-left-color set inline theo priority */
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #e7eefc; /* text trung tính, readable trên nền tối */
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  position: relative;
+  animation: sn-fadein 0.22s ease;
+}
+.sn-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px currentColor);
+  /* color set inline theo priority */
+}
+.sn-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #e7eefc;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sn-clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.sn-clickable:hover {
+  background: linear-gradient(135deg,
+    rgba(20,30,52,0.96),
+    rgba(12,20,36,0.96));
+  border-color: rgba(255,255,255,0.14);
+}
+.sn-clickable:active {
+  transform: scale(0.985);
+}
+.sn-arrow {
+  font-size: 14px;
+  opacity: 0.6;
+  margin-left: 2px;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.sn-clickable:hover .sn-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Close button cho notif bar */
+.sn-close-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: color 0.15s, background 0.15s;
+  z-index: 1;
+  border-radius: 4px;
+}
+.sn-close-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+
+@keyframes sn-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Desktop: căn giữa, giới hạn width */
+@media (min-width: 768px) {
+  #status-notif-bar {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: auto;
+    min-width: 340px;
+    max-width: 560px;
+  }
+}
+
+/* Mobile: full width, nén lại */
+@media (max-width: 767px) {
+  #status-notif-bar {
+    bottom: 64px; /* mobile bottom-nav 56px + 8px gap */
+    padding: 4px 6px;
+    gap: 3px;
+  }
+  .sn-item {
+    font-size: 11.5px;
+    padding: 5px 30px 5px 10px;
+    gap: 7px;
+  }
+  .sn-icon { font-size: 13px; }
 }

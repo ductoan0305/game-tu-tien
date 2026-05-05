@@ -498,38 +498,44 @@ function renderTier1(G, actions) {
   _wireTier1Handlers(panel, G, actions, { modal: false, starterLocked: false, svgSuffix: '' });
 }
 
-/** Popup bản đồ thế giới (dùng được cả khi đang ở tân thủ thôn) */
+/** Popup bản đồ thế giới — dùng PopupManager (drag + resize) */
 export function openWorldMapModal(G, actions) {
-  const existing = document.getElementById('modal-world-map');
-  if (existing) existing.remove();
+  // Toggle: nếu đang mở thì đóng
+  if (PopupManager.isOpen('world-map')) {
+    PopupManager.close('world-map');
+    return;
+  }
 
   const starterLocked = !G.worldMap?.leftStarter;
 
-  const modal = document.createElement('div');
-  modal.id = 'modal-world-map';
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal-box world-map-modal-box">
-      <div class="world-map-modal-head">
-        <span class="world-map-modal-title">🗺 Phàm Nhân Giới</span>
-        <button type="button" class="loc-popup-close" id="modal-world-map-close" aria-label="Đóng">✕</button>
-      </div>
-      <div id="modal-world-map-body"></div>
-    </div>`;
-  document.body.appendChild(modal);
+  const modal = { id: 'world-map' }; // placeholder, không tạo DOM element nữa
+  // Dùng PopupManager để có drag + resize thống nhất
+  const bodyEl = document.createElement('div');
+  bodyEl.style.minWidth = '0';
+  bodyEl.innerHTML = _buildTier1Html(G, { mode: 'modal', svgSuffix: '-modal', starterLocked });
 
-  const body = modal.querySelector('#modal-world-map-body');
-  body.innerHTML = _buildTier1Html(G, { mode: 'modal', svgSuffix: '-modal', starterLocked });
-
-  modal.querySelector('#modal-world-map-close')?.addEventListener('click', () => modal.remove());
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-
-  _wireTier1Handlers(body, G, actions, {
-    modal: true,
-    modalEl: modal,
-    starterLocked,
-    svgSuffix: '-modal',
+  const w = Math.min(window.innerWidth - 20, 740);
+  const h = Math.min(window.innerHeight - 80, 540);
+  PopupManager.open('world-map', {
+    title:      '🗺 Phàm Nhân Giới',
+    content:    bodyEl,
+    width:      w,
+    height:     h,
+    x:          Math.max(10, (window.innerWidth - w) / 2),
+    y:          Math.max(10, (window.innerHeight - h) / 2),
+    extraClass: 'pm-world-map',
   });
+
+  // Wire handlers vào body bên trong popup
+  const pmBody = document.querySelector('[data-popup-id="world-map"] .pm-body > div');
+  if (pmBody) {
+    _wireTier1Handlers(pmBody, G, actions, {
+      modal:       true,
+      modalEl:     pmBody,
+      starterLocked,
+      svgSuffix:   '-modal',
+    });
+  }
 }
 
 // ============================================================

@@ -13,6 +13,7 @@ import { isTabUnlocked, getTabLockInfo, TAB_UNLOCK_CONFIG } from './nav-progress
 import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus } from '../core/duoc-dien-engine.js';
 import { getDanhVongTier } from '../core/danh-vong.js';
+import PopupManager from './popup-manager.js';
 
 // ---- Tab management ----
 
@@ -851,9 +852,11 @@ function _renderStatusNotifs(G) {
   const itemsHtml = shown.map(n => {
     const clickable = n.tab ? ' sn-clickable' : '';
     const arrow     = n.tab ? ' <span class="sn-arrow">›</span>' : '';
+    // Màu priority chỉ dùng cho border-left + icon. Text dùng màu trung tính
+    // để đảm bảo readable trên nền tối.
     return `<div class="sn-item${clickable}" style="border-left-color:${n.color}" ${n.tab ? `data-tab="${n.tab}"` : ''}>
-      <span class="sn-icon">${n.icon}</span>
-      <span class="sn-text" style="color:${n.color}">${n.text}${arrow}</span>
+      <span class="sn-icon" style="color:${n.color}">${n.icon}</span>
+      <span class="sn-text">${n.text}${arrow}</span>
     </div>`;
   }).join('');
 
@@ -1232,34 +1235,29 @@ function _fmtGameTime(years) {
 }
 
 // ---- Tutorial objective panel + age warning modal ----
-// Tutorial panel dismiss + drag state (module-level để tồn tại qua các lần render)
-let _tutDismissed  = false;
-let _tutLastStep   = -1;
+// Tutorial state (module-level)
+let _tutLastStep = -1;
 
 export function renderTutorialObjectivePanel(G) {
-  const t    = G?.tutorial;
-  const root = document.getElementById('game-container');
-  if (!root) return;
+  const t = G?.tutorial;
 
-  let panel = document.getElementById('tutorial-objective-panel');
-
+  // Tutorial khong active hoac completed => dong popup neu dang mo
   if (!t || !G.setupDone || !t.enabled || t.completed) {
-    panel?.remove();
-    _tutDismissed = false;
-    _tutLastStep  = -1;
+    if (PopupManager.isOpen('tutorial-panel')) PopupManager.close('tutorial-panel');
+    _tutLastStep = -1;
     return;
   }
 
-  // Bước mới → bỏ dismiss, hiện lại tự động
-  if (t.step !== _tutLastStep) {
-    _tutLastStep  = t.step;
-    _tutDismissed = false;
-    if (panel) panel.style.display = '';
+  // Buoc moi => force reopen de hien lai
+  const stepChanged = t.step !== _tutLastStep;
+  if (stepChanged) {
+    _tutLastStep = t.step;
+    if (PopupManager.isOpen('tutorial-panel')) {
+      PopupManager.close('tutorial-panel');
+    }
   }
 
-  if (_tutDismissed) return;
-
-  // ── Tính nội dung body ──
+  // Tinh noi dung body
   const maxQi       = calcMaxQi(G);
   const qi          = G.qi ?? 0;
   const qiNeedPct   = Math.max(0, 100 - Math.floor((qi / Math.max(1, maxQi)) * 100));
@@ -1299,94 +1297,24 @@ export function renderTutorialObjectivePanel(G) {
     <div style="margin-top:6px;font-size:11px;color:#9fb4d6;opacity:0.95">✦ ${rootHint}</div>
   `;
 
-  // ── Tạo panel lần đầu ──
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'tutorial-objective-panel';
-    panel.style.cssText = [
-      'position:fixed',
-      'right:10px',
-      'bottom:86px',
-      'z-index:1200',
-      'max-width:320px',
-      'width:max-content',
-      'background:rgba(8,14,24,0.96)',
-      'border:1px solid #2a3b55',
-      'border-radius:10px',
-      'box-shadow:0 6px 24px rgba(0,0,0,0.35)',
-      'overflow:hidden',
-    ].join(';');
-
-    panel.innerHTML = `
-      <div id="tut-panel-header" style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px 4px;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(42,59,85,0.7);cursor:grab;">
-        <span style="font-size:9px;color:#4a6a9a;letter-spacing:.4px;user-select:none">⠿ CẨM NANG</span>
-        <button id="tut-panel-close" title="Ẩn (tự động hiện lại ở bước tiếp theo)" style="background:none;border:none;color:#4a6a9a;font-size:14px;line-height:1;cursor:pointer;padding:0 0 0 8px;transition:color .15s">✕</button>
-      </div>
-      <div id="tut-panel-body" style="padding:10px 12px"></div>
-    `;
-    root.appendChild(panel);
-
-    // Wire close
-    document.getElementById('tut-panel-close')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      _tutDismissed = true;
-      panel.style.display = 'none';
+  if (!PopupManager.isOpen('tutorial-panel')) {
+    // Mo popup lan dau hoac sau khi dong do buoc moi
+    PopupManager.open('tutorial-panel', {
+      title:      '📖 Cẩm Nang Tân Đạo Hữu',
+      content:    bodyHtml,
+      width:      300,
+      x:          window.innerWidth - 320,
+      y:          window.innerHeight - 220,
+      extraClass: 'pm-tutorial-panel',
     });
-
-    // Wire drag trên header
-    _makePanelDraggable(panel, document.getElementById('tut-panel-header'));
+    return;
   }
 
-  // ── Update body (chỉ khi thay đổi, tránh re-render liên tục) ──
-  const bodyEl = document.getElementById('tut-panel-body');
-  if (bodyEl && bodyEl.innerHTML !== bodyHtml) bodyEl.innerHTML = bodyHtml;
-}
-
-/** Làm một phần tử trở nên draggable bằng handle */
-function _makePanelDraggable(panelEl, handleEl) {
-  if (!handleEl || !panelEl) return;
-  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-
-  function startDrag(cx, cy) {
-    const rect = panelEl.getBoundingClientRect();
-    // Chuyển từ right/bottom sang left/top tuyệt đối
-    panelEl.style.right  = 'auto';
-    panelEl.style.bottom = 'auto';
-    panelEl.style.left   = rect.left + 'px';
-    panelEl.style.top    = rect.top  + 'px';
-    ox = rect.left; oy = rect.top;
-    sx = cx; sy = cy;
-    dragging = true;
+  // Popup dang mo, chi update body neu noi dung thay doi
+  const bodyEl = document.querySelector('[data-popup-id="tutorial-panel"] .pm-body');
+  if (bodyEl && bodyEl.innerHTML !== bodyHtml) {
+    bodyEl.innerHTML = bodyHtml;
   }
-
-  function moveDrag(cx, cy) {
-    if (!dragging) return;
-    const W  = panelEl.offsetWidth;
-    const H  = panelEl.offsetHeight;
-    const nx = Math.max(0, Math.min(window.innerWidth  - W, ox + (cx - sx)));
-    const ny = Math.max(0, Math.min(window.innerHeight - H, oy + (cy - sy)));
-    panelEl.style.left = nx + 'px';
-    panelEl.style.top  = ny + 'px';
-  }
-
-  handleEl.addEventListener('mousedown', (e) => {
-    if (e.target.id === 'tut-panel-close') return;
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY);
-    handleEl.style.cursor = 'grabbing';
-  });
-  window.addEventListener('mousemove', (e) => { moveDrag(e.clientX, e.clientY); });
-  window.addEventListener('mouseup',   ()  => { dragging = false; handleEl.style.cursor = 'grab'; });
-
-  handleEl.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    startDrag(t.clientX, t.clientY);
-  }, { passive: true });
-  window.addEventListener('touchmove', (e) => {
-    const t = e.touches[0];
-    moveDrag(t.clientX, t.clientY);
-  }, { passive: true });
-  window.addEventListener('touchend', () => { dragging = false; });
 }
 
 export function showTutorialAgeWarningModal(onAcknowledge) {

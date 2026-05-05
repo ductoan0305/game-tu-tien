@@ -358,36 +358,11 @@
   margin-top: auto;
 }
 
-/* Popup bản đồ thế giới (bottom nav) */
-.world-map-modal-box {
-  max-width: min(1160px, 97vw);
-  width: 95vw;
-  max-height: 95vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.world-map-modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.world-map-modal-title { font-weight: 600; color: var(--gold); font-size: 14px; }
-#modal-world-map-body {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-#modal-world-map-body .map-wrap-t1 {
+/* World map popup styles — dung PopupManager (.pm-world-map)
+   .world-map-modal-box / #modal-world-map-body đã bỏ từ Session 17 */
+.pm-popup.pm-world-map .map-wrap-t1 {
   min-height: 380px;
-  height: min(78vh, 680px);
+  height: 100%;
 }
 .wm-starter-banner {
   font-size: 10px;

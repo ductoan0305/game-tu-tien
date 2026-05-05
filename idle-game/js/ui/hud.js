@@ -1,8 +1,10 @@
 // ============================================================
 // ui/hud.js — Minimal HUD System (Session 14 rev2)
+// Session 17: char-compact-popup dùng PopupManager (drag+resize)
+//             Xóa _makeDraggable riêng, đổi id hud-left → char-compact
 //
 // API:
-//   initHUD()   — tạo DOM, append to body, start 2s interval
+//   initHUD()   — tạo popup compact, start 2s interval
 //   updateHUD() — sync values từ window._G
 //
 // Constraints:
@@ -14,6 +16,7 @@
 import { SPIRIT_ELEMENTS } from '../core/spirit-root.js';
 import { WORLD_NODES }     from './map-data.js';
 import { calcMaxQi }       from '../core/state.js';
+import PopupManager        from './popup-manager.js';
 
 // Tên viết tắt cảnh giới (realmIdx 0-4)
 const REALM_SHORT = ['LK', 'TC', 'KĐ', 'NA', 'HT'];
@@ -31,8 +34,7 @@ const STARTER_VILLAGE_NAMES = {
 // ============================================================
 
 export function initHUD() {
-  _buildLeftHUD();
-  // _buildRightHUD(); // tạm bỏ — hud-right đã CSS display:none, dọn code sạch
+  _buildCharCompactPopup();
   // 2s interval — nav badges (ít quan trọng, chậm được)
   setInterval(updateHUD, 2000);
 }
@@ -41,8 +43,7 @@ export function updateHUD() {
   const G = window._G;
   if (!G || !G.setupDone) return;
   try {
-    _updateLeftHUD(G);
-    // _updateRightPill(G); // tạm bỏ — hud-right đã tắt
+    _updateCharCompact(G);
     _updateNavBadges(G);
   } catch (e) {
     console.warn('[hud] updateHUD error:', e);
@@ -50,82 +51,71 @@ export function updateHUD() {
 }
 
 // ============================================================
-// BUILD DOM
+// BUILD DOM — char-compact-popup (trước đây là hud-left)
+// Dùng PopupManager để có drag + resize thống nhất
 // ============================================================
 
-function _buildLeftHUD() {
-  if (document.getElementById('hud-left')) return; // idempotent
+function _buildCharCompactPopup() {
+  if (PopupManager.isOpen('char-compact')) return; // idempotent
 
-  const el = document.createElement('div');
-  el.id = 'hud-left';
-  el.innerHTML = `
-    <div id="hud-left-header" class="hud-panel-header">
-      <span class="hud-drag-hint">⠿</span>
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'char-compact-body';
+  bodyEl.innerHTML = `
+    <div id="hud-avatar" title="Xem thông tin nhân vật" class="cc-avatar">
+      <span id="hud-avatar-icon">🧘</span>
     </div>
-    <div class="hud-panel-body">
-      <div id="hud-avatar" title="Xem thông tin nhân vật">
-        <span id="hud-avatar-icon">🧘</span>
-      </div>
-      <div class="hud-info-col">
-        <div id="hud-name">—</div>
-        <div id="hud-realm-text">LK1</div>
-      </div>
-      <div class="hud-bars-col">
-        <div class="hud-bar-row">
-          <span class="hud-bar-lbl" style="color:#e05c4a">HP</span>
-          <span class="hud-bar-val" id="hud-val-hp">—</span>
-          <div class="hud-bar-h">
-            <div class="hud-bar-h-fill" id="hud-bar-hp-fill" style="background:#e05c4a"></div>
-          </div>
+    <div class="hud-info-col">
+      <div id="hud-name">—</div>
+      <div id="hud-realm-text">LK1</div>
+    </div>
+    <div class="hud-bars-col">
+      <div class="hud-bar-row">
+        <span class="hud-bar-lbl" style="color:#e05c4a">HP</span>
+        <span class="hud-bar-val" id="hud-val-hp">—</span>
+        <div class="hud-bar-h">
+          <div class="hud-bar-h-fill" id="hud-bar-hp-fill" style="background:#e05c4a"></div>
         </div>
-        <div class="hud-bar-row">
-          <span class="hud-bar-lbl" style="color:var(--spirit,#7b9ef0)">气</span>
-          <span class="hud-bar-val" id="hud-val-mp">—</span>
-          <div class="hud-bar-h">
-            <div class="hud-bar-h-fill" id="hud-bar-mp-fill" style="background:var(--spirit,#7b9ef0)"></div>
-          </div>
+      </div>
+      <div class="hud-bar-row">
+        <span class="hud-bar-lbl" style="color:var(--spirit,#7b9ef0)">气</span>
+        <span class="hud-bar-val" id="hud-val-mp">—</span>
+        <div class="hud-bar-h">
+          <div class="hud-bar-h-fill" id="hud-bar-mp-fill" style="background:var(--spirit,#7b9ef0)"></div>
         </div>
-        <div class="hud-bar-row">
-          <span class="hud-bar-lbl" style="color:var(--jade,#56c46a)">EXP</span>
-          <span class="hud-bar-val" id="hud-val-exp">—</span>
-          <div class="hud-bar-h">
-            <div class="hud-bar-h-fill" id="hud-bar-exp-fill" style="background:var(--jade,#56c46a)"></div>
-          </div>
+      </div>
+      <div class="hud-bar-row">
+        <span class="hud-bar-lbl" style="color:var(--jade,#56c46a)">EXP</span>
+        <span class="hud-bar-val" id="hud-val-exp">—</span>
+        <div class="hud-bar-h">
+          <div class="hud-bar-h-fill" id="hud-bar-exp-fill" style="background:var(--jade,#56c46a)"></div>
         </div>
       </div>
     </div>
   `;
-  document.body.appendChild(el);
 
-  // Avatar click → mở char popup
+  PopupManager.open('char-compact', {
+    title:      '⚕ Nhân Vật',
+    content:    bodyEl,
+    width:      260,
+    x:          10,
+    y:          60,
+    extraClass: 'pm-char-compact',
+  });
+
+  // Avatar click → mở char popup đầy đủ
   document.getElementById('hud-avatar')?.addEventListener('click', () => {
     document.getElementById('btn-char-popup')?.click();
   });
-
-  // Drag theo header
-  _makeDraggable(el, document.getElementById('hud-left-header'));
-}
-
-function _buildRightHUD() {
-  if (document.getElementById('hud-right')) return; // idempotent
-
-  const el = document.createElement('div');
-  el.id = 'hud-right';
-  el.innerHTML = `
-    <span id="hud-stone">💰 0</span>
-    <span class="hud-pill-sep">·</span>
-    <span id="hud-cultivate" title="Trạng thái tu luyện">⚗️ ⚫</span>
-    <span class="hud-pill-sep">·</span>
-    <span id="hud-location" title="Vị trí hiện tại">🗺️ —</span>
-  `;
-  document.body.appendChild(el);
 }
 
 // ============================================================
 // UPDATE FUNCTIONS
 // ============================================================
 
-function _updateLeftHUD(G) {
+function _updateCharCompact(G) {
+  // Chỉ update nếu popup đang mở
+  if (!PopupManager.isOpen('char-compact')) return;
+
   // ── Avatar: border color theo hệ ngũ hành ──
   const mainEl   = G.spiritData?.mainElement;
   const elColor  = (mainEl && SPIRIT_ELEMENTS[mainEl]?.color) || 'var(--border)';
@@ -159,90 +149,9 @@ function _updateLeftHUD(G) {
   _setText('hud-val-exp', `${_fmtShort(exp)}/${_fmtShort(maxExp)}`);
 }
 
-function _updateRightPill(G) {
-  // ── Linh thạch ──
-  const stoneEl = document.getElementById('hud-stone');
-  if (stoneEl) stoneEl.textContent = `💰 ${_fmtShort(G.stone ?? 0)}`;
-
-  // ── Tu luyện ──
-  const cultEl = document.getElementById('hud-cultivate');
-  if (cultEl) cultEl.textContent = G.meditating ? '⚗️ 🟢' : '⚗️ ⚫';
-
-  // ── Vị trí: ưu tiên tân thủ thôn nếu chưa rời ──
-  const locEl = document.getElementById('hud-location');
-  if (locEl) {
-    let locName;
-    if (!G.worldMap?.leftStarter) {
-      // Còn trong tân thủ thôn → dùng tên thôn thật
-      const svId = G.worldMap?.starterVillageId || '';
-      locName = STARTER_VILLAGE_NAMES[svId] || 'Tân Thủ Thôn';
-    } else {
-      const nodeId = G.worldMap?.currentNodeId || '';
-      const node   = WORLD_NODES.find(n => n.id === nodeId);
-      locName = node?.name || '—';
-    }
-    locEl.textContent = `🗺️ ${locName}`;
-  }
-}
-
 function _updateNavBadges(G) {
   const hasQuestBadge = _hasClaimableQuest(G);
   _applyBadge('quests', hasQuestBadge);
-}
-
-// ============================================================
-// DRAG HELPER
-// ============================================================
-
-function _makeDraggable(panelEl, handleEl) {
-  if (!handleEl || !panelEl) return;
-  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-
-  function startDrag(cx, cy) {
-    const rect  = panelEl.getBoundingClientRect();
-    // Đóng băng vị trí hiện tại theo left/top tuyệt đối
-    panelEl.style.right  = 'auto';
-    panelEl.style.bottom = 'auto';
-    panelEl.style.left   = rect.left + 'px';
-    panelEl.style.top    = rect.top  + 'px';
-    ox = rect.left; oy = rect.top;
-    sx = cx; sy = cy;
-    dragging = true;
-  }
-
-  function moveDrag(cx, cy) {
-    if (!dragging) return;
-    const W  = panelEl.offsetWidth;
-    const H  = panelEl.offsetHeight;
-    const nx = Math.max(0, Math.min(window.innerWidth  - W, ox + (cx - sx)));
-    const ny = Math.max(0, Math.min(window.innerHeight - H, oy + (cy - sy)));
-    panelEl.style.left = nx + 'px';
-    panelEl.style.top  = ny + 'px';
-  }
-
-  handleEl.style.cursor = 'grab';
-
-  handleEl.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY);
-    handleEl.style.cursor = 'grabbing';
-  });
-  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
-  window.addEventListener('mouseup',   ()  => {
-    dragging = false;
-    handleEl.style.cursor = 'grab';
-  });
-
-  handleEl.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    startDrag(t.clientX, t.clientY);
-  }, { passive: true });
-  window.addEventListener('touchmove', (e) => {
-    if (!dragging) return;
-    const t = e.touches[0];
-    moveDrag(t.clientX, t.clientY);
-  }, { passive: true });
-  window.addEventListener('touchend', () => { dragging = false; });
 }
 
 // ============================================================
@@ -289,10 +198,6 @@ function _applyBadge(tabId, show) {
       dot?.remove();
     }
   });
-}
-
-function _fmt(n) {
-  return Math.floor(n ?? 0).toLocaleString('vi-VN');
 }
 
 function _fmtShort(n) {

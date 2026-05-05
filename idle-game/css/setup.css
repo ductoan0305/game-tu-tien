@@ -523,18 +523,18 @@
 }
 
 /* Selected male → viền vàng */
-.gender-card[data-gender="male"].selected {
+.gender-grid .gender-card[data-gender="male"].selected {
   border-color: var(--gender-gold-b);
   background: rgba(245,200,66,.06);
   box-shadow: 0 0 20px rgba(245,200,66,.2), 0 4px 16px rgba(0,0,0,.4);
-  transform: translateY(-2px); opacity: 1 !important;
+  transform: translateY(-2px); opacity: 1;
 }
 /* Selected female → viền hồng */
-.gender-card[data-gender="female"].selected {
+.gender-grid .gender-card[data-gender="female"].selected {
   border-color: var(--gender-female);
   background: rgba(255,133,200,.06);
   box-shadow: 0 0 20px rgba(255,133,200,.24), 0 4px 16px rgba(0,0,0,.4);
-  transform: translateY(-2px); opacity: 1 !important;
+  transform: translateY(-2px); opacity: 1;
 }
 
 /* Badge ✓ góc phải */
@@ -676,7 +676,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.7);
-  z-index: 500;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -795,15 +795,7 @@
 .char-popup-body::-webkit-scrollbar { width: 4px; }
 .char-popup-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* Home button special */
-.home-btn {
-  background: rgba(200,168,75,0.1) !important;
-  border-left-color: var(--gold) !important;
-  color: var(--gold) !important;
-  font-weight: 500;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 4px;
-}
+/* .home-btn removed — selector unused */
 
 /* ============================================================
    SPIRIT ROOT REVEAL CINEMATIC
@@ -1539,8 +1531,8 @@
   text-align: right;
   flex-shrink: 0;
 }
-.cp-bar-full {
-  color: #f0d47a !important;
+.cp-bar-val.cp-bar-full {
+  color: #f0d47a;
   font-weight: 700;
 }
 .cp-cultivate-meta {
@@ -1566,14 +1558,14 @@
   color: var(--text-dim);
   margin-top: 4px;
 }
-.cp-bt-ready {
-  color: #f0d47a !important;
-  border-color: var(--gold) !important;
-  background: rgba(240,212,74,0.15) !important;
+.cp-bt-btn.cp-bt-ready {
+  color: #f0d47a;
+  border-color: var(--gold);
+  background: rgba(240,212,74,0.15);
   animation: bt-pulse 1.5s ease-in-out infinite;
 }
-.cp-bt-ready:hover {
-  background: rgba(240,212,74,0.25) !important;
+.cp-bt-btn.cp-bt-ready:hover {
+  background: rgba(240,212,74,0.25);
   box-shadow: 0 0 16px rgba(240,212,74,0.4);
 }
 .cp-bt-hint {
@@ -1604,10 +1596,10 @@
   background: rgba(86,196,106,0.12);
   color: #56c46a;
 }
-.cp-med-active {
-  border-color: rgba(86,196,106,0.5) !important;
-  background: rgba(86,196,106,0.12) !important;
-  color: #56c46a !important;
+.cp-meditate-btn.cp-med-active {
+  border-color: rgba(86,196,106,0.5);
+  background: rgba(86,196,106,0.12);
+  color: #56c46a;
 }
 /* ============================================================
    RESPONSIVE MOBILE LANDSCAPE — Character Creation

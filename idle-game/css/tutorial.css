@@ -100,8 +100,8 @@
   position: relative;
 }
 .nav-btn.nav-locked:hover {
-  background: none !important;
-  color: var(--text-dim) !important;
+  background: none;
+  color: var(--text-dim);
 }
 .nav-lock-icon {
   font-size: 9px;

@@ -487,7 +487,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  z-index: 1000;
+  z-index: var(--z-toast);
   pointer-events: none;
 }
 
@@ -513,7 +513,7 @@
 @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
 
 /* ---- Float text ---- */
-.float-container { position: fixed; bottom: 100px; left: 0; right: 0; pointer-events: none; z-index: 999; }
+.float-container { position: fixed; bottom: 100px; left: 0; right: 0; pointer-events: none; z-index: var(--z-toast); }
 .float-text {
   position: absolute;
   font-size: 14px;
@@ -532,7 +532,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-modal);
 }
 
 .modal-box {
@@ -846,7 +846,7 @@
   position: fixed; top: 50px; right: 10px;
   width: 320px; max-height: 480px;
   background: #0e1520; border: 1px solid var(--border);
-  border-radius: 10px; z-index: 8000;
+  border-radius: 10px; z-index: var(--z-notification);
   display: flex; flex-direction: column;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   animation: sn-fadein 0.15s ease;
@@ -948,7 +948,7 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 500;
+  z-index: var(--z-overlay);
 }
 #popup-layer .pm-popup {
   pointer-events: all;

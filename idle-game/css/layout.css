@@ -111,9 +111,9 @@ html, body { height: 100%; overflow: hidden; }
   font-size: 11px;
   color: var(--text);
 }
-.lr-time {
-  font-size: 9px !important;
-  color: var(--text-dim) !important;
+.lr-item span.lr-time {
+  font-size: 9px;
+  color: var(--text-dim);
 }
 
 /* Pháp địa */
@@ -150,7 +150,7 @@ html, body { height: 100%; overflow: hidden; }
 /* Menu dropdown từ left panel */
 .menu-dropdown-left {
   position: fixed;
-  z-index: 500;
+  z-index: var(--z-overlay);
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -171,7 +171,7 @@ html, body { height: 100%; overflow: hidden; }
   display: flex;
   align-items: stretch;
   flex-shrink: 0;
-  z-index: 100;
+  z-index: var(--z-sticky);
 }
 .bnav-btn {
   flex: 1;
@@ -203,7 +203,7 @@ html, body { height: 100%; overflow: hidden; }
   position: fixed;
   bottom: 52px;
   right: 0;
-  z-index: 300;
+  z-index: var(--z-panel);
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px 0 0 0;
@@ -240,7 +240,10 @@ html, body { height: 100%; overflow: hidden; }
 /* ========== CENTER PANEL — full canvas (Session 13) ========== */
 .panel-center {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 52px; /* dừng ngay trên bottom-nav để không bị che */
   padding: 0;
   overflow: hidden;
   background: var(--bg-panel);
@@ -250,7 +253,7 @@ html, body { height: 100%; overflow: hidden; }
 
 .center-panel {
   padding: 16px;
-  padding-bottom: 68px; /* 52px bottom-nav + 16px breathing room */
+  padding-bottom: 16px; /* breathing room — không cần offset bottom-nav nữa */
   display: block;
   height: 100%;
   overflow-y: auto;
@@ -277,6 +280,11 @@ html, body { height: 100%; overflow: hidden; }
   font-size: 11px;
   color: var(--text-dim);
   font-style: italic;
+}
+
+#active-buffs {
+  /* tạm đóng chức năng */
+  display: none !important;
 }
 
 .active-buffs-center {
@@ -516,10 +524,10 @@ html, body { height: 100%; overflow: hidden; }
   position: relative;
 }
 .lq-btn-bt:disabled { opacity: 0.35; cursor: not-allowed; }
-.lq-btn-bt-ready {
-  color: #f0d47a !important;
-  border-color: rgba(240,212,74,0.5) !important;
-  background: rgba(240,212,74,0.1) !important;
+.lq-btn-bt.lq-btn-bt-ready {
+  color: #f0d47a;
+  border-color: rgba(240,212,74,0.5);
+  background: rgba(240,212,74,0.1);
   animation: bt-pulse 1.5s ease-in-out infinite;
 }
 .bt-pct {
@@ -569,30 +577,33 @@ html, body { height: 100%; overflow: hidden; }
 #bar-qi .bar-fill { transition: background 0.5s ease, width 0.2s ease; }
 
 /* Header purity state */
-.lq-btn-bt-purity {
-  color: #d4a8ff !important;
-  border-color: rgba(168,85,247,0.5) !important;
-  background: rgba(168,85,247,0.1) !important;
+.lq-btn-bt.lq-btn-bt-purity {
+  color: #d4a8ff;
+  border-color: rgba(168,85,247,0.5);
+  background: rgba(168,85,247,0.1);
   animation: bt-purity-pulse 1.6s ease-in-out infinite;
 }
 /* ============================================================
    STATUS NOTIFICATION BAR — render-core.js _renderStatusNotifs
    ============================================================ */
 #status-notif-bar {
+  position: fixed;
+  left: 0;
+  top: 20px;
+  width: 100%;
+  z-index: var(--z-notification);
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 6px 8px;
-  margin-bottom: 6px;
 }
 .sn-item {
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 5px 9px;
-  background: rgba(255,255,255,0.04);
-  border-left: 3px solid var(--border);
-  border-radius: 0 6px 6px 0;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
   font-size: 12px;
   animation: sn-fadein 0.25s ease;
 }
@@ -607,8 +618,6 @@ html, body { height: 100%; overflow: hidden; }
   transition: background 0.15s, transform 0.1s;
 }
 .sn-clickable:hover {
-  background: rgba(255,255,255,0.09);
-  transform: translateX(2px);
 }
 .sn-clickable:active { transform: translateX(0); }
 .sn-arrow {
@@ -650,6 +659,11 @@ html, body { height: 100%; overflow: hidden; }
   }
   .bnav-icon { font-size: 20px; }
   .bnav-label { font-size: 10px; }
+
+  /* Panel center cũng cần bottom = 56px trên mobile */
+  .panel-center {
+    bottom: 56px;
+  }
 
   /* Center panel có padding nhỏ hơn */
   .center-panel {
@@ -776,7 +790,7 @@ html, body { height: 100%; overflow: hidden; }
   position: fixed;
   left: 10px;
   top: 10px;
-  z-index: 90;
+  z-index: var(--z-hud);
   background: rgba(8,14,24,0.96);
   border: 1px solid rgba(42,59,85,0.85);
   border-radius: 10px;
@@ -849,13 +863,16 @@ html, body { height: 100%; overflow: hidden; }
   display: flex;
   align-items: center;
   gap: 4px;
+  position: relative;
 }
 .hud-bar-lbl {
   font-size: 8px;
   font-weight: 700;
   width: 22px;
   flex-shrink: 0;
-  opacity: 0.85;
+}
+.hud-bar-val {
+  font-size: 8px;
 }
 
 /* Bar ngang */
@@ -876,14 +893,22 @@ html, body { height: 100%; overflow: hidden; }
   min-width: 2px;
 }
 
-.hud-bar-val {
-  font-size: 8px;
-  min-width: 52px;
-  text-align: right;
-  flex-shrink: 0;
-  opacity: 0.75;
-  font-variant-numeric: tabular-nums;
+/* Tooltip CSS-only — hiện phía trên row khi hover */
+.hud-bar-row[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 26px;
+  background: rgba(6,8,16,0.97);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 10px;
+  color: var(--text);
   white-space: nowrap;
+  z-index: var(--z-dropdown);
+  pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6);
 }
 
 /* ── RIGHT STATUS PILL (#hud-right) ─────────────────────────
@@ -892,7 +917,7 @@ html, body { height: 100%; overflow: hidden; }
   position: fixed;
   top: 8px;
   right: 8px;
-  z-index: 90;
+  z-index: var(--z-hud);
   background: rgba(6,8,16,0.85);
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -905,6 +930,9 @@ html, body { height: 100%; overflow: hidden; }
   pointer-events: none;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+
+  /*tạm tắt tính năng này*/
+  display: none !important;
 }
 #hud-stone    { color: var(--gold, #c8a84b); font-weight: 600; }
 #hud-location { color: var(--text-dim); }
@@ -919,13 +947,15 @@ html, body { height: 100%; overflow: hidden; }
   line-height: 1;
   cursor: pointer;
   padding: 2px 4px;
-  margin-left: 4px;
   flex-shrink: 0;
-  opacity: 0.6;
-  transition: opacity 0.15s;
   align-self: flex-start;
+
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 10px;
 }
-.sn-close-btn:hover { opacity: 1; color: var(--text); }
 
 /* ── Mobile adjustments ──────────────────────────────────── */
 @media (max-width: 767px) {
@@ -947,7 +977,7 @@ html, body { height: 100%; overflow: hidden; }
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: var(--z-system);
   background: #0a0a14;
   flex-direction: column;
   align-items: center;
@@ -999,4 +1029,4 @@ html, body { height: 100%; overflow: hidden; }
   #game-container, #login-gate, #setup-container {
     display: none !important;
   }
-}  
+}

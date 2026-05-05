@@ -6,7 +6,7 @@
 .craft-popup-overlay {
   position: fixed;
   inset: 0;
-  z-index: 400;
+  z-index: var(--z-popup);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -262,8 +262,8 @@
 }
 
 /* ---- Alchemy tab fixes ---- */
-.aib-warn {
-  color: var(--gold) !important;
+.aib-item.aib-warn {
+  color: var(--gold);
   font-size: 12px;
 }
 
@@ -829,9 +829,9 @@
 }
 
 /* Active recipe highlight */
-.tp-active-recipe {
-  background: rgba(86,196,106,0.04) !important;
-  border-color: rgba(86,196,106,0.35) !important;
+.recipe-card.tp-active-recipe {
+  background: rgba(86,196,106,0.04);
+  border-color: rgba(86,196,106,0.35);
 }
 
 /* Draw button */

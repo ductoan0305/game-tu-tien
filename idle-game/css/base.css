@@ -1,67 +1,58 @@
-/* base.css — CSS Variables, Reset, Base Typography, Scrollbar */
-
-
-/* ============================================================
-   style.css — Tu Tiên Idle v2
-   ============================================================
-
-   MỤC LỤC — Tìm nhanh: Ctrl+G → nhập số dòng
-   ─────────────────────────────────────────────
-   Dòng   6  │ Reset & Base (variables, reset)
-   Dòng  39  │ Layout (#game-container)
-   Dòng  48  │ Header (realm bar, stats bar)
-   Dòng 133  │ Tab Nav (buttons)
-   Dòng 158  │ Main Content (panels)
-   Dòng 170  │ Cultivate Tab (bế quan, actions, portrait)
-   Dòng 258  │ Combat Tab (enemy list, arena cũ)
-   Dòng 383  │ Alchemy Tab
-   Dòng 480  │ Quest Tab
-   Dòng 523  │ Skills Tab
-   Dòng 544  │ Inventory Tab
-   Dòng 571  │ Shop Tab
-   Dòng 590  │ Ranking Tab
-   Dòng 612  │ Log (game log panel)
-   Dòng 638  │ Toasts (thông báo popup)
-   Dòng 671  │ Float text (damage numbers)
-   Dòng 682  │ Buttons (.btn-primary, .btn-sm...)
-   Dòng 740  │ Modals (breakthrough, event)
-   Dòng 772  │ Setup Screen (tạo nhân vật)
-   Dòng 883  │ Rarity Colors
-   Dòng 889  │ Scrollbar
-   Dòng 894  │ Responsive (mobile)
-   Dòng 902  │ Equipment Tab
-   Dòng 1061 │ Combat Arena (rewrite — arena mới)
-   Dòng 1220 │ Character Portrait (#1 feature)
-   Dòng 1271 │ Combat Visual (animations, floats, flash)
-   Dòng 1479 │ Title System (#3 Danh Hiệu)
-   Dòng 1582 │ Dungeon Tab
-   Dòng 1718 │ Sect Tab (Tông Môn)
-   Dòng 1813 │ Passive Skill Tree Tab (Thiên Phú)
-   ─────────────────────────────────────────────
-   Khi thêm section mới: thêm vào cuối file VÀ cập nhật mục lục này
+/* base.css — CSS Variables, Reset, Base Typography
+   Source of truth cho toàn bộ design tokens.
+   Không được define :root ở file khác (ngoại trừ setup.css cho gender vars).
    ============================================================ */
 
-/* ---- Reset & Base ---- */
+/* ---- Reset ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-deep:    #0a0a12;
-  --bg-card:    #13131f;
-  --bg-panel:   #0d0d18;
+  /* ── Background scale (tối → sáng) ─────────────────────── */
+  --bg-deep:    #0a0a12;   /* nền ngoài cùng, tối nhất */
+  --bg-panel:   #0d0d18;   /* nền panel chính */
+  --bg-card:    #13131f;   /* nền card / element */
+  --bg2:        #161622;   /* nền card phụ (travel modal, offline choice) */
+  --bg3:        #1c1c2a;   /* hover state của --bg2 */
+
+  /* ── Borders ────────────────────────────────────────────── */
   --border:     #2a2a3d;
   --border-glow:#4a4a6d;
-  --text:       #d0cfe0;
-  --text-dim:   #7a7a9a;
-  --text-bright:#f0eefc;
+
+  /* ── Text ───────────────────────────────────────────────── */
+  --text:         #d0cfe0;
+  --text-dim:     #7a7a9a;
+  --text-bright:  #f0eefc;
+  --text-main:    #d0cfe0;   /* alias của --text, dùng trong components cũ */
+  --text-primary: #f0eefc;   /* alias của --text-bright, dùng trong dungeon/systems */
+
+  /* ── Accent colors ──────────────────────────────────────── */
   --gold:       #c8a84b;
   --jade:       #56c46a;
   --spirit:     #8080e8;
+  --info:       #4a9eff;
   --danger:     #e05c4a;
   --epic:       #c060e0;
   --legendary:  #f0d47a;
-  --qi-color:   #6060d0;
-  --hp-color:   #d04040;
+
+  /* ── Rarity colors ──────────────────────────────────────── */
+  --common:     #888888;
+  --uncommon:   #56c46a;
+  --rare:       #3a9fd5;
+  --epic-2:     #9c27b0;
+
+  /* ── Surface overlays ───────────────────────────────────── */
+  --panel-soft:       rgba(255,255,255,0.05);
+  --panel-soft-hover: rgba(255,255,255,0.10);
+
+  /* ── Semantic aliases ───────────────────────────────────── */
+  --panel:      #0d0d18;   /* alias của --bg-panel, dùng trong combat/equipment */
+
+  /* ── Resource colors ────────────────────────────────────── */
+  --qi-color:      #6060d0;
+  --hp-color:      #d04040;
   --stamina-color: #40a040;
+
+  /* ── Typography ─────────────────────────────────────────── */
   --font: 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
@@ -82,7 +73,7 @@ html, body {
 
 /* ── Login Gate ──────────────────────────────────────────── */
 #login-gate {
-  position: fixed; inset: 0; z-index: 9999;
+  position: fixed; inset: 0; z-index: var(--z-auth);
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(ellipse at 50% 40%, #0d1a2e 0%, #060a10 100%);
 }

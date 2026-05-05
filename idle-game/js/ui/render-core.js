@@ -709,13 +709,9 @@ function _renderStatusNotifs(G) {
   // Tìm hoặc tạo container
   let bar = document.getElementById('status-notif-bar');
   if (!bar) {
-    // Inject sau cultivate-stats nếu chưa có trong HTML
-    const statsPanel = document.getElementById('cultivate-panel') ||
-                       document.getElementById('panel-cultivate');
-    if (!statsPanel) return;
     bar = document.createElement('div');
     bar.id = 'status-notif-bar';
-    statsPanel.prepend(bar);
+    document.body.prepend(bar);
   }
 
   const notifs = [];

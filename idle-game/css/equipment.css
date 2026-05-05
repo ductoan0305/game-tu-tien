@@ -189,8 +189,8 @@
   background: var(--bg-card);
   min-height: 80px;
 }
-.eq-filled { background: rgba(0,0,0,0.2) !important; }
-.eq-empty  { background: rgba(0,0,0,0.05) !important; opacity: 0.7; }
+.eq-slot-card.eq-filled { background: rgba(0,0,0,0.2); }
+.eq-slot-card.eq-empty  { background: rgba(0,0,0,0.05); opacity: 0.7; }
 .eq-slot-header {
   display: flex; align-items: center; gap: 5px;
   margin-bottom: 6px;

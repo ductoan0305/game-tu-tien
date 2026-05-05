@@ -469,17 +469,7 @@
 .log-quest { color: #60c0ff; }
 .log-achievement { color: var(--legendary); }
 
-/* ---- Toasts ---- */
-.toast-container {
-  position: fixed;
-  top: 80px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 1000;
-  pointer-events: none;
-}
+/* ---- Toasts — defined in components.css ---- */
 
 .toast {
   padding: 8px 14px;
@@ -499,19 +489,10 @@
 .toast-epic    { border-color: var(--epic);    color: var(--epic); }
 .toast-legendary{ border-color: var(--legendary); color: var(--legendary); }
 
-@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+/* @keyframes slideIn, fadeOut, floatUp → components.css */
 
 /* ---- Float text ---- */
-.float-container { position: fixed; bottom: 100px; left: 0; right: 0; pointer-events: none; z-index: 999; }
-.float-text {
-  position: absolute;
-  font-size: 14px;
-  font-weight: 700;
-  animation: floatUp 1.2s ease forwards;
-  color: var(--gold);
-}
-@keyframes floatUp { to { transform: translateY(-60px); opacity: 0; } }
+/* .float-container, .float-text → components.css */
 
 /* ---- Buttons ---- */
 .btn-primary {
@@ -823,9 +804,9 @@
   padding: 1px 6px;
   white-space: nowrap;
 }
-.dungeon-recipe {
-  border-color: rgba(168,85,247,0.35) !important;
-  background: rgba(168,85,247,0.04) !important;
+.recipe-card.dungeon-recipe {
+  border-color: rgba(168,85,247,0.35);
+  background: rgba(168,85,247,0.04);
 }
 /* ============================================================
    SHOP — Category tabs (Session 6)
@@ -1029,9 +1010,9 @@
   cursor: pointer; transition: all 0.18s;
 }
 .th-tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-.th-tab-active {
-  background: rgba(200,168,75,0.15) !important;
-  color: var(--gold) !important;
+.th-tab-btn.th-tab-active {
+  background: rgba(200,168,75,0.15);
+  color: var(--gold);
   border: 1px solid rgba(200,168,75,0.3);
 }
 

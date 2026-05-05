@@ -145,8 +145,8 @@
   transform: translateY(-1px);
 }
 .skill-btn[disabled], .skill-disabled { opacity: 0.4; cursor: not-allowed; }
-.skill-last { border-color: var(--jade) !important; }
-.skill-combo { border-color: #f0d47a !important; box-shadow: 0 0 8px #f0d47a55; }
+.skill-btn.skill-last  { border-color: var(--jade); }
+.skill-btn.skill-combo { border-color: #f0d47a; box-shadow: 0 0 8px #f0d47a55; }
 
 .sk-emoji { font-size: 20px; margin-bottom: 2px; }
 .sk-name  { font-size: 12px; font-weight: 600; line-height: 1.2; }

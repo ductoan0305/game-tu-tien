@@ -89,9 +89,9 @@
   font-size: 13px;
   font-weight: 700;
 }
-.btn-boss {
-  background: linear-gradient(135deg, #7c3aed, #dc2626) !important;
-  border-color: #c084fc !important;
+.btn-dungeon-enter.btn-boss {
+  background: linear-gradient(135deg, #7c3aed, #dc2626);
+  border-color: #c084fc;
   animation: boss-pulse 2s infinite;
 }
 @keyframes boss-pulse {
@@ -128,7 +128,7 @@
 .dungeon-floor-cleared  { opacity: 0.5; }
 .dungeon-floor-next     { background: rgba(150,50,200,0.12); border-color: rgba(150,50,200,0.4); }
 .dungeon-floor-locked   { opacity: 0.4; }
-.dungeon-floor-boss     { border-color: rgba(220,38,38,0.4) !important; background: rgba(220,38,38,0.06) !important; }
+.dungeon-floor-row.dungeon-floor-boss { border-color: rgba(220,38,38,0.4); background: rgba(220,38,38,0.06); }
 .df-num  { width: 22px; text-align: center; color: var(--text-dim); font-weight: 700; }
 .df-emoji { font-size: 18px; flex-shrink: 0; }
 .df-info { flex: 1; min-width: 0; }
@@ -197,7 +197,7 @@
 .sncd-actions { display: flex; gap: 6px; }
 
 /* ---- Dungeon tab additions ---- */
-.ds-val-warn { color: #e05c4a !important; }
+.ds-val.ds-val-warn { color: #e05c4a; }
 
 .dungeon-active-panel {
   background: rgba(150,50,200,0.08);
@@ -258,7 +258,7 @@
 .passive-tooltip {
   position: fixed;
   display: none;
-  z-index: 9999;
+  z-index: var(--z-tooltip-top);
   background: var(--bg-card);
   border: 1px solid var(--border-glow);
   border-radius: 10px;

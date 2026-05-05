@@ -32,8 +32,8 @@ const STARTER_VILLAGE_NAMES = {
 
 export function initHUD() {
   _buildLeftHUD();
-  _buildRightHUD();
-  // 2s interval — right pill + nav badges (ít quan trọng, chậm được)
+  // _buildRightHUD(); // tạm bỏ — hud-right đã CSS display:none, dọn code sạch
+  // 2s interval — nav badges (ít quan trọng, chậm được)
   setInterval(updateHUD, 2000);
 }
 
@@ -42,7 +42,7 @@ export function updateHUD() {
   if (!G || !G.setupDone) return;
   try {
     _updateLeftHUD(G);
-    _updateRightPill(G);
+    // _updateRightPill(G); // tạm bỏ — hud-right đã tắt
     _updateNavBadges(G);
   } catch (e) {
     console.warn('[hud] updateHUD error:', e);
@@ -133,16 +133,12 @@ function _updateLeftHUD(G) {
   if (avatarEl) avatarEl.style.borderColor = elColor;
 
   // ── Tên nhân vật ──
-  const nameEl = document.getElementById('hud-name');
-  if (nameEl) nameEl.textContent = G.name || '—';
+  _setText('hud-name', G.name || '—');
 
   // ── Cảnh giới ──
-  const realmEl = document.getElementById('hud-realm-text');
-  if (realmEl) {
-    const ri    = G.realmIdx ?? 0;
-    const stage = G.stage    ?? 1;
-    realmEl.textContent = (REALM_SHORT[ri] || 'LK') + stage;
-  }
+  const ri    = G.realmIdx ?? 0;
+  const stage = G.stage    ?? 1;
+  _setText('hud-realm-text', (REALM_SHORT[ri] || 'LK') + stage);
 
   // ── HP bar ──
   const hp    = G.hp    ?? 0;

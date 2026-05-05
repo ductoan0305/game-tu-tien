@@ -138,6 +138,54 @@ function _buildLocNodes(village, G) {
   }).join('');
 }
 
+// ============================================================
+// Drag helper cho sv-side-popup (absolute position trong map container)
+// ============================================================
+function _makeSvPopupDraggable(popupEl, handleEl) {
+  if (!handleEl || !popupEl) return;
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+
+  function startDrag(cx, cy) {
+    ox = popupEl.offsetLeft;
+    oy = popupEl.offsetTop;
+    sx = cx; sy = cy;
+    dragging = true;
+    handleEl.style.cursor = 'grabbing';
+  }
+
+  function moveDrag(cx, cy) {
+    if (!dragging) return;
+    const parent = popupEl.offsetParent || document.body;
+    const maxX = parent.offsetWidth  - popupEl.offsetWidth;
+    const maxY = parent.offsetHeight - popupEl.offsetHeight;
+    const nx = Math.max(0, Math.min(maxX, ox + (cx - sx)));
+    const ny = Math.max(0, Math.min(maxY, oy + (cy - sy)));
+    popupEl.style.left  = nx + 'px';
+    popupEl.style.top   = ny + 'px';
+    popupEl.style.right = 'auto';
+  }
+
+  function endDrag() {
+    dragging = false;
+    handleEl.style.cursor = 'grab';
+  }
+
+  handleEl.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
+
+  handleEl.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', endDrag);
+}
+
 // Render Zone Map cho tân thủ thôn
 export function renderStarterVillage(G, actions) {
   const panel = document.getElementById('panel-cultivate');
@@ -178,17 +226,19 @@ export function renderStarterVillage(G, actions) {
           ${svgInner}
         </svg>
       </div>
-      <div class="map-side-t2 starter-village-side" data-sv-accent="${village.color}">
-        <div class="mst2-zone-name starter-side-title sv-zone-name">${village.emoji} ${village.name}</div>
-        <div class="mst2-zone-desc">${village.desc}</div>
-        <div class="village-map-hint">Bấm <strong>Bản Đồ</strong> dưới thanh điều hướng để xem toàn Phàm Nhân Giới.</div>
-        <div class="mst2-loc-info" id="mst2-loc-info">
-          <div class="starter-village-side-hint">Chọn địa điểm trên sơ đồ để tương tác</div>
+      <!-- Floating info popup — draggable, có close button, dùng class riêng sv-side-popup -->
+      <div class="sv-side-popup" id="sv-side-popup" data-sv-accent="${village.color}">
+        <div class="sv-popup-header" id="sv-popup-drag-handle">
+          <span class="sv-popup-drag-hint">⠿</span>
+          <span class="sv-popup-title">${village.emoji} ${village.name}</span>
+          <button class="sv-popup-close" id="sv-popup-close" title="Đóng">✕</button>
         </div>
-        <div class="mst1-stats sv-stats-top">
-          <div class="mst1-s"><span>⚡</span><strong id="map-stat-rate">--</strong></div>
-          <div class="mst1-s"><span>⏳</span><strong id="map-stat-age">--</strong></div>
-          <div class="mst1-s"><span>💎</span><strong id="map-stat-stone">--</strong></div>
+        <div class="sv-popup-body">
+          <div class="mst2-zone-desc">${village.desc}</div>
+          <div class="village-map-hint">Bấm <strong>Bản Đồ</strong> dưới thanh điều hướng để xem toàn Phàm Nhân Giới.</div>
+          <div class="mst2-loc-info" id="mst2-loc-info">
+            <div class="starter-village-side-hint">Chọn địa điểm trên sơ đồ để tương tác</div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -196,15 +246,25 @@ export function renderStarterVillage(G, actions) {
   const svgEl = document.getElementById('village-svg');
   if (svgEl) _setupDrag('village-svg');
 
+  // Apply CSS variables cho scene và popup accent color
   const sceneEl = panel.querySelector('.starter-village-scene[data-sv-bg][data-sv-accent]');
   if (sceneEl?.dataset?.svBg) {
     sceneEl.style.background = sceneEl.dataset.svBg;
     if (sceneEl.dataset.svAccent) sceneEl.style.setProperty('--sv-accent', sceneEl.dataset.svAccent);
   }
-  const sideEl = panel.querySelector('.starter-village-side[data-sv-accent]');
-  if (sideEl?.dataset?.svAccent) {
-    sideEl.style.setProperty('--sv-accent', sideEl.dataset.svAccent);
+  const sidePopup = document.getElementById('sv-side-popup');
+  if (sidePopup?.dataset?.svAccent) {
+    sidePopup.style.setProperty('--sv-accent', sidePopup.dataset.svAccent);
   }
+
+  // Drag cho popup
+  const dragHandle = document.getElementById('sv-popup-drag-handle');
+  if (sidePopup && dragHandle) _makeSvPopupDraggable(sidePopup, dragHandle);
+
+  // Close button
+  document.getElementById('sv-popup-close')?.addEventListener('click', () => {
+    if (sidePopup) sidePopup.style.display = 'none';
+  });
 
   panel.querySelectorAll('.znode:not(.znode-locked)').forEach(g => {
     g.addEventListener('click', () => {
@@ -219,6 +279,11 @@ export function renderStarterVillage(G, actions) {
         actions.toast(`🚶 Rời ${village.name}, bước vào thế giới rộng lớn!`, 'jade');
         window._renderWorldMap?.(G, actions);
         return;
+      }
+
+      // Hiện popup nếu đang ẩn (sau khi bấm close)
+      if (sidePopup && sidePopup.style.display === 'none') {
+        sidePopup.style.display = '';
       }
 
       const el = document.getElementById('mst2-loc-info');
@@ -243,8 +308,6 @@ export function renderStarterVillage(G, actions) {
       }
     });
   });
-
-  window._updateMapStats?.(G);
 }
 
 function _getStarterLocBtns(loc) {

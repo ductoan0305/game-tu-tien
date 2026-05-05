@@ -33,10 +33,10 @@
   background: var(--bg-card);
   transition: all 0.2s;
 }
-.phapdia-current { border-color: color-mix(in srgb, var(--jade) 26%, transparent) !important; background: color-mix(in srgb, var(--jade) 6%, transparent) !important; }
-.phapdia-locked  { opacity: 0.45; }
-.congphap-current { background: color-mix(in srgb, var(--gold) 6%, transparent) !important; }
-.congphap-locked  { opacity: 0.45; }
+.phapdia-card.phapdia-current   { border-color: color-mix(in srgb, var(--jade) 26%, transparent); background: color-mix(in srgb, var(--jade) 6%, transparent); }
+.phapdia-card.phapdia-locked    { opacity: 0.45; }
+.congphap-card.congphap-current { background: color-mix(in srgb, var(--gold) 6%, transparent); }
+.congphap-card.congphap-locked  { opacity: 0.45; }
 
 .pd-header, .cp-header {
   display: flex;
@@ -217,7 +217,7 @@
   border-radius: 10px;
   padding: 6px;
   min-width: 180px;
-  z-index: 999;
+  z-index: var(--z-notification);
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   animation: menu-appear 0.15s ease;
 }
@@ -409,6 +409,85 @@
 /* ============================================================
    TÂN THỦ THÔN — cảnh quan (gradient CSS + SVG lớp trên)
    ============================================================ */
+
+/* Override map-wrap-starter: full-width SVG, popup float bên trên */
+.map-wrap-starter {
+  grid-template-columns: 1fr !important;
+  position: relative;
+}
+
+/* ---- sv-side-popup — draggable info popup overlay ---- */
+.sv-side-popup {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 210px;
+  max-height: calc(100% - 24px);
+  background: linear-gradient(165deg, rgba(10, 13, 22, 0.97) 0%, rgba(5, 7, 13, 0.99) 100%);
+  border: 1px solid color-mix(in srgb, var(--sv-accent, var(--gold)) 28%, transparent);
+  border-radius: 10px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sv-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  border-radius: 10px 10px 0 0;
+}
+.sv-popup-header:active { cursor: grabbing; }
+
+.sv-popup-drag-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.sv-popup-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-accent, var(--gold));
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sv-popup-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sv-popup-close:hover { color: rgba(255, 255, 255, 0.85); }
+
+.sv-popup-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
 .map-wrap-starter .starter-village-scene {
   position: relative;
   min-height: 300px;
@@ -764,8 +843,8 @@
   position: relative;
 }
 .nav-btn.nav-locked:hover {
-  background: none !important;
-  color: var(--text-dim) !important;
+  background: none;
+  color: var(--text-dim);
 }
 .nav-lock-icon {
   font-size: 9px;
@@ -951,7 +1030,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
-  z-index: 9999;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

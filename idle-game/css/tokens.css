@@ -1,33 +1,76 @@
+/* tokens.css — Design Token System
+   ============================================================
+   Tất cả magic numbers được đặt tên tại đây.
+   Các file CSS khác NÊN dùng tokens này thay vì hardcode.
+   ============================================================ */
+
 :root {
-  /* Semantic palette aliases for long-term maintainability */
-  --color-bg-deep: var(--bg-deep);
-  --color-bg-card: var(--bg-card);
-  --color-bg-panel: var(--bg-panel);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-glow);
-  --color-text: var(--text);
-  --color-text-dim: var(--text-dim);
-  --color-text-bright: var(--text-bright);
-  --color-accent-gold: var(--gold);
-  --color-accent-jade: var(--jade);
-  --color-accent-danger: var(--danger);
-  --color-accent-epic: var(--epic);
-  --color-accent-legendary: var(--legendary);
 
-  /* Rarity & status tokens */
-  --color-rarity-common: var(--common);
-  --color-rarity-uncommon: var(--uncommon);
-  --color-rarity-rare: var(--rare);
-  --color-rarity-epic: var(--epic-2);
-  --color-rarity-legendary: var(--legendary);
+  /* ── Z-INDEX SCALE ──────────────────────────────────────────
+     Nguyên tắc: mỗi layer cách nhau 100, có tên ngữ nghĩa rõ.
+     Tối đa: 1200 (thay vì 99999 cũ).
+     ─────────────────────────────────────────────────────────── */
+  --z-decorative:   0;     /* stars, aura, mist — trong local stacking context */
+  --z-content:      10;    /* elements nội bộ trong component (text over bar) */
+  --z-hud:           90;    /* #hud-left, #hud-right — below nav bar */
+  --z-sticky:       100;   /* bottom-nav, header bar */
+  --z-dropdown:     200;   /* menu dropdown, HUD tooltip */
+  --z-panel:        300;   /* bnav-more-panel, right panel */
+  --z-popup:        400;   /* craft-popup, phapdia popup — nhỏ */
+  --z-overlay:      500;   /* semi-transparent overlay nền modal, popup-layer */
+  --z-modal:        600;   /* dialog modal chính (quest reward, event...) */
+  --z-toast:        700;   /* toast notifications, float-container */
+  --z-notification: 800;   /* notification panel cố định */
+  --z-tooltip-top:  900;   /* passive-tooltip, location popup — nổi trên modal */
+  --z-critical:    1000;   /* game over, loading screen */
+  --z-auth:        1100;   /* login gate, auth modal */
+  --z-system:      1200;   /* mobile fullscreen overlay (rotate-overlay) */
 
-  /* Shared spacing/radius/shadow primitives */
+  /* ── SPACING SCALE ──────────────────────────────────────────
+     Dùng cho gap, padding, margin nhất quán.                   */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* ── BORDER-RADIUS SCALE ────────────────────────────────────
+     Thay thế cho 17 giá trị khác nhau đang tồn tại.
+     7px, 9px là outliers — map về nearest standard.            */
+  --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 99px;
+
+  /* ── SHADOW SCALE ─────────────────────────────────────────── */
+  --shadow-soft:  0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-card:  0 4px 20px rgba(0, 0, 0, 0.45);
+  --shadow-popup: 0 8px 40px rgba(0, 0, 0, 0.70);
+
+  /* ── SEMANTIC COLOR ALIASES ──────────────────────────────────
+     Dùng cho code mới. Tên mô tả ngữ nghĩa, không mô tả màu.  */
+  --color-bg-deep:          var(--bg-deep);
+  --color-bg-card:          var(--bg-card);
+  --color-bg-panel:         var(--bg-panel);
+  --color-border:           var(--border);
+  --color-border-strong:    var(--border-glow);
+  --color-text:             var(--text);
+  --color-text-dim:         var(--text-dim);
+  --color-text-bright:      var(--text-bright);
+  --color-accent-gold:      var(--gold);
+  --color-accent-jade:      var(--jade);
+  --color-accent-danger:    var(--danger);
+  --color-accent-epic:      var(--epic);
+  --color-accent-legendary: var(--legendary);
+
+  /* ── RARITY TOKENS ───────────────────────────────────────── */
+  --color-rarity-common:    var(--common);
+  --color-rarity-uncommon:  var(--uncommon);
+  --color-rarity-rare:      var(--rare);
+  --color-rarity-epic:      var(--epic-2);
+  --color-rarity-legendary: var(--legendary);
+
 }

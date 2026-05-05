@@ -58,6 +58,7 @@ export function loadGame() {
     _migrateThuongHoi(merged);
     _migrateCongPhap(merged);
     _migrateTutorial(merged);
+    _migrateFlags(merged);
 
     console.log('[loadGame] Loaded successfully, setupDone:', merged.setupDone);
     return merged;
@@ -270,6 +271,80 @@ function _migrateThuongHoi(m) {
   if (m.dungeon) {
     if (m.dungeon.attemptsToday === undefined) m.dungeon.attemptsToday = m.dungeon.runsToday ?? 0;
     if (m.dungeon.lastAttemptDay === undefined) m.dungeon.lastAttemptDay = 0;
+  }
+}
+
+// ============================================================
+// S-B: Visibility Gate flags migration
+// ============================================================
+
+/**
+ * Suy ra danh sách nghề phụ đã dùng từ state hiện tại.
+ * Dùng khi load save cũ chưa có flags.unlockedProfessions.
+ */
+function _inferUnlockedProfessions(m) {
+  const unlocked = [];
+  // Luyện Đan: có công thức hoặc đã luyện thành công
+  if ((m.alchemy?.craftsCount ?? 0) > 0 || (m.alchemy?.knownRecipes?.length ?? 0) > 0) {
+    unlocked.push('alchemy');
+  }
+  // Trận Pháp: đã dùng trận pháp
+  if ((m.crafts?.tran_phap?.level ?? 0) > 0 || (m.tranPhap?.arrayCount ?? 0) > 0) {
+    unlocked.push('tran_phap');
+  }
+  // Phù Chú: đã vẽ bùa
+  if ((m.crafts?.phu_chu?.level ?? 0) > 0 || (m.phuChu?.drawCount ?? 0) > 0) {
+    unlocked.push('phu_chu');
+  }
+  // Khôi Lỗi: đã chế tạo khôi lỗi
+  if ((m.crafts?.khoi_loi?.level ?? 0) > 0 || (m.khoiLoi?.craftCount ?? 0) > 0) {
+    unlocked.push('khoi_loi');
+  }
+  // Linh Thực: đã nấu
+  if ((m.crafts?.linh_thuc?.level ?? 0) > 0 || (m.linhThuc?.cooksCount ?? 0) > 0) {
+    unlocked.push('linh_thuc');
+  }
+  // nghe_nghiep parent tab: mở nếu có bất kỳ nghề nào
+  if (unlocked.some(p => ['tran_phap','phu_chu','khoi_loi','linh_thuc'].includes(p))) {
+    unlocked.push('nghe_nghiep');
+  }
+  return unlocked;
+}
+
+/**
+ * Migration cho G.flags — đảm bảo save cũ không mất tab visibility.
+ * Quy tắc: save cũ (trước S-B) luôn có setupDone=true và đã thấy shop.
+ */
+function _migrateFlags(m) {
+  if (!m.flags || typeof m.flags !== 'object') {
+    // Save cũ chưa có flags object → suy ra từ state hiện tại
+    m.flags = {
+      // Save cũ đã thấy shop (shop luôn visible trước S-B)
+      shopUnlocked: !!m.setupDone,
+      // Dungeon: đã từng vào (Kim Đan trở lên)
+      dungeonQuestDone: (m.realmIdx ?? 0) >= 2,
+      // Nghề nghiệp: auto-detect từ usage history
+      unlockedProfessions: _inferUnlockedProfessions(m),
+    };
+    return;
+  }
+  // Flags object đã tồn tại — patch các field còn thiếu
+  if (m.flags.shopUnlocked === undefined) {
+    m.flags.shopUnlocked = !!m.setupDone;
+  }
+  if (m.flags.dungeonQuestDone === undefined) {
+    m.flags.dungeonQuestDone = (m.realmIdx ?? 0) >= 2;
+  }
+  if (!Array.isArray(m.flags.unlockedProfessions)) {
+    m.flags.unlockedProfessions = _inferUnlockedProfessions(m);
+  } else {
+    // Bổ sung nghề phụ đã dùng nhưng chưa có trong list
+    const inferred = _inferUnlockedProfessions(m);
+    for (const p of inferred) {
+      if (!m.flags.unlockedProfessions.includes(p)) {
+        m.flags.unlockedProfessions.push(p);
+      }
+    }
   }
 }
 

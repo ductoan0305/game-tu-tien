@@ -248,10 +248,16 @@ tutorial: {
 js/
 ├── core/
 │   ├── state.js              SHIM (14 dòng) → re-export từ state/
+│   ├── visibility.js         S-B: getVisibleTabs(G) → string[]
+│   │                         Kiểm soát tab nào hiện trong bottom nav theo progression
+│   │                         Gate: always / setupDone / flags / realm+stage
+│   │                         KHÔNG gate programmatic tab switches (game logic)
 │   ├── state/
 │   │   ├── fresh-state.js    createFreshState, SAVE_KEY='tutien_v10', SAVE_VERSION=11
+│   │   │                     S-B: thêm flags: { shopUnlocked, dungeonQuestDone, unlockedProfessions }
 │   │   ├── persistence.js    saveGame, loadGame, tất cả migrations
 │   │   │                     _migrateCongPhap() — thêm S10: activeIds + mastery
+│   │   │                     _migrateFlags() — S-B: auto-detect từ save cũ (shopUnlocked, professions)
 │   │   ├── computed.js       calcQiRate, calcMaxQi, calcAtk, calcDef, calcMaxHp,
 │   │   │                     calcPurityRate (×getPurityBoostMult), calcPurityThreshold
 │   │   │                     S10: dùng calcCongPhapMasteryBonus thay CONG_PHAP_MULT cố định
@@ -303,6 +309,7 @@ js/
 │   └── popups/               char-popup, gameover-popup, misc-popups
 ├── ui/
 │   ├── render-core.js        S10: hiển thị số công pháp đang tu thay vì tên
+│   │                         S-B: renderNav() import getVisibleTabs → ẩn/hiện button + "Thêm" btn
 │   ├── popup-manager.js      S15/S16: PopupManager singleton
 │   │                         open/close/toggle/isOpen/setContent/closeAll
 │   │                         Drag (header), Resize 8-direction (N/S/E/W + 4 góc)
@@ -493,6 +500,13 @@ G = {
 18. `G.tutorial` default state đã có trong `fresh-state.js` và migration `_migrateTutorial()` trong `persistence.js` ✅ ĐÃ DONE
 19. `renderTutorialObjectivePanel()` và `showTutorialAgeWarningModal()` đã có trong `render-core.js` ✅ ĐÃ DONE
 20. Wiring trong `main.js`: `trackMeditateSeconds` gọi mỗi tick khi bế quan, `trackStaminaAction` / `trackBreakthroughAttempt` gắn vào từng cultivate action, `trackTabOpen` gắn vào tab switch, Step 5 modal trigger trong tick loop ✅ ĐÃ DONE
+
+### S-B — Visibility Gate System (2026-05-05)
+29. Bottom nav hiển thị toàn bộ 19 tabs ngay từ đầu → vi phạm triết lý hardcore, overwhelm người mới → tạo `js/core/visibility.js` với `getVisibleTabs(G)`, wire vào `renderNav()` (ẩn button nếu tab chưa visible), wire vào `wireNavBtn` (toast nếu click button ẩn). Migration `_migrateFlags()` đảm bảo save cũ không mất tab. `G.flags` object thêm vào `fresh-state.js`. Programmatic tab switches (hunting, dungeon, combat end) KHÔNG bị gate. ✅ ĐÃ FIX
+
+### S-A — Fix Tutorial Panel Re-trigger (2026-05-05)
+27. Tutorial panel tự bật lại ngay sau khi đóng — `renderTutorialObjectivePanel()` gọi mỗi tick, không có guard cho trạng thái "người chơi đã đóng tay" → thêm `G.tutorial.panelDismissed` flag; khi user bấm X, `onClose` callback set flag `true`; `renderTutorialObjectivePanel` không auto-open nếu flag đang `true`; flag reset về `false` tự động khi `_advance()` chuyển step mới ✅ ĐÃ FIX
+28. Không có nút mở lại tutorial panel sau khi đóng (HANDOFF §4 spec) → thêm `_renderTutorialReopenBtn()` trong `render-core.js`: nút `#tutorial-reopen-btn` class `.tutorial-reopen-btn` fixed-position góc phải màn hình, chỉ hiện khi `panelDismissed=true`, click → reset flag + reopen panel; CSS thêm vào `tutorial.css` ✅ ĐÃ FIX
 
 ### S11
 14. `calcCultivationMultiplier()` dùng `congPhap.rateMultiplier` (field không tồn tại) → xóa dead code khỏi `phap-dia.js` (Audit #3 ✅)

@@ -317,6 +317,15 @@ export function createFreshState() {
     chronicle: [],
     _actionLog: [],
 
+    // ---- Visibility Flags (S-B) ----
+    // Lưu trạng thái unlock các tính năng quan trọng.
+    // Được dùng bởi visibility.js để gate bottom nav.
+    flags: {
+      shopUnlocked:          false, // true sau khi tương tác NPC shop (S-C)
+      dungeonQuestDone:      false, // true sau khi hoàn thành dungeon quest đầu (S-D)
+      unlockedProfessions:   [],    // array profession ids đã mở (S-E)
+    },
+
     // ---- UI / meta ----
     lastSave: Date.now(),
     activeTab: 'cultivate',

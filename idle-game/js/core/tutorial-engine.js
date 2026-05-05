@@ -11,6 +11,7 @@ const FRESH_TUTORIAL = () => ({
   completed: false,
   startedAt: 0,
   seenHints: {},
+  panelDismissed: false,  // true khi người chơi bấm X đóng panel; reset khi step mới
   progress: {
     meditateSec: 0,
     usedStaminaAction: false,
@@ -32,6 +33,7 @@ export function ensureTutorialState(G) {
   if (t.completed  === undefined) t.completed  = false;
   if (t.startedAt  === undefined) t.startedAt  = 0;
   if (!t.seenHints || typeof t.seenHints !== 'object') t.seenHints = {};
+  if (t.panelDismissed === undefined) t.panelDismissed = false;
   if (!t.progress  || typeof t.progress  !== 'object') t.progress  = {};
   const p = t.progress;
   if (p.meditateSec             === undefined) p.meditateSec             = 0;
@@ -157,5 +159,6 @@ function _advance(G, nextStep) {
   if (nextStep === 1 && !t.startedAt) {
     t.startedAt = Date.now();
   }
+  t.panelDismissed = false; // Step mới → reset để panel auto-show lại
   t.step = nextStep;
 }

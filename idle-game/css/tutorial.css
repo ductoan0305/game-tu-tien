@@ -1,4 +1,4 @@
-/* tutorial.css — Welcome Modal, Full Guide, Nav Locked Panel */
+/* tutorial.css — Welcome Modal, Full Guide, Nav Locked Panel, Reopen Btn */
 
 
    WELCOME MODAL & FULL GUIDE
@@ -128,6 +128,40 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
+}
+
+/* ============================================================
+   TUTORIAL REOPEN BUTTON
+   Hiện khi tutorial active nhưng panel bị người chơi đóng
+   ============================================================ */
+.tutorial-reopen-btn {
+  position: fixed;
+  bottom: 64px;          /* trên bottom-nav */
+  right: 12px;
+  z-index: var(--z-sticky, 100);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gold, #f0d47a);
+  background: rgba(20, 18, 35, 0.88);
+  border: 1px solid rgba(200, 168, 75, 0.35);
+  border-radius: var(--radius-pill, 99px);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.tutorial-reopen-btn:hover {
+  background: rgba(30, 26, 50, 0.95);
+  border-color: rgba(200, 168, 75, 0.65);
+  transform: translateY(-1px);
+}
+.tutorial-reopen-btn:active {
+  transform: translateY(0);
 }
 
 /* ============================================================

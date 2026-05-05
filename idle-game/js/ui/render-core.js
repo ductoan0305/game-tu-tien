@@ -10,6 +10,7 @@ import { getActiveTitle } from '../core/title-engine.js';
 import { getRemainingLifespan, getMaxLifespan, getLifespanColor, getLifespanPercent, formatYear } from '../core/time-engine.js';
 import { formatCurrencyShort, migrateCurrency } from '../core/currency.js';
 import { isTabUnlocked, getTabLockInfo, TAB_UNLOCK_CONFIG } from './nav-progression.js';
+import { getVisibleTabs } from '../core/visibility.js';
 import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus } from '../core/duoc-dien-engine.js';
 import { getDanhVongTier } from '../core/danh-vong.js';
@@ -82,11 +83,21 @@ export function renderNav(G) {
   // Tính notification dots
   const dots = _calcNavDots(G);
 
+  // S-B: tính danh sách tab được phép visible
+  const visibleSet = new Set(getVisibleTabs(G));
+
   document.querySelectorAll('.bnav-btn[data-tab], .bmp-btn[data-tab]').forEach(btn => {
     const tabId = btn.dataset.tab;
     if (!tabId) return;
 
-    // Lock state (chỉ cho .nav-btn cũ nếu còn)
+    // S-B: Ẩn button nếu tab chưa visible theo progression gate
+    if (!visibleSet.has(tabId)) {
+      btn.style.display = 'none';
+      return;
+    }
+    btn.style.display = '';
+
+    // Lock state (nav-progression.js)
     const unlocked = isTabUnlocked(tabId, G);
     if (!unlocked) {
       btn.classList.add('nav-locked');
@@ -109,6 +120,15 @@ export function renderNav(G) {
       dot?.remove();
     }
   });
+
+  // S-B: Ẩn nút "Thêm" nếu toàn bộ bmp-btn đều bị hide
+  const morePanelBtns = document.querySelectorAll('#bnav-more-panel .bmp-btn[data-tab]');
+  const anyMoreVisible = [...morePanelBtns].some(btn => {
+    const tabId = btn.dataset.tab;
+    return tabId && visibleSet.has(tabId);
+  });
+  const moreBtn = document.getElementById('bnav-more-btn');
+  if (moreBtn) moreBtn.style.display = anyMoreVisible ? '' : 'none';
 
   // Compat: nav-btn cũ
   document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
@@ -1241,17 +1261,19 @@ let _tutLastStep = -1;
 export function renderTutorialObjectivePanel(G) {
   const t = G?.tutorial;
 
-  // Tutorial khong active hoac completed => dong popup neu dang mo
+  // Tutorial khong active hoac completed => dong popup, an nut reopen
   if (!t || !G.setupDone || !t.enabled || t.completed) {
     if (PopupManager.isOpen('tutorial-panel')) PopupManager.close('tutorial-panel');
+    _hideTutorialReopenBtn();
     _tutLastStep = -1;
     return;
   }
 
-  // Buoc moi => force reopen de hien lai
+  // Buoc moi => reset panelDismissed + force reopen de hien lai
   const stepChanged = t.step !== _tutLastStep;
   if (stepChanged) {
     _tutLastStep = t.step;
+    t.panelDismissed = false; // step moi -> auto-show lai
     if (PopupManager.isOpen('tutorial-panel')) {
       PopupManager.close('tutorial-panel');
     }
@@ -1298,7 +1320,12 @@ export function renderTutorialObjectivePanel(G) {
   `;
 
   if (!PopupManager.isOpen('tutorial-panel')) {
-    // Mo popup lan dau hoac sau khi dong do buoc moi
+    if (t.panelDismissed) {
+      // Nguoi choi da dong tay — khong mo lai tu dong, hien nut reopen
+      _renderTutorialReopenBtn(G);
+      return;
+    }
+    // Mo popup lan dau hoac sau khi step moi
     PopupManager.open('tutorial-panel', {
       title:      '📖 Cẩm Nang Tân Đạo Hữu',
       content:    bodyHtml,
@@ -1306,15 +1333,42 @@ export function renderTutorialObjectivePanel(G) {
       x:          window.innerWidth - 320,
       y:          window.innerHeight - 220,
       extraClass: 'pm-tutorial-panel',
+      onClose:    () => { const tut = window._G?.tutorial; if (tut) tut.panelDismissed = true; },
     });
+    _hideTutorialReopenBtn();
     return;
   }
 
-  // Popup dang mo, chi update body neu noi dung thay doi
+  // Popup dang mo — an nut reopen + chi update body neu noi dung thay doi
+  _hideTutorialReopenBtn();
   const bodyEl = document.querySelector('[data-popup-id="tutorial-panel"] .pm-body');
   if (bodyEl && bodyEl.innerHTML !== bodyHtml) {
     bodyEl.innerHTML = bodyHtml;
   }
+}
+
+// Hien nut "Cam nang" khi tutorial active nhung panel bi dong
+function _renderTutorialReopenBtn(G) {
+  let btn = document.getElementById('tutorial-reopen-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id        = 'tutorial-reopen-btn';
+    btn.className = 'tutorial-reopen-btn';
+    btn.innerHTML = '📖 Cẩm nang';
+    btn.title     = 'Mở lại Cẩm Nang Tân Đạo Hữu';
+    btn.addEventListener('click', () => {
+      const tut = window._G?.tutorial;
+      if (tut) tut.panelDismissed = false;
+      renderTutorialObjectivePanel(window._G);
+    });
+    document.body.appendChild(btn);
+  }
+  btn.style.display = '';
+}
+
+function _hideTutorialReopenBtn() {
+  const btn = document.getElementById('tutorial-reopen-btn');
+  if (btn) btn.style.display = 'none';
 }
 
 export function showTutorialAgeWarningModal(onAcknowledge) {

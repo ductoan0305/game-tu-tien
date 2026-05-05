@@ -99,6 +99,9 @@ import { initHUD, updateHUD }                                         from './ui
 // ---- Tab Popup System (Session 15) ----
 import { openTabPopup, closeAllTabPopups, closeTabPopup }             from './ui/tab-popup.js';
 
+// ---- Visibility Gate (Session S-B) ----
+import { getVisibleTabs }                                             from './core/visibility.js';
+
 // ---- Global state ----
 let G              = null;
 
@@ -776,6 +779,12 @@ function wireEvents() {
   function wireNavBtn(btn) {
     btn.addEventListener('click', () => {
       const tabId = btn.dataset.tab; if (!tabId) return;
+      // S-B: Kiểm tra visibility gate trước (tab có được phép hiển thị không?)
+      const visibleTabs = getVisibleTabs(G);
+      if (!visibleTabs.includes(tabId)) {
+        showToast('🔒 Chưa mở khóa', 'danger');
+        return;
+      }
       import('./ui/nav-progression.js').then(({ isTabUnlocked, getTabLockInfo }) => {
         if (!isTabUnlocked(tabId, G)) { const info=getTabLockInfo(tabId,G); showToast(`🔒 ${info?.desc||'Chưa mở khóa'}`,'danger'); appendLog(`🔒 ${info?.label}: ${info?.desc}`,'danger'); return; }
         trackTabOpen(G, tabId);

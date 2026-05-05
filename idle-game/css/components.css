@@ -1006,3 +1006,110 @@
 }
 .pm-body::-webkit-scrollbar { width: 4px; }
 .pm-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* ============================================================
+   Tab Popup System — pm-tab-popup & panel-in-popup
+   Session 15: Tab-as-floating-popup
+   ============================================================ */
+
+/* Tab popups: chiều cao tối đa, body không có padding riêng */
+.pm-popup.pm-tab-popup {
+  max-height: min(84vh, 860px);
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-popup.pm-tab-popup .pm-body {
+  padding: 0; /* tab panels tự có padding riêng */
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Panel khi được move vào popup body: reset layout cứng */
+.panel-in-popup {
+  height: auto !important;
+  min-height: unset !important;
+  max-height: unset !important;
+  overflow: visible !important;
+  display: block !important;
+}
+
+/* ============================================================
+   Resize Handles — Session 16
+   8 handles (N/S/E/W + 4 góc) bao quanh popup
+   ============================================================ */
+
+.pm-resize-handle {
+  position: absolute;
+  z-index: 20;
+  /* Vùng hit trong suốt, không có visual */
+}
+
+/* Cạnh trên */
+.pm-rh-n  { top: -4px;    left: 10px;   right: 10px;  height: 8px;  cursor: n-resize; }
+/* Cạnh dưới */
+.pm-rh-s  { bottom: -4px; left: 10px;   right: 10px;  height: 8px;  cursor: s-resize; }
+/* Cạnh phải */
+.pm-rh-e  { right: -4px;  top: 10px;    bottom: 10px; width: 8px;   cursor: e-resize; }
+/* Cạnh trái */
+.pm-rh-w  { left: -4px;   top: 10px;    bottom: 10px; width: 8px;   cursor: w-resize; }
+
+/* Góc — 12×12px, ưu tiên cao hơn edge handles nhờ vị trí không overlap */
+.pm-rh-ne { top: -4px;    right: -4px;  width: 14px;  height: 14px; cursor: ne-resize; }
+.pm-rh-nw { top: -4px;    left: -4px;   width: 14px;  height: 14px; cursor: nw-resize; }
+.pm-rh-se { bottom: -4px; right: -4px;  width: 14px;  height: 14px; cursor: se-resize; }
+.pm-rh-sw { bottom: -4px; left: -4px;   width: 14px;  height: 14px; cursor: sw-resize; }
+
+/* Gợi ý visual nhẹ ở góc SE — dấu hiệu resize quen thuộc */
+.pm-rh-se::after {
+  content: '';
+  position: absolute;
+  bottom: 5px; right: 5px;
+  width: 6px; height: 6px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+.pm-popup:hover .pm-rh-se::after {
+  opacity: 0.7;
+}
+
+/* ============================================================
+   Resize Handles — Session 16
+   8 handles (N/S/E/W + 4 goc) bao quanh popup
+   ============================================================ */
+
+.pm-resize-handle {
+  position: absolute;
+  z-index: 20;
+}
+
+/* Canh tren */
+.pm-rh-n  { top: -4px;    left: 10px;   right: 10px;  height: 8px;  cursor: n-resize; }
+/* Canh duoi */
+.pm-rh-s  { bottom: -4px; left: 10px;   right: 10px;  height: 8px;  cursor: s-resize; }
+/* Canh phai */
+.pm-rh-e  { right: -4px;  top: 10px;    bottom: 10px; width: 8px;   cursor: e-resize; }
+/* Canh trai */
+.pm-rh-w  { left: -4px;   top: 10px;    bottom: 10px; width: 8px;   cursor: w-resize; }
+
+/* Goc - 14x14px */
+.pm-rh-ne { top: -4px;    right: -4px;  width: 14px;  height: 14px; cursor: ne-resize; }
+.pm-rh-nw { top: -4px;    left: -4px;   width: 14px;  height: 14px; cursor: nw-resize; }
+.pm-rh-se { bottom: -4px; right: -4px;  width: 14px;  height: 14px; cursor: se-resize; }
+.pm-rh-sw { bottom: -4px; left: -4px;   width: 14px;  height: 14px; cursor: sw-resize; }
+
+/* Visual goi y nhe o goc SE */
+.pm-rh-se::after {
+  content: '';
+  position: absolute;
+  bottom: 5px; right: 5px;
+  width: 6px; height: 6px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+.pm-popup:hover .pm-rh-se::after {
+  opacity: 0.7;
+}

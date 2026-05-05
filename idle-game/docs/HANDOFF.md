@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session 12 — Onboarding Tutorial Engine implemented (2026-05-03)
+**Cập nhật lần cuối:** Session 16 — Tab-as-Popup + Resize System (2026-05-05)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -303,6 +303,18 @@ js/
 │   └── popups/               char-popup, gameover-popup, misc-popups
 ├── ui/
 │   ├── render-core.js        S10: hiển thị số công pháp đang tu thay vì tên
+│   ├── popup-manager.js      S15/S16: PopupManager singleton
+│   │                         open/close/toggle/isOpen/setContent/closeAll
+│   │                         Drag (header), Resize 8-direction (N/S/E/W + 4 góc)
+│   │                         onClose callback, extraClass support
+│   ├── tab-popup.js          S15: MỚI — hệ thống tab-as-floating-popup
+│   │                         openTabPopup(tabId, G, renderFn)
+│   │                         closeTabPopup / closeAllTabPopups / isTabPopupOpen
+│   │                         TAB_POPUP_CFG: 18 tabs (không có cultivate)
+│   │                         DOM node move: panel vào .pm-body, trả về khi đóng
+│   ├── starter-village.js    S15: side panel → sv-side-popup (absolute overlay)
+│   │                         Xóa div.mst1-stats.sv-stats-top (map-stat-rate/age/stone)
+│   │                         Class mới: .sv-side-popup (không dùng .map-side-t2)
 │   ├── tabs/
 │   │   ├── phapdia-tab.js    S10: UI redesign — thuần thục bar, add/remove slot
 │   │   ├── nghe-nghiep-tab.js S10: thêm khai báo _arrayTier, _buaTier, _kloiTier...
@@ -311,6 +323,11 @@ js/
 └── main.js                   S10: addCongPhapSlot, removeCongPhapSlot actions
                               fix pagehide check _isResetting
                               fix init() xóa localStorage khi _pendingReset
+                              S15: _switchTabWithPopup(tabId) helper
+                              wireNavBtn → _switchTabWithPopup thay switchTab
+                              alchemyActions.switchTab → _switchTabWithPopup
+                              dungeonActions.enterDungeon → _switchTabWithPopup('combat')
+                              hunt start / combat end / flee → _switchTabWithPopup
 ```
 
 ---
@@ -463,6 +480,14 @@ G = {
 
 16. `canCotBonus` từ `tay_tuy_quyet` đã được tính trong `calcCongPhapMasteryBonus` nhưng chưa apply vào pipeline — đã thêm `calcEffectiveCanCot(G)` vào `computed.js`, cập nhật `breakthrough.js` dùng hàm này thay `G.canCot` trực tiếp, export qua `state.js` shim (Audit #5 ✅ ĐÃ FIX)
 
+### S15/S16 — Tab-as-Popup + Layout + Resize
+21. `hud-right` (#hud-right) tạm tắt — comment `_buildRightHUD()` và `_updateRightPill()` trong `hud.js`
+22. `.panel-center` dùng `inset: 0` che khuất bottom-nav → fix thành `bottom: 52px` (56px mobile)
+23. `starter-village-side` (map-side-t2) gây nhầm lẫn với T2 world-map → đổi sang class `.sv-side-popup` hoàn toàn mới, loại bỏ `.mst1-stats.sv-stats-top`
+24. PopupManager thiếu drag, onClose, extraClass → thêm đủ 3, wired trong `open()`
+25. PopupManager thiếu resize → thêm `_makeResizable()` 8-direction (N/S/E/W + NE/NW/SE/SW), min 240×160px, clamp viewport, override `maxHeight` khi resize thủ công
+26. Tất cả tab switches dùng `switchTab()` + `renderCurrentTab()` riêng lẻ → thống nhất qua `_switchTabWithPopup(tabId)` trong `main.js`
+
 ### S12 — Onboarding Tutorial V1
 17. `tutorial-engine.js` chưa tồn tại trong khi `main.js` đã import → tạo file `js/core/tutorial-engine.js` với đầy đủ exports: `ensureTutorialState`, `updateTutorialStep`, `trackMeditateSeconds`, `trackStaminaAction`, `trackBreakthroughAttempt`, `trackTabOpen`, `acknowledgeAgeWarning` ✅ ĐÃ FIX
 18. `G.tutorial` default state đã có trong `fresh-state.js` và migration `_migrateTutorial()` trong `persistence.js` ✅ ĐÃ DONE
@@ -493,7 +518,25 @@ Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và co
 ## LƯU Ý KỸ THUẬT
 
 ```js
-// Circular imports đã giải quyết:
+// ---- Popup System (S15/S16) ----
+// Tất cả tab (trừ cultivate) mở như floating popup qua openTabPopup()
+// Cultivate luôn là background canvas — KHÔNG popup hóa
+// DOM node move strategy: appendChild(panelEl) vào .pm-body để giữ event listeners
+// Khi đóng popup: panel trả về .panel-center (display:none), không clone innerHTML
+// _openTabPopupCount() đếm .pm-popup.pm-tab-popup — dùng để detect popup cuối (<=1)
+// onClose closure capture G ref để reset G.activeTab = 'cultivate' khi popup cuối đóng
+
+// ---- Layout (S15) ----
+// .panel-center: bottom: 52px (desktop) / 56px (mobile) — KHÔNG dùng inset:0
+// .panel-in-popup: height/min-height/max-height: auto/unset/none — tránh double-scroll
+// .pm-popup.pm-tab-popup: max-height: min(84vh, 860px) — override khi resize thủ công
+
+// ---- starter-village side panel (S15) ----
+// Class .sv-side-popup (KHÔNG phải .map-side-t2 — class đó dùng cho T2 world-map)
+// #sv-side-popup: absolute overlay trong .map-wrap-starter (position: relative)
+// Drag nội bộ: _makeSvPopupDraggable — dùng offsetParent coords (khác PopupManager)
+
+// ---- Circular imports đã giải quyết:
 // map-data.js ← không import gì
 // world-map.js ← map-data.js + location-popup.js
 // location-popup.js ← map-data.js (KHÔNG phải world-map.js)
@@ -580,9 +623,10 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 
 ### ⬜ Polish
 - **Combat log formatting** — hiện text thuần, cần color/icon
-- **Mobile UI** — responsive improvements
-- **Notification clickable** — click notif → mở đúng tab
+- **Mobile UI** — responsive improvements (panel-center bottom đã fix, còn touch drag/resize)
+- **Notification clickable** — click notif → gọi `openTabPopup(tabId, G, renderFn)` (nền tảng đã có)
 - **Thông báo chớp liên tục** — linh lực đầy + thuần độ cần fix debounce
+- **Popup z-index / focus** — khi click vào popup, nên bring-to-front (hiện chưa có stacking order). Token `--z-tooltip-top` (900) có thể dùng cho focused popup, nhưng cần cơ chế JS set z-index động khi click.
 
 ### ⬜ Kỹ thuật
 - **Balance playtesting** — TC/KĐ/NA purityThresholds chưa calibrate
@@ -596,10 +640,38 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 
 ---
 
-## CSS FILES (12)
+## CSS FILES (13)
 ```
-base.css, layout.css, components.css,
+base.css, tokens.css, layout.css, components.css,
 tabs.css (+Thương Hội), setup.css, equipment.css, combat.css,
 dungeon_sect.css (+Achievement UI),
 systems.css, map.css, tutorial.css, craft-popup.css
 ```
+_(style.css đã XÓA — file 3182 dòng orphan, không load trong index.html)_
+
+### CSS Refactoring — Đã hoàn thành (Session CSS-Audit)
+
+**tokens.css** đã rebuild đầy đủ:
+- Z-index scale 14 tầng: `--z-decorative(0)` → `--z-hud(90)` → `--z-sticky(100)` → `--z-dropdown(200)` → `--z-panel(300)` → `--z-popup(400)` → `--z-overlay(500)` → `--z-modal(600)` → `--z-toast(700)` → `--z-notification(800)` → `--z-tooltip-top(900)` → `--z-critical(1000)` → `--z-auth(1100)` → `--z-system(1200)`
+- Spacing: `--space-1(4px)` đến `--space-6(32px)`
+- Border-radius: `--radius-xs(4px)` đến `--radius-pill(99px)`
+- Shadow: `--shadow-soft`, `--shadow-card`, `--shadow-popup`
+
+**Z-index values đã thay đổi** (quan trọng cho popup/overlay logic):
+| Element | Cũ | Mới (token) |
+|---------|-----|-------------|
+| `#login-gate` | 9999 | 1100 (`--z-auth`) |
+| rotate overlay | 99999 | 1200 (`--z-system`) |
+| `.passive-tooltip` | 9999 | 900 (`--z-tooltip-top`) |
+| `#notif-panel` | 8000 | 800 (`--z-notification`) |
+| `.toast-container` | 1000 | 700 (`--z-toast`) |
+| `.float-container` | 999 | 700 (`--z-toast`) |
+| `.modal-overlay` | 2000 | 600 (`--z-modal`) |
+| `#modal-ambush` | 9999 | 600 (`--z-modal`) |
+| `#popup-layer` | 500 | **500** (`--z-overlay`) — KHÔNG ĐỔI |
+| `.craft-popup-overlay` | 400 | **400** (`--z-popup`) — KHÔNG ĐỔI |
+| `#hud-left`, `#hud-right` | 90 | **90** (`--z-hud`) — KHÔNG ĐỔI |
+
+**Popup system S15/S16 KHÔNG bị ảnh hưởng** — `#popup-layer` (500) và `.pm-popup` giữ nguyên value. `.modal-overlay` (600 > 500) vẫn nổi trên popup-layer đúng thứ tự.
+
+**!important** — đã xóa sạch 19 cascade wars trên 7 file. 6 `!important` còn lại trong map.css media query là hợp lệ (override inline JS styles của menu dropdown).

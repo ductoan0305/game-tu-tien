@@ -96,6 +96,9 @@ import { ensureTutorialState, updateTutorialStep,
 // ---- HUD (Session 14) ----
 import { initHUD, updateHUD }                                         from './ui/hud.js';
 
+// ---- Tab Popup System (Session 15) ----
+import { openTabPopup, closeAllTabPopups, closeTabPopup }             from './ui/tab-popup.js';
+
 // ---- Global state ----
 let G              = null;
 
@@ -204,12 +207,12 @@ function startGame() {
     renderAll,
     clearIntervals: () => { clearInterval(_tickInterval); clearInterval(_saveInterval); },
     cultivateActions,
-    switchTabFn: (tabId) => { switchTab(tabId, G); renderCurrentTab(); },
+    switchTabFn: _switchTabWithPopup,
   });
 
   wireEvents();
   renderAll();
-  switchTab(G.activeTab || 'cultivate', G);
+  switchTab('cultivate', G); // luôn bắt đầu tại cultivate (map background)
   setTimeout(() => restoreLog(G), 50);
 }
 
@@ -321,6 +324,14 @@ function _doRenderTab(tab) {
   }
 }
 
+// ---- Tab Popup helper (Session 15) ----
+// Mở tab như floating popup thay vì switch center panel.
+// Cultivate → đóng tất cả popup, refresh map.
+// Các tab khác → mở/focus popup tương ứng.
+function _switchTabWithPopup(tabId) {
+  openTabPopup(tabId, G, () => _doRenderTab(tabId));
+}
+
 // ============================================================
 // UNIVERSAL ACTION HANDLER
 // ============================================================
@@ -376,7 +387,7 @@ const mapActions = {
   onMapMove: (node) => { showToast(`🗺 Đến ${node.name}`, 'jade'); appendLog(`🗺 Di chuyển đến ${node.name} — ${node.desc}`, 'jade'); },
   onMapError: (msg) => showToast(msg, 'danger'),
   toast: (msg, type) => showToast(msg, type||'jade'),
-  switchTab: (tabId) => { switchTab(tabId, G); renderCurrentTab(); },
+  switchTab: _switchTabWithPopup,
   startHunt: (enemyId, huntDays = 7) => {
     _showTravelOverlay(huntDays, '⚔ Tìm Kiếm Yêu Thú', () => {
       const travelResult = spendTravelTime(G, huntDays);
@@ -390,8 +401,7 @@ const mapActions = {
       if (!result.ok) { showToast(result.msg, 'danger'); return; }
       showToast(`⚔ Bắt đầu chiến đấu: ${result.enemy.name}`, 'danger');
       appendLog(`⚔ Gặp ${result.enemy.name} sau ${huntDays} ngày lùng sục!`, 'danger');
-      switchTab('combat', G);
-      renderCurrentTab();
+      _switchTabWithPopup('combat');
     });
   },
   gather: (zoneId, travelDays = 30) => {
@@ -498,7 +508,7 @@ const combatActions = {
     if (result.ended) {
       if (result.victory) showToast(`🏆 Chiến thắng! +${result.rewards?.stone}💎`, 'gold');
       else { showToast('💀 Bại trận!', 'danger'); flashScreen('death'); }
-      if (!G.dungeon?.active) { setTimeout(() => { switchTab('cultivate',G); renderCurrentTab(); }, 1200); return; }
+      if (!G.dungeon?.active) { setTimeout(() => { _switchTabWithPopup('cultivate'); }, 1200); return; }
     }
     renderCurrentTab();
   },
@@ -507,7 +517,7 @@ const combatActions = {
     showToast(result.msg, result.ok?'jade':'danger');
     if (result.ok) {
       if (G.dungeon?.active) { const er=exitDungeon(G); showToast(er.msg,'danger'); appendLog(er.msg,'danger'); renderCurrentTab(); }
-      else { setTimeout(()=>{ switchTab('cultivate',G); renderCurrentTab(); }, 800); return; }
+      else { setTimeout(()=>{ _switchTabWithPopup('cultivate'); }, 800); return; }
     } else renderCurrentTab();
   },
 };
@@ -673,7 +683,7 @@ const alchemyActions = {
       saveGame(G); renderCurrentTab();
     });
   },
-  switchTab: (tabId) => { switchTab(tabId,G); renderCurrentTab(); },
+  switchTab: _switchTabWithPopup,
   craftPuppet: (recipeId) => {
     import('./alchemy/khoi-loi-data.js').then(({PUPPET_RECIPES,PUPPET_ITEMS,getPuppetRank})=>{
       const recipe=PUPPET_RECIPES.find(r=>r.id===recipeId); if (!recipe) return;
@@ -739,7 +749,7 @@ const dungeonActions = {
     showToast(result.msg,'jade');
     if (result.floorData) {
       const eid=result.floorData.enemies[0]; const de=buildDungeonEnemyForCombat(eid,G.realmIdx);
-      if (de) { G._dungeonPendingEnemy=de; G._dungeonPendingFloor=result.floor; const cr=startCombat(G,'__dungeon__'); if (cr.ok) { appendLog(`🏯 Bước vào tầng ${result.floor}: ${result.floorData.name}`,'jade'); appendLog(`⚔ ${de.name} xuất hiện!`,'danger'); switchTab('combat',G); return; } }
+      if (de) { G._dungeonPendingEnemy=de; G._dungeonPendingFloor=result.floor; const cr=startCombat(G,'__dungeon__'); if (cr.ok) { appendLog(`🏯 Bước vào tầng ${result.floor}: ${result.floorData.name}`,'jade'); appendLog(`⚔ ${de.name} xuất hiện!`,'danger'); _switchTabWithPopup('combat'); return; } }
     }
     renderCurrentTab();
   },
@@ -768,10 +778,9 @@ function wireEvents() {
       const tabId = btn.dataset.tab; if (!tabId) return;
       import('./ui/nav-progression.js').then(({ isTabUnlocked, getTabLockInfo }) => {
         if (!isTabUnlocked(tabId, G)) { const info=getTabLockInfo(tabId,G); showToast(`🔒 ${info?.desc||'Chưa mở khóa'}`,'danger'); appendLog(`🔒 ${info?.label}: ${info?.desc}`,'danger'); return; }
-        switchTab(tabId, G);
         trackTabOpen(G, tabId);
         updateTutorialStep(G);
-        renderCurrentTab();
+        _switchTabWithPopup(tabId);
       });
     });
   }

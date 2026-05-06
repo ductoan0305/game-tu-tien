@@ -6,7 +6,7 @@
 import { bus } from '../utils/helpers.js';
 import { addChronicle } from '../core/time-engine.js';
 import { moveToPhapDia } from '../core/phap-dia.js';
-import { calcMaxQi, calcQiRate, calcPurityThreshold } from '../core/state.js';
+import { calcMaxQi, calcQiRate, calcPurityThreshold, calcKienCoCeiling } from '../core/state.js';
 import { getAvailableEnemies } from '../combat/combat-engine.js';
 import { checkAmbush, getAvailableTargets, robTarget, getNghiepLucPenalty } from '../core/kiep-tu-engine.js';
 import { _showLocationPopup, _setupDrag } from './location-popup.js';
@@ -61,7 +61,7 @@ export function updateMapStats(G) {
 // TẦNG 1 — WORLD MAP
 // ============================================================
 
-// Nút Đột Phá — hiển thị khi đủ điều kiện, bao gồm cảnh báo purity
+// Nút Đột Phá — hiển thị khi đủ điều kiện, bao gồm cảnh báo purity và bottleneck
 function _renderBreakthroughBtn(G) {
   const maxQi   = calcMaxQi(G);
   const pctFull = G.qi >= maxQi;
@@ -74,11 +74,31 @@ function _renderBreakthroughBtn(G) {
     </button>`;
   }
 
+  // R4: Bottleneck check — hard gate trước purity (kienCo < required → blocked hoàn toàn)
+  const isBottleneck = G.realmIdx === 0 && (G.stage === 3 || G.stage === 6 || G.stage === 9);
+  const bnThresholds = { 3:40, 6:70, 9:90 };
+  if (isBottleneck) {
+    const bnRequired = bnThresholds[G.stage];
+    const kienCo     = G.kienCo ?? 0;
+    if (kienCo < bnRequired) {
+      return `<button id="btn-breakthrough" class="btn-breakthrough-map"
+        style="background:rgba(60,20,120,0.35);border:1px solid #7040c0;color:#b090ff;cursor:not-allowed"
+        disabled
+        title="Bình Cảnh — Linh lực chưa đủ vững. Kiên Cố ${Math.floor(kienCo)}/${bnRequired}. Rèn qua chiến đấu và nhiệm vụ.">
+        ⚠ Bình Cảnh — Kiên Cố chưa đủ (${Math.floor(kienCo)}/${bnRequired})
+      </button>`;
+    }
+  }
+
   // Qi đầy — kiểm tra purity
   const threshold = calcPurityThreshold(G);
   const purity    = G.purity ?? 0;
   const ratio     = purity / Math.max(1, threshold);
   const purityPct = Math.floor(ratio * 100);
+
+  // Label/style bổ sung khi đã vượt bottleneck
+  const bnLabel = isBottleneck ? ' 【Bình Cảnh】' : '';
+  const bnStyle = isBottleneck ? 'box-shadow:0 0 8px #c084fc66;border-color:#c084fc;' : '';
 
   if (ratio < 0.5) {
     // Bị block hoàn toàn (doBreakthrough sẽ reject)
@@ -99,15 +119,17 @@ function _renderBreakthroughBtn(G) {
   if (ratio < 1.0) {
     // Thuần độ 75-99%: thấp nhưng có xác suất
     return `<button id="btn-breakthrough" class="btn-breakthrough-map btn-breakthrough-warn ready"
-      title="Thuần Độ ${purityPct}%/100% ngưỡng — có thể đột phá nhưng xác suất thấp">
-      ⚡ Đột Phá (Thuần Độ ${purityPct}%)
+      style="${bnStyle}"
+      title="Thuần Độ ${purityPct}%/100% ngưỡng${isBottleneck ? ' · Kiên Cố đã đủ' : ''} — có thể đột phá nhưng xác suất thấp">
+      ⚡ Đột Phá (Thuần Độ ${purityPct}%)${bnLabel}
     </button>`;
   }
 
   // Đủ ngưỡng: sẵn sàng
   return `<button id="btn-breakthrough" class="btn-breakthrough-map ready"
-    title="Thuần Độ ${purityPct}% — đủ điều kiện đột phá!">
-    ⚡ ĐỘT PHÁ — SẴN SÀNG!
+    style="${bnStyle}"
+    title="Thuần Độ ${purityPct}% — đủ điều kiện đột phá!${isBottleneck ? ' Đã vượt qua Bình Cảnh.' : ''}">
+    ⚡ ĐỘT PHÁ — SẴN SÀNG!${bnLabel}
   </button>`;
 }
 

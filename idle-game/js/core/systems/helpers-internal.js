@@ -3,6 +3,7 @@
 // Các helper dùng nội bộ trong systems/ — không export ra ngoài
 // ============================================================
 import { getLinhThuBuff } from '../linh-thu-engine.js';
+import { calcKienCoCeiling } from '../state/computed.js';
 
 export function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -39,6 +40,13 @@ export function gainStone(G, base) {
     + bcStonePct / 100 + (G.stoneBuffPct || 0) / 100
     + beastStone / 100;
   return Math.floor(base * mult);
+}
+
+// R2: Kiên Cố — tích qua hoạt động tiêu hao qi
+// base: lượng "qi tương đương" tiêu trong action đó (doExplore=8, doSpar=15, combat=turns×2.5...)
+// Công thức: gain = base × 0.01 — rất chậm, cần nhiều hoạt động mới đầy
+export function gainKienCo(G, base) {
+  G.kienCo = Math.min(calcKienCoCeiling(G), (G.kienCo ?? 0) + base * 0.01);
 }
 
 // ---- buff sum helpers ----

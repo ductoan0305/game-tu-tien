@@ -3,7 +3,7 @@
 // Không có side effects. Không mutate G.
 // ============================================================
 import { REALMS } from '../data.js';
-import { calcCongPhapMasteryBonus, calcCongPhapBaseMult } from '../phap-dia.js';
+import { calcCongPhapMasteryBonus, calcCongPhapBaseMult, CONG_PHAP_LIST } from '../phap-dia.js';
 import { calcSpiritRateMulti } from '../spirit-root.js';
 import { getLinhThuBuff } from '../linh-thu-engine.js';
 import { getPurityBoostMult } from '../thuong-hoi-engine.js';
@@ -214,6 +214,35 @@ export function calcDmgReduce(G) {
 
 export function calcSpeed(G) {
   return 10 + Math.floor(G.spdBonus * 20) + G.realmIdx * 5;
+}
+
+// ---- R3: Công Pháp Grade → Trần Kiên Cố & Thuần Độ ----
+
+// calcKienCoCeiling(G): trần tối đa của Kiên Cố dựa theo grade công pháp cao nhất đang tu
+// Tạp (0)→60  Hạ (1)→100  Trung (2)→150  Thượng (3)→220  Thiên (4)→350
+export function calcKienCoCeiling(G) {
+  const activeIds = G.congPhap?.activeIds || [G.congPhap?.currentId || 'vo_danh'];
+  let topGrade = 0;
+  for (const id of activeIds) {
+    const cp = CONG_PHAP_LIST.find(c => c.id === id);
+    if (cp && (cp.grade ?? 0) > topGrade) topGrade = cp.grade;
+  }
+  const ceilings = [60, 100, 150, 220, 350];
+  return ceilings[Math.min(topGrade, 4)] ?? 60;
+}
+
+// calcThuanDoCeiling(G): trần tối đa của Thuần Độ dựa theo grade công pháp cao nhất đang tu
+// Tạp (0)→threshold×0.85  Hạ (1)→×1.15  Trung (2)→×1.50  Thượng (3)→×1.90  Thiên (4)→không giới hạn (×999)
+export function calcThuanDoCeiling(G) {
+  const activeIds = G.congPhap?.activeIds || [G.congPhap?.currentId || 'vo_danh'];
+  let topGrade = 0;
+  for (const id of activeIds) {
+    const cp = CONG_PHAP_LIST.find(c => c.id === id);
+    if (cp && (cp.grade ?? 0) > topGrade) topGrade = cp.grade;
+  }
+  const threshold = calcPurityThreshold(G);
+  const mults = [0.85, 1.15, 1.50, 1.90, 999];
+  return threshold * (mults[Math.min(topGrade, 4)] ?? 0.85);
 }
 
 // ---- Internal helpers ----

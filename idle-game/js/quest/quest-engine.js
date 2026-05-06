@@ -10,6 +10,7 @@ import { QUESTS, NPC_QUESTS, NPC_QUEST_MAP,
          DAILY_QUEST_IDS, BOUNTY_QUEST_IDS, SECT_QUEST_IDS } from './quest-data.js';
 import { bus } from '../utils/helpers.js';
 import { unlockRecipe } from '../alchemy/alchemy-engine.js';
+import { gainKienCo } from '../core/systems/helpers-internal.js';
 
 // ---- Helpers ----
 
@@ -207,6 +208,13 @@ function completeNpcQuest(G, questId) {
     }
   }
 
+  // R2: Kiên Cố — hoàn thành nhiệm vụ rèn linh lực
+  // Quest có combat objective → nguy hiểm hơn → +15, còn lại +5
+  const hasCombatObj = quest.objectives.some(obj =>
+    obj.key === 'kill_specific' || obj.key === 'kill' || obj.key === 'kill_tier'
+  );
+  gainKienCo(G, hasCombatObj ? 15 : 5);
+
   // Danh Vọng nhỏ từ giải quyết nhu cầu NPC
   const dvGain = 5;
   G.danhVong = (G.danhVong ?? 0) + dvGain;
@@ -373,6 +381,9 @@ export function completeQuest(G, questId) {
     G.sect.exp = (G.sect.exp || 0) + rewards.sectExp;
     _checkSectRankUp(G);
   }
+
+  // R2: Kiên Cố — bounty quest thường có combat, các loại khác nhẹ hơn
+  gainKienCo(G, quest.type === 'bounty' ? 15 : 5);
 
   if (quest.type === 'bounty' || quest.type === 'sect') {
     const dvGain = quest.type === 'bounty' ? 8 : 5;

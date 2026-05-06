@@ -3,7 +3,7 @@
 // gameTick, checkAchievements, learnSkill, canPrestige, doPrestige
 // ============================================================
 import { REALMS, SKILLS, ACHIEVEMENTS } from '../data.js';
-import { calcQiRate, calcMaxQi, calcPurityRate, calcMaxHp } from '../state/computed.js';
+import { calcQiRate, calcMaxQi, calcPurityRate, calcMaxHp, calcThuanDoCeiling } from '../state/computed.js';
 import { calcMasteryGainPerTick } from '../phap-dia.js';
 import { fmtNum, bus }                   from '../../utils/helpers.js';
 import { tickTime }                      from '../time-engine.js';
@@ -27,13 +27,42 @@ export function gameTick(G, dt = 0.1) {
   const nghiepMod  = 1 - (getNghiepLucPenalty(G).qiPenalty ?? 0);
 
   if (G.meditating) {
-    const effRate = rate * hungerMod * nghiepMod;
+    // R1 — Resource Gate: tiêu hao linh thạch khi bế quan
+    // stoneCostPerYear = 2 (2 linh thạch/năm game — tán tu không tông môn)
+    const stoneCostPerYear = 2;
+    const stoneCostPerTick = stoneCostPerYear * YEARS_PER_TICK * dt * 10;
+    G.stone = Math.max(0, (G.stone ?? 0) - stoneCostPerTick);
+    G.stoneStarved = (G.stone <= 0);
+
+    const stoneMod = G.stone > 50 ? 1.0
+                   : G.stone > 10 ? 0.3
+                   : 0.05;
+
+    const effRate = rate * hungerMod * nghiepMod * stoneMod;
     if ((G.qi ?? 0) < maxQ) {
       G.qi = Math.min(G.qi + effRate * dt, maxQ);
     } else {
-      const pRate = calcPurityRate(G) * hungerMod * nghiepMod;
-      G.purity = (G.purity ?? 0) + pRate * dt * 10;
+      const pRate = calcPurityRate(G) * hungerMod * nghiepMod * stoneMod;
+      // R5: Ceiling override khi dùng đan dược tăng purity (bỏ qua trần công pháp tạm thời)
+      const thuanDoCeiling = G._purityCeilingOverride ? Infinity : calcThuanDoCeiling(G);
+      if ((G.purity ?? 0) < thuanDoCeiling) {
+        G.purity = (G.purity ?? 0) + pRate * dt * 10;
+        if (!G._purityCeilingOverride) G.purity = Math.min(G.purity, thuanDoCeiling);
+      }
     }
+  }
+
+  // R5: Purity decay khi không tu luyện — linh lực để lâu bị tạp chất xâm nhập
+  // 0.001/tick × 10 × dt → ~0.01/s realtime; 1 năm game ≈ 17,520s → mất ~175 units/năm
+  if (!G.meditating && (G.purity ?? 0) > 0) {
+    const purityDecayRate = 0.001;
+    G.purity = Math.max(0, G.purity - purityDecayRate * dt * 10);
+  }
+
+  // R5: Ceiling override timer — tự hết sau X giây real
+  if ((G._purityCeilingOverrideTimer ?? 0) > 0) {
+    G._purityCeilingOverrideTimer = Math.max(0, G._purityCeilingOverrideTimer - dt);
+    if (G._purityCeilingOverrideTimer <= 0) G._purityCeilingOverride = false;
   }
 
   if ((G.danDoc ?? 0) > 0) G.danDoc = Math.max(0, G.danDoc - dtYears / 5);

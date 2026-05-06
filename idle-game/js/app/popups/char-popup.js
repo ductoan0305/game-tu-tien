@@ -5,7 +5,7 @@
 // ============================================================
 import { REALMS }                from '../../core/data.js';
 import { REALM_NAMES }           from '../../core/constants.js';
-import { calcMaxQi, calcQiRate, calcQiRateBreakdown, calcPurityThreshold } from '../../core/state.js';
+import { calcMaxQi, calcQiRate, calcQiRateBreakdown, calcPurityThreshold, calcKienCoCeiling } from '../../core/state.js';
 import { getDanhVongTier }       from '../../core/danh-vong.js';
 import { getSpiritDisplayName, getSpiritMainColor, getSpiritProphecy,
          calcSpiritRateMulti, SPIRIT_ROOT_TYPES, SPIRIT_ELEMENTS } from '../../core/spirit-root.js';
@@ -70,10 +70,17 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
     </div>`;
   }
 
-  const khiVan  = G.khiVan  ?? 20;
-  const ngoTinh = G.ngoTinh ?? 50;
-  const canCot  = G.canCot  ?? 50;
-  const tamCanh = G.tamCanh ?? 50;
+  const khiVan    = G.khiVan    ?? 20;
+  const ngoTinh   = G.ngoTinh   ?? 50;
+  const canCot    = G.canCot    ?? 50;
+  const tamCanh   = G.tamCanh   ?? 50;
+  const kienCo      = G.kienCo ?? 0;
+  const kcCeiling   = calcKienCoCeiling(G);
+  const kcPct       = Math.min(100, Math.round(kienCo / Math.max(1, kcCeiling) * 100));
+  // R4: Bottleneck info
+  const _bnMap      = { 3:40, 6:70, 9:90 };
+  const isBottleneck = G.realmIdx === 0 && (G.stage === 3 || G.stage === 6 || G.stage === 9);
+  const bnRequired   = isBottleneck ? _bnMap[G.stage] : null;
   const qiRate  = calcQiRate(G);
   const bd      = calcQiRateBreakdown(G);
   const maxQi   = calcMaxQi(G);
@@ -114,6 +121,19 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
         <div class="cp-realm-display" style="color:${realm?.color||'#c8a84b'}">${realm?.emoji||'⚡'} ${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage} / ${realm?.stages||9}</div>
         <div class="cp-bar-row"><span class="cp-bar-label">Linh Lực</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${qiPct}%;background:${qiFull?'#f0d47a':'#4a9eff'}"></div></div><span class="cp-bar-val ${qiFull?'cp-bar-full':''}">${qiPct}%</span></div>
         <div class="cp-bar-row"><span class="cp-bar-label">💎 Linh Thạch</span><div class="cp-bar-track" style="background:transparent;flex:unset"></div><span class="cp-bar-val" style="color:var(--gold);width:auto">${_fmtStone(G)}</span></div>
+        <div class="cp-bar-row" title="Kiên Cố — rèn qua chiến đấu, thám hiểm, thiết đả. Không tích qua bế quan. Reset khi đột phá.${isBottleneck ? ` | Bình Cảnh: cần ${bnRequired} để đột phá` : ''}">
+          <span class="cp-bar-label" style="color:${isBottleneck && kienCo < bnRequired ? '#b090ff' : '#c8763a'}">🔥 Kiên Cố${isBottleneck ? ' ⚠' : ''}</span>
+          <div class="cp-bar-track" style="${isBottleneck ? 'position:relative;overflow:visible' : ''}">
+            <div class="cp-bar-fill" style="width:${kcPct}%;background:linear-gradient(90deg,#8b3a00,#e07030)"></div>
+            ${isBottleneck ? `<div style="position:absolute;top:-1px;bottom:-1px;left:${Math.min(100, Math.round(bnRequired/Math.max(1,kcCeiling)*100))}%;width:2px;background:#c084fc;border-radius:1px"></div>` : ''}
+          </div>
+          <span class="cp-bar-val" style="color:#e08040">${kienCo.toFixed(0)}/${kcCeiling}</span>
+        </div>
+        ${isBottleneck ? `<div style="font-size:10px;padding:3px 6px;border-radius:4px;margin-top:2px;margin-bottom:2px;${kienCo < bnRequired ? 'color:#b090ff;background:rgba(100,40,200,0.15);border:1px solid #7040c044' : 'color:#56c46a;background:rgba(60,160,80,0.1);border:1px solid #56c46a44'}">
+          ${kienCo < bnRequired
+            ? `⚠ Bình Cảnh — cần Kiên Cố ${bnRequired} để đột phá. Rèn qua chiến đấu và nhiệm vụ.`
+            : `✓ Bình Cảnh — Kiên Cố đủ điều kiện đột phá.`}
+        </div>` : ''}
         <div class="cp-cultivate-meta">
           <span>⚡ Tu tốc: <strong>${bd.totalQiRate}/s</strong></span>
           <span>📍 ${pdName}</span>

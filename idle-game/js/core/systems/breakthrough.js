@@ -113,6 +113,18 @@ export function calcBreakthroughChance(G) {
   };
 }
 
+// ---- R4: Bottleneck Mechanics ----
+const KIENCOC_BOTTLENECK = {
+  3: 40,  // LK3→4: Sơ→Trung kỳ
+  6: 70,  // LK6→7: Trung→Hậu kỳ
+  9: 90,  // LK9→TC: bottleneck lớn nhất
+};
+
+function _isBottleneck(G) {
+  if (G.realmIdx !== 0) return false;
+  return G.stage === 3 || G.stage === 6 || G.stage === 9;
+}
+
 export function doBreakthrough(G) {
   const maxQ      = calcMaxQi(G);
   const realm     = REALMS[G.realmIdx];
@@ -125,6 +137,19 @@ export function doBreakthrough(G) {
   if (purity < threshold * 0.5) {
     const pct = Math.round(purity / threshold * 100);
     return { ok:false, msg:`Thuần Độ chưa đủ (${pct}% / cần ít nhất 50% ngưỡng). Tiếp tục bế quan để tinh luyện linh lực.`, type:'warning' };
+  }
+
+  // R4: Bottleneck hard gate — Kiên Cố bắt buộc tại LK3→4, LK6→7, LK9→TC
+  if (_isBottleneck(G)) {
+    const required = KIENCOC_BOTTLENECK[G.stage];
+    const kienCo   = G.kienCo ?? 0;
+    if (kienCo < required) {
+      return {
+        ok: false,
+        type: 'bottleneck_blocked',
+        msg: `Bình Cảnh! Kiên Cố chưa đủ (${Math.floor(kienCo)}/${required}). Linh lực chưa đủ vững — cần rèn luyện qua chiến đấu và nhiệm vụ trước khi đột phá.`,
+      };
+    }
   }
 
   const { chance, breakdown } = calcBreakthroughChance(G);
@@ -145,6 +170,13 @@ export function doBreakthrough(G) {
     G._breakthroughDanduoc      = 1.0;
     G._breakthroughCoDuyenBonus = 0;
 
+    // R4: Bottleneck severe fail — Kiên Cố giảm 30% (bình cảnh phản ứng ngược)
+    let kienCoPenaltyMsg = '';
+    if (_isBottleneck(G) && isSevere) {
+      G.kienCo = Math.max(0, (G.kienCo ?? 0) * 0.70);
+      kienCoPenaltyMsg = ' Kinh mạch tổn thương, Kiên Cố suy giảm.';
+    }
+
     const stageName = realm.stageNames
       ? realm.stageNames[G.stage] ?? `Tầng ${G.stage+1}`
       : `Tầng ${G.stage+1}`;
@@ -154,8 +186,8 @@ export function doBreakthrough(G) {
       ok:false, type:isSevere?'fail_severe':'fail', chance:chance.toFixed(1), breakdown,
       msg: isSevere
         ? (purityRatio < 0.75
-            ? `Đại thất bại! Thuần Độ quá thấp (${Math.floor(purityRatio*100)}% / cần 75%+ để có cơ hội). Kinh mạch hỗn loạn nghiêm trọng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`
-            : `Đại thất bại! Linh lực hỗn loạn, kinh mạch tổn thương nặng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`)
+            ? `Đại thất bại! Thuần Độ quá thấp (${Math.floor(purityRatio*100)}% / cần 75%+ để có cơ hội). Kinh mạch hỗn loạn nghiêm trọng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.${kienCoPenaltyMsg}`
+            : `Đại thất bại! Linh lực hỗn loạn, kinh mạch tổn thương nặng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.${kienCoPenaltyMsg}`)
         : `Đột phá thất bại. Linh lực tán loạn. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`,
     };
   }
@@ -166,6 +198,8 @@ export function doBreakthrough(G) {
   G._breakthroughDanduoc      = 1.0;
   G._breakthroughCoDuyenBonus = 0;
   G.breakthroughs = (G.breakthroughs ?? 0) + 1;
+  // R2: Kiên Cố reset — linh lực tầng mới chưa vững, phải rèn lại từ đầu
+  G.kienCo = 0;
   G.exp     = 0;
   G.maxExp  = Math.floor(G.maxExp * 1.5);
   G.tamCanh = Math.min(100, (G.tamCanh ?? 50) + 3);

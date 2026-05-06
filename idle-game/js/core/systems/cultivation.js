@@ -7,7 +7,7 @@ import { calcMaxQi, calcMaxHp }       from '../state/computed.js';
 import { fmtNum, bus }                from '../../utils/helpers.js';
 import { rollCoDuyen }                from '../co-duyen.js';
 import { rollLinhThuEncounter }       from '../linh-thu-engine.js';
-import { clamp, spendStamina, gainExp, gainStone } from './helpers-internal.js';
+import { clamp, spendStamina, gainExp, gainStone, gainKienCo } from './helpers-internal.js';
 import { addToInventory }             from './inventory.js';
 
 export function applyCharacterSetup(G, { name, gender, spiritRootId, spiritData, sectId, sectInvites }) {
@@ -134,6 +134,7 @@ export function doExplore(G) {
   if (!spendStamina(G, 10)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
 
   if ((G.tamCanh ?? 50) < 100) G.tamCanh = Math.min(100, (G.tamCanh ?? 50) + 0.5);
+  gainKienCo(G, 8); // Thám hiểm tiêu hao thể năng, rèn linh lực vững chắc
 
   // Linh Thú encounter
   const encounter = rollLinhThuEncounter(G);
@@ -184,6 +185,7 @@ export function doExplore(G) {
 export function doFish(G) {
   if (G.meditating) return { ok:false, msg:'🧘 Đang nhập định — xuất định trước!', type:'danger' };
   if (!spendStamina(G, 5)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
+  gainKienCo(G, 3); // Câu cá tĩnh tâm — nhẹ nhàng nhất
   const roll = Math.random();
   if (roll < 0.35) {
     const s = gainStone(G, Math.floor(8 + Math.random() * 20));
@@ -210,6 +212,7 @@ export function doArray(G) {
   }
   if (!spendStamina(G, 25)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
   G._arrayCooldown = now;
+  gainKienCo(G, 10); // Bố trận tiêu hao khí lực đáng kể
   const bonus = 1 + (G.arrayBonus||0) / 100;
   const arrays = ['Tụ Linh Trận','Hộ Môn Đại Trận','Tốc Tu Trận','Linh Khí Tụ Tán Trận'];
   const name = arrays[Math.floor(Math.random() * arrays.length)];
@@ -238,6 +241,7 @@ export function doSpar(G) {
   }
   if (!spendStamina(G, 20)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
   G._sparCooldown = now;
+  gainKienCo(G, 15); // Thiết đả — cường độ cao nhất trong cultivation actions
   G.atk += 1;
   if ((G.canCot ?? 50) < 100) G.canCot = Math.min(100, (G.canCot ?? 50) + 0.2);
   gainExp(G, 20);

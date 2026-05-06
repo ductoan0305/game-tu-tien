@@ -12,6 +12,7 @@ import { bus } from '../utils/helpers.js';
 import { rollCoDuyen } from '../core/co-duyen.js';
 import { rollEquipmentDrop } from '../equipment/equipment-engine.js';
 import { accumulateAmThuong } from '../core/duoc-dien-engine.js';
+import { gainKienCo } from '../core/systems/helpers-internal.js';
 
 // ---- Helpers ----
 
@@ -664,6 +665,11 @@ function endCombat(G, result, victory) {
       result.msgs.push(`⚔ Rơi trang bị: ${eqDrop.emoji} ${eqDrop.name}!`);
       addLog(G, `⚔ Rơi trang bị: ${eqDrop.name}`, 'gold');
     }
+
+    // R2: Kiên Cố — chiến đấu rèn linh lực vững hơn cultivation actions thông thường
+    // Ước lượng qi đã dùng: số lượt × 5 MP/lượt trung bình
+    const qiUsedEst = (G.combat.turn || 1) * 5;
+    gainKienCo(G, qiUsedEst * 0.5);
 
     result.victory = true;
     result.rewards = { exp: expGain, stone: stoneGain, drops };

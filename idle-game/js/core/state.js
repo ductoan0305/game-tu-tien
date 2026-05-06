@@ -18,4 +18,5 @@ export { calcQiRate, calcMaxQi, calcPurityThreshold,
          calcPurityRate, calcAtk, calcDef, calcMaxHp,
          calcDmgReduce, calcSpeed,
          calcEffectiveCanCot,
-         calcQiRateBreakdown }                          from './state/computed.js';
+         calcQiRateBreakdown,
+         calcKienCoCeiling, calcThuanDoCeiling }         from './state/computed.js';

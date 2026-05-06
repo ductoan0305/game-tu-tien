@@ -202,6 +202,18 @@ export function useItem(G, slotIdx) {
       if (!r.ok) return { ok:false, msg:r.msg, type:'warning' };
       return { ok:true, msg:r.msg, type:'jade', float:`🩹 -${r.healed} Ám Thương` };
     }
+    case 'purity': {
+      // R5: Đan dược tăng Thuần Độ trực tiếp (ví dụ: Tẩy Tủy Đan)
+      // item.val: lượng purity cộng thêm
+      // item.overrideDuration (giây real): thời gian bypass ceiling công pháp (mặc định 300s)
+      const gain = item.val ?? 0;
+      G.purity = (G.purity ?? 0) + gain;
+      const dur = item.overrideDuration ?? 300;
+      G._purityCeilingOverride = true;
+      G._purityCeilingOverrideTimer = dur;
+      result = { ok:true, msg:`${item.emoji} ${item.name} — +${fmtNum(gain)} Thuần Độ`, type:'spirit', float:`+${fmtNum(gain)}✨` };
+      break;
+    }
     default:
       result = { ok:true, msg:`Dùng ${item.name}`, type:'jade', float:'' };
   }

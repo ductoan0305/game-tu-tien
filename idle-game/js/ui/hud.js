@@ -83,13 +83,6 @@ function _buildCharCompactPopup() {
           <div class="hud-bar-h-fill" id="hud-bar-mp-fill" style="background:var(--spirit,#7b9ef0)"></div>
         </div>
       </div>
-      <div class="hud-bar-row">
-        <span class="hud-bar-lbl" style="color:var(--jade,#56c46a)">EXP</span>
-        <span class="hud-bar-val" id="hud-val-exp">—</span>
-        <div class="hud-bar-h">
-          <div class="hud-bar-h-fill" id="hud-bar-exp-fill" style="background:var(--jade,#56c46a)"></div>
-        </div>
-      </div>
     </div>
   `;
 
@@ -142,11 +135,6 @@ function _updateCharCompact(G) {
   _setHBarFill('hud-bar-mp-fill', qi, maxQi);
   _setText('hud-val-mp', `${_fmtShort(qi)}/${_fmtShort(maxQi)}`);
 
-  // ── EXP bar ──
-  const exp    = G.exp    ?? 0;
-  const maxExp = G.maxExp ?? 1;
-  _setHBarFill('hud-bar-exp-fill', exp, maxExp);
-  _setText('hud-val-exp', `${_fmtShort(exp)}/${_fmtShort(maxExp)}`);
 }
 
 function _updateNavBadges(G) {

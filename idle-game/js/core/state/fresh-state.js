@@ -32,6 +32,13 @@ export function createFreshState() {
     purity: 0,
     danDoc: 0,
 
+    // ---- R2: Kiên Cố — độ vững chắc linh lực ----
+    // Tích qua hoạt động tiêu hao qi (chiến đấu, thám hiểm, thiết đả...)
+    // KHÔNG tích qua bế quan thụ động
+    // Reset về 0 sau mỗi breakthrough thành công
+    kienCo: 0,
+    kienCoMax: 100,
+
     // ---- v12: Danh Vọng ----
     danhVong: 0,
 

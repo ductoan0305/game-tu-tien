@@ -381,6 +381,24 @@ export function renderHeader(G) {
     // Màu chuyển dần: xanh → vàng → tím khi đủ ngưỡng
     const purColor = purRatio >= 1.0 ? '#a855f7' : purRatio >= 0.5 ? '#f0d47a' : '#56c46a';
     _setBarColor('bar-qi', purColor);
+
+    // R5: Decay hint — text nhỏ dưới thanh purity khi không tu luyện
+    {
+      const hintId = 'purity-decay-hint';
+      let hintEl   = document.getElementById(hintId);
+      if (!G.meditating && (G.purity ?? 0) > 0) {
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = hintId;
+          hintEl.style.cssText = 'font-size:10px;color:#9d6fc488;text-align:right;margin-top:1px;letter-spacing:0.2px';
+          el('bar-qi')?.insertAdjacentElement('afterend', hintEl);
+        }
+        if (hintEl.style.display === 'none') hintEl.style.display = '';
+        hintEl.textContent = '🌫 Thuần Độ đang phân tán...';
+      } else if (hintEl) {
+        hintEl.style.display = 'none';
+      }
+    }
   }
   renderBar('bar-hp',      G.hp,       maxHp,        `HP ${Math.floor(G.hp)} / ${maxHp}`);
   renderBar('bar-stamina', G.stamina,  G.maxStamina, `💪 ${Math.floor(G.stamina)} / ${G.maxStamina}`);
@@ -721,12 +739,50 @@ export function renderCultivateStats(G) {
   const timerEl = el('stat-time');
   if (timerEl) timerEl.textContent = fmtTime(Math.floor(G.totalTime));
 
+  // ---- R2: Kiên Cố bar ----
+  _renderKienCoBar(G);
+
   // ---- Status notifications bar ----
   _renderStatusNotifs(G);
 
   renderTitlePanel(G);
 }
 
+
+// R2: Kiên Cố bar — hiển thị trong cultivate panel
+// Tạo DOM element động, chèn sau stat-am-thuong nếu chưa có
+function _renderKienCoBar(G) {
+  const kienCo    = G.kienCo    ?? 0;
+  const kienCoMax = G.kienCoMax ?? 100;
+  const kcPct     = Math.min(100, Math.round(kienCo / Math.max(1, kienCoMax) * 100));
+
+  // Chỉ re-render khi giá trị thay đổi (mỗi 0.1 điểm = đủ granular)
+  const kcKey = `${Math.round(kienCo * 10)}:${kienCoMax}`;
+
+  let wrap = document.getElementById('stat-kienko');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id    = 'stat-kienko';
+    wrap.style.cssText = 'margin:4px 0 2px 0;font-size:11px';
+    // Chèn sau stat-am-thuong, hoặc stat-hunger nếu không có
+    const refEl = el('stat-am-thuong') || el('stat-hunger') || el('stat-rate');
+    if (refEl?.parentNode) {
+      refEl.parentNode.insertBefore(wrap, refEl.nextSibling);
+    }
+  }
+  if (wrap.dataset.kcKey === kcKey) return; // không đổi → skip
+  wrap.dataset.kcKey = kcKey;
+
+  wrap.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+      <span style="color:#c8763a;font-weight:600">🔥 Kiên Cố</span>
+      <span style="color:#e08040">${kienCo.toFixed(1)} / ${kienCoMax}</span>
+    </div>
+    <div style="height:5px;background:#1a1020;border-radius:3px;overflow:hidden">
+      <div style="width:${kcPct}%;height:100%;background:linear-gradient(90deg,#8b3a00,#e07030);border-radius:3px"></div>
+    </div>
+  `;
+}
 
 function _renderStatusNotifs(G) {
   // Tìm hoặc tạo container
@@ -752,6 +808,16 @@ function _renderStatusNotifs(G) {
   }
 
   // 2. Đói (đã tắt hunger system)
+
+  // 2b. R1 — Linh thạch thấp khi bế quan
+  if (G.meditating) {
+    const stone = G.stone ?? 0;
+    if (stone <= 0) {
+      notifs.push({ icon:'⛔', text:'Hết linh thạch — tu luyện gần như vô hiệu', color:'#e05c4a', priority:11, tab:'cultivate' });
+    } else if (stone < 50) {
+      notifs.push({ icon:'⚠', text:'Linh thạch thấp — tu tốc giảm 70%', color:'#f0d47a', priority:10, tab:'cultivate' });
+    }
+  }
 
   // 3. Dược Điền chín
   const readyCrops = (G.duocDien?.slots || []).filter(s => s && now >= (s.harvestAt ?? Infinity));

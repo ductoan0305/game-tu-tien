@@ -196,6 +196,10 @@ function _migrateV11(m) {
   if (m.danDoc    === undefined) m.danDoc    = 0;
   if (m.danhVong  === undefined) m.danhVong  = 0;
 
+  // R2: Kiên Cố
+  if (m.kienCo    === undefined) m.kienCo    = 0;
+  if (m.kienCoMax === undefined) m.kienCoMax = 100;
+
   // Dược Điền
   if (!m.duocDien || typeof m.duocDien !== 'object') {
     m.duocDien = { slots:[], maxSlots:0, totalHarvests:0 };

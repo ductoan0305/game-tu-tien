@@ -6,6 +6,7 @@ import { SECTS } from './data.js';
 import { REALM_NAMES } from './constants.js';
 import { addChronicle } from './time-engine.js';
 import { bus } from '../utils/helpers.js';
+import { SECT_RANKS } from '../sect/sect-data.js';
 
 // ============================================================
 // PHÁP ĐỊA — Vị trí tu luyện
@@ -452,7 +453,11 @@ export function moveToPhapDia(G, phapDiaId) {
 
   if (target.costType === 'sect_rank') {
     const sectExp = G.sect?.exp || 0;
-    const rank = Math.floor(sectExp / 500);
+    // Dùng SECT_RANKS để tính rank đúng, tránh hardcode Math.floor(exp/500)
+    let rank = 0;
+    for (const r of SECT_RANKS) {
+      if (sectExp >= r.expRequired) rank = r.rank;
+    }
     if (rank < (target.requiredSectRank || 2)) {
       return { ok: false, msg: `Cần cấp bậc Chân Truyền trong tông môn`, type: 'danger' };
     }
@@ -475,6 +480,44 @@ export function moveToPhapDia(G, phapDiaId) {
     msg: `🏔 Di chuyển đến ${target.name} — tốc độ tu luyện ×${target.rateMultiplier}`,
     type: 'jade',
   };
+}
+
+// ============================================================
+// PHÍ LINH ĐỊA ĐỊNH KỲ
+// Mỗi 1 năm game, trừ phí thuê Linh Địa.
+// Nếu không đủ stone: cảnh báo, không kick ra ngay (Audit #6).
+// ============================================================
+export const LINH_DIA_ANNUAL_FEE = 150; // 💎/năm game
+
+export function checkLinhDiaFee(G) {
+  if (G.phapDia?.currentId !== 'linh_dia') return;
+
+  const currentYear = G.gameTime?.currentYear ?? 0;
+
+  // Lần đầu gặp (save cũ hoặc fresh): init lastFeeYear = năm hiện tại, không trừ phí
+  if (G.phapDia.lastFeeYear == null) {
+    G.phapDia.lastFeeYear = currentYear;
+    return;
+  }
+
+  // Chưa đủ 1 năm game → bỏ qua
+  if (currentYear - G.phapDia.lastFeeYear < 1) return;
+
+  // Tính số năm cần tính phí (ít nhất 1)
+  const yearsDue = Math.floor(currentYear - G.phapDia.lastFeeYear);
+  G.phapDia.lastFeeYear += yearsDue;
+
+  const totalFee = LINH_DIA_ANNUAL_FEE * yearsDue;
+
+  if (G.stone >= totalFee) {
+    G.stone -= totalFee;
+    bus.emit('phapdia:fee_paid', { amount: totalFee, years: yearsDue });
+  } else {
+    // Trừ toàn bộ stone còn lại (tính như nợ), cảnh báo nhưng không kick
+    const paid = G.stone;
+    G.stone = 0;
+    bus.emit('phapdia:fee_overdue', { owed: totalFee, paid, shortfall: totalFee - paid });
+  }
 }
 
 // Kiểm tra Pháp Địa hết hạn (Động Phủ)

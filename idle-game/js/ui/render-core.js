@@ -369,12 +369,14 @@ export function renderHeader(G) {
     _setBarColor('bar-qi', '#4a9eff');
   } else {
     // Qi đã đầy — hiển thị Thuần Độ
-    const threshold = calcPurityThreshold(G);
-    const purRatio  = Math.min((G.purity ?? 0) / Math.max(1, threshold), 2.0);
-    const purPct    = Math.min(purRatio * 100, 100); // cap hiển thị ở 100%
-    const purLabel  = purRatio >= 1.0
-      ? `✨ Thuần Độ ${((G.purity ?? 0) / threshold * 100).toFixed(0)}% ngưỡng — sẵn sàng đột phá`
-      : `✨ Thuần Độ ${((G.purity ?? 0) / threshold * 100).toFixed(1)}% / 100% ngưỡng`;
+    const threshold  = calcPurityThreshold(G);
+    const purRatio   = Math.min((G.purity ?? 0) / Math.max(1, threshold), 2.0);
+    const purPct     = Math.min(purRatio * 100, 100); // cap hiển thị ở 100%
+    const purityRate = rate * (REALMS[G.realmIdx]?.purityRateFactor ?? 0.5) * 10;
+    const purRateStr = G.meditating ? `  (+${purityRate.toFixed(3)}/s)` : '';
+    const purLabel   = purRatio >= 1.0
+      ? `✨ Thuần Độ ${((G.purity ?? 0) / threshold * 100).toFixed(0)}% ngưỡng — sẵn sàng đột phá${purRateStr}`
+      : `✨ Thuần Độ ${((G.purity ?? 0) / threshold * 100).toFixed(1)}% / 100% ngưỡng${purRateStr}`;
     renderBar('bar-qi', purPct, 100, purLabel);
     // Màu chuyển dần: xanh → vàng → tím khi đủ ngưỡng
     const purColor = purRatio >= 1.0 ? '#a855f7' : purRatio >= 0.5 ? '#f0d47a' : '#56c46a';
@@ -482,7 +484,7 @@ export function renderHeader(G) {
   const meditateBtn = el('btn-meditate');
   if (meditateBtn) {
     meditateBtn.classList.toggle('active', !!G.meditating);
-    meditateBtn.title = G.meditating ? '🧘 Xuất Quan' : '🧘 Bế Quan';
+    meditateBtn.title = G.meditating ? '🧘 Xuất Định' : '🧘 Nhập Định';
   }
 
   // Breakthrough header button
@@ -991,7 +993,7 @@ export function showOfflineChoiceModal(offSec, callback) {
       <div class="offline-choice-grid">
         <button class="offline-choice-btn offline-choice-meditate" id="offline-btn-meditate">
           <span class="offline-choice-icon">🧘</span>
-          <strong>Bế Quan</strong>
+          <strong>Nhập Định</strong>
           <span class="offline-choice-desc">
             Linh lực tích lũy bình thường.<br>
             Tuổi thọ trôi qua.<br>
@@ -1289,7 +1291,7 @@ export function renderTutorialObjectivePanel(G) {
   const age         = Math.floor(G.gameTime?.currentYear ?? 10);
 
   const textMap = {
-    0: `Bế quan 10 giây để cảm nhận linh lực (${Math.floor(t.progress?.meditateSec || 0)}/10s).`,
+    0: `Tu luyện 10 giây để cảm nhận linh lực (${Math.floor(t.progress?.meditateSec || 0)}/10s).`,
     1: 'Thử 1 hành động tiêu hao thể năng (Thám hiểm / Câu cá / Thiết đả / Tham thiền).',
     2: qi < maxQi
       ? `Linh lực chưa đầy, còn thiếu ~${qiNeedPct}% trước khi thử đột phá.`

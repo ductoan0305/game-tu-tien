@@ -349,12 +349,130 @@
   color: var(--prof-color);
 }
 .nn-prof-btn.nn-prof-locked {
-  opacity: 0.4;
-  cursor: default;
+  opacity: 0.45;
+  cursor: pointer; /* vẫn click được để xem điều kiện */
+}
+.nn-prof-btn.nn-prof-locked:hover {
+  opacity: 0.65;
+  background: rgba(255,255,255,0.03);
+}
+.nn-prof-btn.nn-prof-locked.nn-prof-active {
+  opacity: 0.75;
+  border-color: var(--prof-color);
+  background: color-mix(in srgb, var(--prof-color) 8%, transparent);
 }
 .nn-prof-icon { font-size: 20px; line-height: 1; }
 .nn-prof-name { font-size: 10px; font-weight: 600; text-align: center; line-height: 1.3; }
 .nn-prof-lock { font-size: 10px; position: absolute; top: 4px; right: 4px; }
+
+/* ---- Sidebar hint khi chưa có nghề nào ---- */
+.nn-sidebar-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 8px 4px;
+  line-height: 1.4;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* ---- Overview khi tất cả nghề đều locked ---- */
+.nn-locked-overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  min-height: 200px;
+}
+.nn-lock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+.nn-lock-card--mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border: 1px solid;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+/* ---- Card chi tiết nghề chưa unlock ---- */
+.nn-locked-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.nn-lc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nn-lc-icon {
+  font-size: 36px;
+  opacity: 0.5;
+}
+.nn-lc-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.nn-lc-badge {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.06);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.nn-lc-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border-left: 3px solid var(--prof-color, var(--border));
+  opacity: 0.8;
+}
+.nn-lc-condition {
+  background: rgba(255,200,0,0.04);
+  border: 1px solid rgba(255,200,0,0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.nn-lc-cond-title {
+  font-size: 11px;
+  color: #f0d47a;
+  font-weight: 700;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nn-lc-cond-text {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.nn-lc-progress {
+  margin-top: 8px;
+}
+.nn-lc-footer {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--border);
+  opacity: 0.7;
+}
 .nn-prof-badge {
   font-size: 9px;
   font-weight: 700;

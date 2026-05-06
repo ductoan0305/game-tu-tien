@@ -1,6 +1,7 @@
 // ============================================================
 // ui/tabs/nghe-nghiep-tab.js — Layout + Wire Events
 // Render logic từng nghề → ui/tabs/professions/
+// S-E: Profession gate system — dùng G.flags.unlockedProfessions
 // ============================================================
 import { INGREDIENTS }       from '../../alchemy/alchemy-data.js';
 import { MINERALS }          from '../../alchemy/crafting-data.js';
@@ -19,14 +20,66 @@ const RARITY_COLORS = { common:'#888', uncommon:'#56c46a', rare:'#3a9fd5', epic:
 
 const ALL_INGS = Object.entries(INGREDIENTS).map(([id,v]) => ({ id,...v }));
 
+// ---- Định nghĩa 6 nghề phụ + điều kiện mở khoá ----
 const PROFESSIONS = [
-  { id:'luyen_dan', icon:'⚗',  name:'Luyện Đan', color:'#e8a020', unlockRealm:0, unlockStage:1 },
-  { id:'luyen_khi', icon:'⚒',  name:'Luyện Khí', color:'#7b9fd4', unlockRealm:0, unlockStage:1 },
-  { id:'tran_phap', icon:'🔮', name:'Trận Pháp', color:'#56c46a', unlockRealm:0, unlockStage:1 },
-  { id:'phu_chu',   icon:'📿', name:'Phù Chú',   color:'#a855f7', unlockRealm:0, unlockStage:1 },
-  { id:'khoi_loi',  icon:'🤖', name:'Khôi Lỗi',  color:'#e05c4a', unlockRealm:0, unlockStage:1 },
-  { id:'linh_thuc', icon:'🍲', name:'Linh Thực', color:'#4db8a0', unlockRealm:0, unlockStage:1 },
+  {
+    id: 'luyen_dan',
+    icon: '⚗',
+    name: 'Luyện Đan',
+    color: '#e8a020',
+    desc: 'Chưng cất linh dược thành đan hoàn, tăng cường tu vi và chữa lành thương tích.',
+    unlockHint: 'Cần Ngộ Tính ≥ 40 và linh căn Hỏa, hoặc cơ duyên đặc biệt.',
+    // Auto-unlock: ngoTinh >= 40 + có điểm Hỏa trong spiritData
+  },
+  {
+    id: 'luyen_khi',
+    icon: '⚒',
+    name: 'Luyện Khí',
+    color: '#7b9fd4',
+    desc: 'Rèn giũa khí cụ và trang bị từ khoáng vật, gia cố khả năng chiến đấu.',
+    unlockHint: 'Học từ thợ rèn NPC hoặc tìm được bí quyết rèn luyện qua cơ duyên.',
+    // Unlock qua NPC hoặc flags
+  },
+  {
+    id: 'tran_phap',
+    icon: '🔮',
+    name: 'Trận Pháp',
+    color: '#56c46a',
+    desc: 'Bố trận phòng ngự và tấn công, vận dụng linh lực theo cấu hình trận đồ.',
+    unlockHint: 'Học từ NPC hoặc tông môn, hoặc tìm được Trận Kinh qua cơ duyên.',
+    // Unlock qua NPC/tông môn hoặc flags
+  },
+  {
+    id: 'phu_chu',
+    icon: '📿',
+    name: 'Phù Chú',
+    color: '#a855f7',
+    desc: 'Vẽ bùa lên vật phẩm để tạo hiệu ứng đặc biệt trong chiến đấu và tu luyện.',
+    unlockHint: 'Học từ NPC hoặc tông môn, hoặc nhận cơ duyên Phù Chú.',
+    // Unlock qua NPC/tông môn hoặc flags
+  },
+  {
+    id: 'khoi_loi',
+    icon: '🤖',
+    name: 'Khôi Lỗi',
+    color: '#e05c4a',
+    desc: 'Chế tạo và điều khiển bù nhìn chiến đấu bằng linh lực và vật liệu đặc biệt.',
+    unlockHint: 'Học từ NPC hoặc tông môn, hoặc nhận cơ duyên Khôi Lỗi.',
+    // Unlock qua NPC/tông môn hoặc flags
+  },
+  {
+    id: 'linh_thuc',
+    icon: '🍲',
+    name: 'Linh Thực',
+    color: '#4db8a0',
+    desc: 'Nấu nướng thức ăn linh từ nguyên liệu đặc biệt, bổ sung thể lực và linh khí.',
+    unlockHint: 'Xây Bếp Linh Thực hoặc vào được vùng Linh Địa.',
+    // Auto-unlock: linhThuc.kitchen.level >= 1
+  },
 ];
+
+// Màn hình chưa unlock nào hợp lệ để hiện
+const _LOCK_SENTINEL = '__locked__';
 
 let _activeProf  = 'luyen_dan';
 let _arrayTier   = 0;
@@ -37,46 +90,186 @@ let _kloiTier    = 0;
 let _foodTier    = 0;
 let _foodCat     = 'all';
 
+// ============================================================
+// Auto-unlock: kiểm tra điều kiện live, cập nhật G.flags ngay
+// ============================================================
+function _tryAutoUnlock(G) {
+  if (!G.flags) G.flags = {};
+  if (!Array.isArray(G.flags.unlockedProfessions)) G.flags.unlockedProfessions = [];
+  const profs = G.flags.unlockedProfessions;
+
+  const addIfNew = (id) => { if (!profs.includes(id)) profs.push(id); };
+
+  // Luyện Đan: ngoTinh >= 40 + có linh căn Hỏa
+  if (!profs.includes('luyen_dan')) {
+    const hasFireRoot = (G.spiritData?.points?.huo ?? 0) > 0;
+    if ((G.ngoTinh ?? 0) >= 40 && hasFireRoot) {
+      addIfNew('luyen_dan');
+    }
+  }
+
+  // Linh Thực: có bếp (kitchen level >= 1)
+  if (!profs.includes('linh_thuc')) {
+    if ((G.linhThuc?.kitchen?.level ?? 0) >= 1) {
+      addIfNew('linh_thuc');
+    }
+  }
+}
+
+// ============================================================
+// Kiểm tra unlock
+// ============================================================
+function _isUnlocked(profId, G) {
+  return (G.flags?.unlockedProfessions ?? []).includes(profId);
+}
+
+// ============================================================
+// Main render
+// ============================================================
 export function renderNgheNghiepTab(G, actions) {
   const panel = document.getElementById('panel-nghe_nghiep');
   if (!panel) return;
 
-  const cur = PROFESSIONS.find(p => p.id === _activeProf);
-  if (cur && !_isUnlocked(cur, G)) {
-    const first = PROFESSIONS.find(p => _isUnlocked(p, G));
-    if (first) _activeProf = first.id;
+  // Chạy auto-unlock trước khi render
+  _tryAutoUnlock(G);
+
+  // Nếu activeProf đang là sentinel hoặc không hợp lệ, giữ nguyên
+  // (user có thể click vào nghề locked để xem điều kiện)
+  // Nhưng nếu profession không tồn tại trong PROFESSIONS → reset
+  if (!PROFESSIONS.find(p => p.id === _activeProf) && _activeProf !== _LOCK_SENTINEL) {
+    const first = PROFESSIONS.find(p => _isUnlocked(p.id, G));
+    _activeProf = first ? first.id : _LOCK_SENTINEL;
   }
+
+  const unlockedCount = PROFESSIONS.filter(p => _isUnlocked(p.id, G)).length;
 
   panel.innerHTML = `
     <div class="nn-layout">
       <div class="nn-sidebar">
         <div class="nn-sidebar-title">🛠 Nghề Nghiệp</div>
         ${PROFESSIONS.map(p => {
-          const locked = !_isUnlocked(p, G);
+          const locked = !_isUnlocked(p.id, G);
           const active = p.id === _activeProf;
-          return `<button class="nn-prof-btn ${active?'nn-prof-active':''} ${locked?'nn-prof-locked':''}"
-                    data-prof="${p.id}" style="--prof-color:${p.color}" ${locked?'disabled':''}>
+          return `<button class="nn-prof-btn ${active ? 'nn-prof-active' : ''} ${locked ? 'nn-prof-locked' : ''}"
+                    data-prof="${p.id}" style="--prof-color:${p.color}">
             <span class="nn-prof-icon">${p.icon}</span>
             <span class="nn-prof-name">${p.name}</span>
-            ${locked?'<span class="nn-prof-lock">🔒</span>':''} 
-            ${_getProfBadge(p.id,G)?`<span class="nn-prof-badge" style="color:${p.color}">${_getProfBadge(p.id,G)}</span>`:''}
+            ${locked ? '<span class="nn-prof-lock">🔒</span>' : ''}
+            ${!locked && _getProfBadge(p.id, G) ? `<span class="nn-prof-badge" style="color:${p.color}">${_getProfBadge(p.id, G)}</span>` : ''}
           </button>`;
         }).join('')}
+        ${unlockedCount === 0 ? `<div class="nn-sidebar-hint">Gặp NPC hoặc nhận cơ duyên để mở nghề phụ.</div>` : ''}
       </div>
       <div class="nn-main">
         <div class="nn-content" id="nn-content">
-          ${_renderProfContent(_activeProf, G, actions)}
+          ${_renderActiveContent(_activeProf, G, actions)}
         </div>
+        ${_isUnlocked(_activeProf, G) ? `
         <div class="nn-storage">
           <div class="nn-storage-title">📦 Kho Nguyên Liệu</div>
           ${_renderStorage(G)}
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
 
   _wireEvents(G, actions);
 }
 
+// ============================================================
+// Render nội dung chính — unlocked hiện content, locked hiện card
+// ============================================================
+function _renderActiveContent(profId, G, actions) {
+  const prof = PROFESSIONS.find(p => p.id === profId);
+
+  // Chưa chọn nghề nào (tất cả locked)
+  if (!prof || profId === _LOCK_SENTINEL) {
+    return _renderAllLockedOverview(G);
+  }
+
+  // Nghề đã unlock → render content thật
+  if (_isUnlocked(profId, G)) {
+    return _renderProfContent(profId, G, actions);
+  }
+
+  // Nghề chưa unlock → render lock card
+  return _renderLockedCard(prof, G);
+}
+
+// Khi tất cả nghề đều chưa mở
+function _renderAllLockedOverview(G) {
+  return `
+    <div class="nn-locked-overview">
+      <div style="font-size:40px;margin-bottom:12px">🔒</div>
+      <h3 style="color:var(--gold);margin:0 0 8px">Nghề Phụ Chưa Mở</h3>
+      <p style="color:var(--text-dim);font-size:13px;max-width:320px;text-align:center">
+        Không phải ai cũng có thể theo mọi con đường. Gặp NPC trong bản đồ,
+        gia nhập tông môn, hoặc chờ cơ duyên để mở nghề phụ.
+      </p>
+      <div class="nn-lock-grid" style="margin-top:16px">
+        ${PROFESSIONS.map(p => `
+          <div class="nn-lock-card nn-lock-card--mini" style="border-color:${p.color}33">
+            <span style="font-size:22px">${p.icon}</span>
+            <span style="color:${p.color};font-size:11px;font-weight:700">${p.name}</span>
+            <span style="font-size:14px">🔒</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// Card chi tiết cho nghề chưa unlock
+function _renderLockedCard(prof, G) {
+  const progressHtml = _renderLuyenDanProgress(prof.id, G);
+
+  return `
+    <div class="nn-locked-card" style="--prof-color:${prof.color}">
+      <div class="nn-lc-header">
+        <span class="nn-lc-icon">${prof.icon}</span>
+        <div>
+          <h3 class="nn-lc-name" style="color:${prof.color}">${prof.name}</h3>
+          <span class="nn-lc-badge">🔒 Chưa mở</span>
+        </div>
+      </div>
+      <div class="nn-lc-desc">${prof.desc}</div>
+      <div class="nn-lc-condition">
+        <div class="nn-lc-cond-title">⚠ Điều kiện mở khoá:</div>
+        <div class="nn-lc-cond-text">${prof.unlockHint}</div>
+        ${progressHtml}
+      </div>
+      <div class="nn-lc-footer">
+        Con đường tu tiên có sự lựa chọn — không phải ai cũng đủ duyên phận
+        để bước vào nghề này.
+      </div>
+    </div>`;
+}
+
+// Hiện progress bar nếu gần đạt điều kiện (chỉ cho luyen_dan)
+function _renderLuyenDanProgress(profId, G) {
+  if (profId !== 'luyen_dan') return '';
+
+  const ngoTinh = G.ngoTinh ?? 0;
+  const hasFireRoot = (G.spiritData?.points?.huo ?? 0) > 0;
+  const ngoTinhPct = Math.min(100, Math.round(ngoTinh / 40 * 100));
+
+  const fireStatus = hasFireRoot
+    ? `<span style="color:#56c46a">✓ Có linh căn Hỏa</span>`
+    : `<span style="color:#e05c4a">✗ Thiếu linh căn Hỏa</span>`;
+
+  return `
+    <div class="nn-lc-progress" style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--text-dim)">Ngộ Tính</span>
+        <span style="color:${ngoTinh >= 40 ? '#56c46a' : '#f0d47a'}">${ngoTinh.toFixed(1)} / 40</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden">
+        <div style="width:${ngoTinhPct}%;height:100%;background:${ngoTinh >= 40 ? '#56c46a' : '#e8a020'};border-radius:4px;transition:width 0.3s"></div>
+      </div>
+      <div style="margin-top:6px;font-size:11px">${fireStatus}</div>
+    </div>`;
+}
+
+// ============================================================
+// Render nội dung nghề đã unlock
+// ============================================================
 function _renderProfContent(profId, G, actions) {
   switch (profId) {
     case 'luyen_dan':  return renderLuyenDan(G);
@@ -89,35 +282,9 @@ function _renderProfContent(profId, G, actions) {
   }
 }
 
-function _renderSkeleton(profId, G) {
-  const info = SKELETON_INFO[profId];
-  if (!info) return '<p>Đang phát triển...</p>';
-  const lv = G.crafts?.[profId]?.level || 0;
-
-  return `
-    <div class="nn-skeleton">
-      <div class="nn-sk-desc" style="border-color:${info.color}33;background:${info.color}08">
-        ${info.desc}
-      </div>
-      <div class="nn-sk-coming">
-        <span style="font-size:32px">🚧</span>
-        <h3 style="color:var(--gold);margin:8px 0 4px">Đang Phát Triển</h3>
-        <p style="color:var(--text-dim);font-size:12px">Tính năng sắp ra mắt:</p>
-      </div>
-      <div class="nn-sk-features">
-        ${info.features.map(f => `
-          <div class="nn-sk-feat" style="border-color:${info.color}33">
-            <span style="font-size:20px">${f.icon}</span>
-            <div>
-              <div style="color:${info.color};font-size:12px;font-weight:700">${f.name}</div>
-              <div style="color:var(--text-dim);font-size:11px">${f.desc}</div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-// ---- Kho Nguyên Liệu ----
+// ============================================================
+// Kho Nguyên Liệu
+// ============================================================
 function _renderStorage(G) {
   const alchIngs = Object.entries(G.alchemy?.ingredients||{}).filter(([,qty])=>qty>0);
   const foodIngs = Object.entries(G.linhThuc?.ingredients||{}).filter(([,qty])=>qty>0);
@@ -129,14 +296,14 @@ function _renderStorage(G) {
   const danIngs     = alchIngs.filter(([id]) =>  ALL_INGS.find(i=>i.id===id) && !MINERALS.find(m=>m.id===id));
   const mineralIngs = alchIngs.filter(([id]) => MINERALS.find(m=>m.id===id));
 
-  const renderGroup = (list, title, extraLookup=[]) => {
+  const renderGroup = (list, title) => {
     if (!list.length) return '';
     return `
       <div class="nn-storage-group">
         <div class="nn-storage-group-title">${title}</div>
         <div class="nn-storage-grid">
           ${list.map(([id,qty]) => {
-            const ing   = [...ALL_INGS, ...MINERALS, ...(FOOD_INGREDIENTS||[]), ...extraLookup].find(i=>i.id===id);
+            const ing   = [...ALL_INGS, ...MINERALS, ...(FOOD_INGREDIENTS||[])].find(i=>i.id===id);
             const color = RARITY_COLORS[ing?.rarity] || '#888';
             return `<div class="nn-storage-item" style="border-color:${color}44" title="${ing?.desc||id}">
               <div class="nsi-emoji">${ing?.emoji||'?'}</div>
@@ -157,33 +324,31 @@ function _renderStorage(G) {
          `<div class="nn-storage-total">Tổng: ${totalCount} loại · ${totalQty} vật phẩm</div>`;
 }
 
-// ---- Helpers ----
-function _isUnlocked(prof, G) {
-  if (G.realmIdx > prof.unlockRealm) return true;
-  if (G.realmIdx === prof.unlockRealm && (G.stage||1) >= prof.unlockStage) return true;
-  return false;
-}
-
+// ============================================================
+// Helpers
+// ============================================================
 function _getProfBadge(profId, G) {
   if (profId === 'luyen_dan') {
-    const c = G.alchemy?.craftsCount || 0;
-    return c >= 10 ? `Lv${Math.floor(c/10)}` : null;
+    const s = G.alchemySuccess || 0;
+    return s >= 10 ? `Lv${Math.floor(s/10)}` : null;
   }
   if (profId === 'luyen_khi') {
     const r = getCraftsmanRank(G.alchemy?.craftsCount||0);
-    return r?.rank > 0 ? r?.name : null; // rank 0 = nhập môn, không hiện badge
+    return r?.rank > 0 ? r?.name : null;
   }
   const lv = G.crafts?.[profId]?.level || 0;
   return lv > 0 ? `Lv${lv}` : null;
 }
 
-// ---- Wire Events ----
+// ============================================================
+// Wire Events
+// ============================================================
 function _wireEvents(G, actions) {
   const panel = document.getElementById('panel-nghe_nghiep');
   if (!panel) return;
 
-  // Chuyển nghề
-  panel.querySelectorAll('.nn-prof-btn:not([disabled])').forEach(btn => {
+  // Chuyển nghề (kể cả locked — để xem điều kiện)
+  panel.querySelectorAll('.nn-prof-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       _activeProf = btn.dataset.prof;
       renderNgheNghiepTab(G, actions);
@@ -209,9 +374,7 @@ function _wireEvents(G, actions) {
 
   // Sửa lò
   panel.querySelectorAll('.nn-repair-furnace').forEach(btn => {
-    btn.addEventListener('click', () => {
-      actions.repairFurnace?.();
-    });
+    btn.addEventListener('click', () => actions.repairFurnace?.());
   });
 
   // Sửa Bếp Linh Thực
@@ -264,6 +427,11 @@ function _wireEvents(G, actions) {
     btn.addEventListener('click', () => { _buaTier = parseInt(btn.dataset.buaTier)||0; renderNgheNghiepTab(G, actions); });
   });
 
+  // Phù Chú category filter (bua-cat không có trong wireEvents cũ nhưng thêm để hoàn chỉnh)
+  panel.querySelectorAll('[data-bua-cat]').forEach(btn => {
+    btn.addEventListener('click', () => { _buaCat = btn.dataset.buaCat||'all'; renderNgheNghiepTab(G, actions); });
+  });
+
   // Khôi Lỗi — chế tạo
   panel.querySelectorAll('.kl-craft-btn:not([disabled])').forEach(btn => {
     btn.addEventListener('click', () => actions.craftPuppet?.(btn.dataset.recipeId));
@@ -286,9 +454,7 @@ function _wireEvents(G, actions) {
 
   // Sửa Bễ Rèn
   panel.querySelectorAll('.nn-repair-forge').forEach(btn => {
-    btn.addEventListener('click', () => {
-      actions.repairForge?.();
-    });
+    btn.addEventListener('click', () => actions.repairForge?.());
   });
 
   // Tier filter Luyện Khí
@@ -302,16 +468,12 @@ function _wireEvents(G, actions) {
 
   // Rèn khí
   panel.querySelectorAll('.btn-forge:not([disabled])').forEach(btn => {
-    btn.addEventListener('click', () => {
-      actions.forge?.(btn.dataset.recipeId);
-    });
+    btn.addEventListener('click', () => actions.forge?.(btn.dataset.recipeId));
   });
 
   // Đến cửa hàng
   panel.querySelectorAll('.nn-goto-shop').forEach(btn => {
-    btn.addEventListener('click', () => {
-      actions.switchTab?.('shop');
-    });
+    btn.addEventListener('click', () => actions.switchTab?.('shop'));
   });
 
   // ---- Dược Điền ----

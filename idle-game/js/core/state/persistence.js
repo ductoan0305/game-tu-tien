@@ -284,9 +284,14 @@ function _migrateThuongHoi(m) {
  */
 function _inferUnlockedProfessions(m) {
   const unlocked = [];
-  // Luyện Đan: có công thức hoặc đã luyện thành công
-  if ((m.alchemy?.craftsCount ?? 0) > 0 || (m.alchemy?.knownRecipes?.length ?? 0) > 0) {
-    unlocked.push('alchemy');
+  // Luyện Đan (luyen_dan): có công thức hoặc đã luyện thành công
+  if ((m.alchemy?.craftsCount ?? 0) > 0 || (m.alchemy?.knownRecipes?.length ?? 0) > 0
+      || (m.alchemySuccess ?? 0) > 0) {
+    unlocked.push('luyen_dan');
+  }
+  // Luyện Khí (luyen_khi): đã rèn đồ
+  if ((m.alchemy?.craftsCount ?? 0) > 0 || (m.alchemy?.forge?.level ?? 0) > 0) {
+    unlocked.push('luyen_khi');
   }
   // Trận Pháp: đã dùng trận pháp
   if ((m.crafts?.tran_phap?.level ?? 0) > 0 || (m.tranPhap?.arrayCount ?? 0) > 0) {
@@ -300,12 +305,13 @@ function _inferUnlockedProfessions(m) {
   if ((m.crafts?.khoi_loi?.level ?? 0) > 0 || (m.khoiLoi?.craftCount ?? 0) > 0) {
     unlocked.push('khoi_loi');
   }
-  // Linh Thực: đã nấu
-  if ((m.crafts?.linh_thuc?.level ?? 0) > 0 || (m.linhThuc?.cooksCount ?? 0) > 0) {
+  // Linh Thực: đã nấu hoặc có bếp
+  if ((m.crafts?.linh_thuc?.level ?? 0) > 0 || (m.linhThuc?.cooksCount ?? 0) > 0
+      || (m.linhThuc?.kitchen?.level ?? 0) > 0) {
     unlocked.push('linh_thuc');
   }
   // nghe_nghiep parent tab: mở nếu có bất kỳ nghề nào
-  if (unlocked.some(p => ['tran_phap','phu_chu','khoi_loi','linh_thuc'].includes(p))) {
+  if (unlocked.length > 0) {
     unlocked.push('nghe_nghiep');
   }
   return unlocked;

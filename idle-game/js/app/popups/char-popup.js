@@ -5,7 +5,7 @@
 // ============================================================
 import { REALMS }                from '../../core/data.js';
 import { REALM_NAMES }           from '../../core/constants.js';
-import { calcMaxQi, calcQiRate } from '../../core/state.js';
+import { calcMaxQi, calcQiRate, calcQiRateBreakdown, calcPurityThreshold } from '../../core/state.js';
 import { getDanhVongTier }       from '../../core/danh-vong.js';
 import { getSpiritDisplayName, getSpiritMainColor, getSpiritProphecy,
          calcSpiritRateMulti, SPIRIT_ROOT_TYPES, SPIRIT_ELEMENTS } from '../../core/spirit-root.js';
@@ -75,10 +75,10 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
   const canCot  = G.canCot  ?? 50;
   const tamCanh = G.tamCanh ?? 50;
   const qiRate  = calcQiRate(G);
+  const bd      = calcQiRateBreakdown(G);
   const maxQi   = calcMaxQi(G);
   const qiFull  = (G.qi||0) >= maxQi;
   const qiPct   = Math.min(100, Math.floor(((G.qi||0)/Math.max(1,maxQi))*100));
-  const expPct  = Math.min(100, Math.floor(((G.exp||0)/Math.max(1,G.maxExp||200))*100));
   const realm   = REALMS[G.realmIdx];
   const khiVanColor  = khiVan>=70?'#f0d47a':khiVan>=40?'#56c46a':'#3a9fd5';
   const khiVanStatus = khiVan<30 ? '⚠ Dưới 30 — kỳ ngộ không thể xuất hiện' : khiVan<70 ? '✦ Cơ duyên bình thường' : '🌟 Khí vận cao — cơ duyên chiếu mệnh!';
@@ -113,19 +113,50 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
         <div class="cp-section-title">🧘 Tu Luyện</div>
         <div class="cp-realm-display" style="color:${realm?.color||'#c8a84b'}">${realm?.emoji||'⚡'} ${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage} / ${realm?.stages||9}</div>
         <div class="cp-bar-row"><span class="cp-bar-label">Linh Lực</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${qiPct}%;background:${qiFull?'#f0d47a':'#4a9eff'}"></div></div><span class="cp-bar-val ${qiFull?'cp-bar-full':''}">${qiPct}%</span></div>
-        <div class="cp-bar-row"><span class="cp-bar-label">Kinh Nghiệm</span><div class="cp-bar-track"><div class="cp-bar-fill" style="width:${expPct}%;background:#56c46a"></div></div><span class="cp-bar-val">${G.exp||0} / ${G.maxExp||200}</span></div>
         <div class="cp-bar-row"><span class="cp-bar-label">💎 Linh Thạch</span><div class="cp-bar-track" style="background:transparent;flex:unset"></div><span class="cp-bar-val" style="color:var(--gold);width:auto">${_fmtStone(G)}</span></div>
-        <div class="cp-cultivate-meta"><span>⚡ Tu tốc: <strong>${qiRate}/s</strong></span><span>📍 ${pdName}</span><span>${G.meditating?'🧘 Đang bế quan':'⚠ Chưa bế quan'}</span></div>
-        ${qiFull
-          ? `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough">⚡ ĐỦ LINH LỰC — ẤN ĐỂ ĐỘT PHÁ!</button>`
-          : `<div class="cp-bt-hint">Tích lũy đủ linh lực (${qiPct}%) để đột phá.</div>`}
+        <div class="cp-cultivate-meta">
+          <span>⚡ Tu tốc: <strong>${bd.totalQiRate}/s</strong></span>
+          <span>📍 ${pdName}</span>
+          <span>${G.meditating ? '🧘 Đang nhập định' : '⚠ Chưa vận công'}</span>
+        </div>
+        <div class="cp-rate-breakdown" style="font-size:11px;color:var(--text-dim,#888);background:var(--color-background-secondary,#0a0a1a);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.8">
+          <div>Base: <strong>${bd.base}</strong>
+            × Linh Căn: <strong>${bd.spiritMult.toFixed(2)}</strong>
+            × Pháp Địa: <strong>${bd.phapDiaMult.toFixed(1)}</strong>
+            × Công Pháp: <strong>${bd.congPhapMult.toFixed(2)}</strong>
+            ${bd.masteryBonusPct > 0 ? `+ Thuần Thục: <strong>+${bd.masteryBonusPct.toFixed(0)}%</strong>` : ''}
+            ${bd.otherPct > 0 ? `+ Khác: <strong>+${bd.otherPct}%</strong>` : ''}
+          </div>
+          ${(G.qi >= calcMaxQi(G))
+            ? `<div style="margin-top:4px;color:var(--jade,#56c46a)">
+                 ✨ Qi đầy — đang tích Thuần Độ: <strong>${bd.purityPerSec.toFixed(3)}/s</strong>
+               </div>`
+            : ''}
+        </div>
+        ${(() => {
+          if (!qiFull) return `<div class="cp-bt-hint">Tích lũy đủ linh lực (${qiPct}%) để đột phá.</div>`;
+          const btThreshold = calcPurityThreshold(G);
+          const btPurity    = G.purity ?? 0;
+          const btRatio     = btPurity / Math.max(1, btThreshold);
+          const btPurityPct = Math.floor(btRatio * 100);
+          if (btRatio < 0.5) return `<div class="cp-bt-hint" style="color:#888">
+            ⚡ Qi đầy — đang tích Thuần Độ (${btPurityPct}% / cần 50%+)</div>`;
+          if (btRatio < 0.75) return `<button class="cp-bt-btn" id="cp-btn-breakthrough"
+            style="background:rgba(180,30,30,0.2);border-color:#c0392b;color:#e74c3c;animation:pulse-danger 1.5s infinite">
+            ⚠ CẢNH BÁO: Thuần Độ ${btPurityPct}% — Xác Suất 0%! (Guaranteed Fail)</button>`;
+          if (btRatio < 1.0) return `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough"
+            style="background:rgba(180,120,0,0.2);border-color:#d4a017;color:#d4a017">
+            ⚡ ĐỦ LINH LỰC — ĐỘT PHÁ (Thuần Độ ${btPurityPct}%)</button>`;
+          return `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough">
+            ⚡ ĐỦ ĐIỀU KIỆN — ĐỘT PHÁ (Thuần Độ ${btPurityPct}%)</button>`;
+        })()}
         <button class="cp-meditate-btn ${G.meditating?'cp-med-active':''}" id="cp-btn-meditate">
-          ${G.meditating ? '⏹ Xuất Quan' : '🧘 Bế Quan'}
+          ${G.meditating ? '⏹ Xuất Định' : '🧘 Nhập Định'}
         </button>
         <div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;line-height:1.5">
           ${G.meditating
-            ? '🧘 Đang bế quan — đóng cửa tu luyện. Linh lực tích lũy, thuần thục công pháp tăng dần, tiêu thể năng. Không thể chiến đấu hay di chuyển.'
-            : 'Bế quan: đóng cửa tập trung tu luyện. Linh lực mới tích lũy, thuần thục công pháp tăng. Không thể chiến đấu hay di chuyển.'}
+            ? '🧘 Đang nhập định — linh lực tích lũy, thuần thục công pháp tăng dần, tiêu thể năng. Vẫn có thể luyện đan, chế phù. Không thể chiến đấu hay di chuyển.'
+            : 'Nhập định: vận công tập trung tu luyện. Linh lực mới tích lũy, thuần thục công pháp tăng. Không thể chiến đấu hay di chuyển.'}
         </div>
       </div>
       ${spiritHtml}

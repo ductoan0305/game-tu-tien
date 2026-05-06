@@ -13,26 +13,38 @@ export function renderLinhThuTab(G, actions) {
 
   const lt = G.linhThu || { slots: [null, null], eggs: [] };
 
+  // S-C: Chỉ hiện section "Mua" khi đã có ít nhất 1 linh thú hoặc đang ấp trứng
+  // (slot được mở qua cơ duyên/quest — thể hiện bởi việc có beast hoặc egg)
+  const hasAnyBeast = (lt.slots || []).some(s => s !== null) || (lt.eggs || []).length > 0;
+
+  // Nếu đang ở section shop nhưng chưa có linh thú → reset về my_beasts
+  if (_activeSection === 'shop' && !hasAnyBeast) {
+    _activeSection = 'my_beasts';
+  }
+
+  // Danh sách section tabs — ẩn "Mua" khi chưa có linh thú
+  const sectionTabs = [
+    { id:'my_beasts', label:'🐾 Của Ta' },
+    { id:'eggs',      label:'🥚 Trứng' },
+    ...(hasAnyBeast ? [{ id:'shop', label:'🛒 Mua' }] : []),
+  ];
+
   panel.innerHTML = `
     <div class="tab-content">
       <h2 class="tab-title" style="color:#a89df5">🐾 Linh Thú <span style="font-size:12px;opacity:0.5">靈獸</span></h2>
 
       <!-- Section tabs -->
       <div class="lt-sec-tabs" style="display:flex;gap:6px;margin-bottom:14px">
-        ${[
-          { id:'my_beasts', label:'🐾 Của Ta' },
-          { id:'eggs',      label:'🥚 Trứng' },
-          { id:'shop',      label:'🛒 Mua' },
-        ].map(s => `
+        ${sectionTabs.map(s => `
           <button class="lt-sec-btn ${_activeSection===s.id?'active':''}" data-sec="${s.id}"
             style="flex:1;padding:7px 4px;font-size:12px;border-radius:7px;border:1px solid ${_activeSection===s.id?'#a89df5':'#333'};background:${_activeSection===s.id?'#a89df522':'transparent'};color:${_activeSection===s.id?'#a89df5':'#888'};cursor:pointer">
             ${s.label}
           </button>`).join('')}
       </div>
 
-      ${_activeSection === 'my_beasts' ? _renderMyBeasts(lt, G) : ''}
+      ${_activeSection === 'my_beasts' ? _renderMyBeasts(lt, G, hasAnyBeast) : ''}
       ${_activeSection === 'eggs'      ? _renderEggs(lt, G) : ''}
-      ${_activeSection === 'shop'      ? _renderShop(G) : ''}
+      ${_activeSection === 'shop' && hasAnyBeast ? _renderShop(G) : ''}
     </div>`;
 
   // Wire section tabs
@@ -70,9 +82,23 @@ export function renderLinhThuTab(G, actions) {
 }
 
 // ============================================================
-function _renderMyBeasts(lt, G) {
+function _renderMyBeasts(lt, G, hasAnyBeast) {
   const slots = lt.slots || [null, null];
   const now = G.gameTime?.currentYear || 0;
+
+  // S-C: Khi chưa có linh thú, hiện mô tả và điều kiện mở khóa thay vì slot trống + hint mua
+  if (!hasAnyBeast) {
+    return `
+      <div style="text-align:center;padding:30px 16px">
+        <div style="font-size:48px;margin-bottom:12px">🐾</div>
+        <div style="font-size:14px;font-weight:600;color:#a89df5;margin-bottom:8px">Chưa có Linh Thú</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.7;max-width:280px;margin:0 auto">
+          Linh thú là bạn đồng hành tu tiên — chúng cung cấp buff thụ động quý giá và có thể cùng chiến đấu.<br><br>
+          <span style="color:#888">✦ Cách có linh thú đầu tiên:</span><br>
+          <span style="color:#666">Trong lúc thám hiểm hoặc chiến đấu, có thể gặp cơ duyên để thuần hóa hoặc nhặt trứng linh thú. Đây là con đường tự nhiên — không thể mua trực tiếp khi chưa có duyên phận.</span>
+        </div>
+      </div>`;
+  }
 
   return `
     <div class="lt-slots">

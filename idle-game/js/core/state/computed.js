@@ -89,6 +89,57 @@ export function calcPurityRate(G) {
   return Math.max(0.0001, calcQiRate(G) * factor * getPurityBoostMult(G));
 }
 
+// Trả về từng hệ số cấu thành qi rate để hiển thị breakdown
+// KHÔNG thay đổi calcQiRate — chỉ đọc các hệ số riêng lẻ
+export function calcQiRateBreakdown(G) {
+  const r    = REALMS[G.realmIdx];
+  const base = r.rate;  // 0.06 cho LK
+
+  // Linh Căn multiplier
+  let spiritMult = 1.0;
+  if (G.spiritData) {
+    spiritMult = calcSpiritRateMulti(G.spiritData);
+  } else if (G.spiritRoot) {
+    const legacy = { jin:1.2, mu:1.1, shui:1.25, huo:1.15, tu:1.0, yin_yang:1.1, hun:1.25 };
+    spiritMult = legacy[G.spiritRoot] || 1.0;
+  }
+
+  // Pháp Địa multiplier
+  const PHAP_DIA_MULT = { pham_dia:0.8, linh_dia:1.2, phuc_dia:1.8, dong_phu:3.0, bao_dia:5.0 };
+  const phapDiaMult = PHAP_DIA_MULT[G.phapDia?.currentId || 'pham_dia'] || 0.8;
+
+  // Công Pháp multiplier (base grade)
+  const congPhapMult = calcCongPhapBaseMult(G);
+
+  // Thuần thục công pháp bonus (%)
+  const cpBonus        = calcCongPhapMasteryBonus(G);
+  const masteryBonusPct = cpBonus.ratePct || 0;
+
+  // Các bonus khác (ratePct từ passive tree + spdBonus ×100, qiBonus flat)
+  const otherPct   = (G.ratePct || 0) + Math.floor((G.spdBonus || 0) * 100);
+  const qiBonusFlat = G.qiBonus || 0;
+
+  // Tổng qi rate (= calcQiRate, 0 nếu không nhập định)
+  const totalQiRate = calcQiRate(G);
+
+  // Tốc độ purity thực tế/giây khi qi đầy
+  // Trong tick.js: G.purity += pRate * dt * 10 → 10 ticks/s → pRate×10 /s
+  const purityPerSec = totalQiRate * (REALMS[G.realmIdx]?.purityRateFactor ?? 0.5) * 10;
+
+  return {
+    base,             // 0.06 (LK)
+    spiritMult,       // 1.0 ~ 1.25
+    phapDiaMult,      // 0.8 ~ 5.0
+    congPhapMult,     // 0.7 (tạp) ~ 1.0+
+    masteryBonusPct,  // % bonus thuần thục công pháp
+    otherPct,         // % từ passive tree + spdBonus
+    qiBonusFlat,      // flat qi bonus
+    totalQiRate,      // tổng cuối cùng (0 nếu chưa nhập định)
+    purityPerSec,     // tốc độ purity/giây khi qi đầy (tham khảo)
+    meditating: G.meditating,
+  };
+}
+
 export function calcAtk(G) {
   const presBonus = G.prestige.bonuses.atkPct || 0;
   const eqAtk     = G.equipment?.slots?.weapon?.stats?.atk    || 0;

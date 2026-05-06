@@ -17,4 +17,5 @@ export { calcOfflineProgress,
 export { calcQiRate, calcMaxQi, calcPurityThreshold,
          calcPurityRate, calcAtk, calcDef, calcMaxHp,
          calcDmgReduce, calcSpeed,
-         calcEffectiveCanCot }                          from './state/computed.js';
+         calcEffectiveCanCot,
+         calcQiRateBreakdown }                          from './state/computed.js';

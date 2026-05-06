@@ -1,13 +1,144 @@
 // ============================================================
 // quest/quest-data.js — Quest definitions
-// v2 — Thêm: 15 side quest, 12 daily, 10 bounty, 5 sect quest
+// v3 — S-D: NPC-gated quest system (Manifesto §6)
+//      Quest chỉ xuất hiện khi được NPC giao.
+//      Thêm trường: givenBy, giveCondition, unlocks
 // ============================================================
 
+// ============================================================
+// NPC QUESTS — 5 quest LK đầu tiên, có người giao cụ thể
+// Đây là quest duy nhất hiển thị cho tân thủ trong tab Nhiệm Vụ.
+// Không ai giao → không ai thấy.
+// ============================================================
+export const NPC_QUESTS = [
+  {
+    id: 'nq_01_clear_vermin',
+    name: 'Trừ Họa Cho Thôn',
+    type: 'npc_quest',
+    givenBy: 'lao_duoc_su',          // NPC id trong STARTER_VILLAGES[*].locations
+    givenByName: 'Lão Dược Sư',
+    givenByVillage: 'thanh_phong_thon',
+    // Điều kiện để NPC chịu giao quest (kiểm tra tại giveQuestFromNPC)
+    giveCondition: (G) => G.setupDone && G.realmIdx === 0 && G.stage >= 1,
+    desc: 'Lão Dược Sư bảo: Yêu thú dạo gần đây thường xuyên quấy phá vườn thuốc. Ta không còn sức để xua chúng — ngươi còn trẻ, hãy ra tay giúp thôn.',
+    objectives: [{ key: 'kill', label: 'Diệt yêu thú', required: 3 }],
+    rewards: {
+      // Không phải "mưa tài nguyên" — lão nhân trả bằng thứ ông có
+      items: [{ id: 'linh_thao', qty: 2 }],   // linh thảo tự trồng, không phải linh thạch
+      exp: 40,
+      // Mở ra quan hệ và thông tin, không phải vật phẩm
+      unlocks: 'Lão Dược Sư tin tưởng ngươi hơn — có thể hỏi ông về bí quyết thu thảo dược.'
+    },
+    lore: '"Yêu thú nhỏ cũng đủ dẫm nát cả vườn Linh Thảo. Ta trồng mấy khóm đó ba năm rồi. Ngươi giúp ta được không?"',
+    // Quest tiếp theo NPC này có thể giao (sau khi quest này hoàn thành)
+    nextQuest: 'nq_02_herb_knowledge',
+    order: 1,
+  },
+
+  {
+    id: 'nq_02_herb_knowledge',
+    name: 'Học Nhận Linh Thảo',
+    type: 'npc_quest',
+    givenBy: 'lao_duoc_su',
+    givenByName: 'Lão Dược Sư',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.quests?.completed?.includes('nq_01_clear_vermin'),
+    desc: 'Lão Dược Sư muốn truyền lại kiến thức phân biệt linh thảo thật và giả cho ngươi — nhưng trước hết phải chứng tỏ bằng cách tự tay thu thập.',
+    objectives: [{ key: 'gather', label: 'Thu thập thảo dược', required: 5 }],
+    rewards: {
+      // Phần thưởng là kiến thức và mở đường, không phải linh thạch
+      recipe: 'healing_pill',
+      exp: 60,
+      unlocks: 'Mở khóa khả năng luyện Hồi Khí Đan cơ bản — NPC đầu tiên dạy ngươi nghề luyện đan.'
+    },
+    lore: '"Thu thập không khó — khó là biết loại nào dùng được, loại nào độc. Đi lấy về năm cụm, ta nhìn xem ngươi có nhận đúng không."',
+    nextQuest: null,  // kết thúc chain Lão Dược Sư tạm thời
+    order: 2,
+  },
+
+  {
+    id: 'nq_03_patrol_duty',
+    name: 'Tuần Tra Đêm',
+    type: 'npc_quest',
+    givenBy: 'lao_ngu_ong',
+    givenByName: 'Lão Ngư Ông',
+    givenByVillage: 'lam_hai_thon',
+    giveCondition: (G) => G.setupDone && G.realmIdx === 0 && G.stage >= 1,
+    desc: 'Lão Ngư Ông nói: Đêm qua có tiếng động lạ ven sông. Mấy con Thủy Trạch Ngạc hay kéo lên bờ về đêm phá lưới. Ta già rồi không đi được — nhờ ngươi đi kiểm tra một chuyến.',
+    objectives: [{ key: 'kill_specific', target: 'water_croc', label: 'Diệt Thủy Trạch Ngạc', required: 2 }],
+    rewards: {
+      items: [{ id: 'linh_ngu', qty: 1 }],  // cá linh — ngư ông trả bằng cá ông đánh được
+      stone: 4,
+      exp: 45,
+      unlocks: 'Lão Ngư Ông chỉ cho ngươi bãi cá linh bí mật ven sông — tăng tỷ lệ thu thập Thủy Ngọc Hoa.'
+    },
+    lore: '"Ta đánh cá ở đây bốn mươi năm. Con sông này nuôi cả thôn. Không thể để yêu thú phá lưới ta mãi được."',
+    nextQuest: 'nq_04_river_secret',
+    order: 1,
+  },
+
+  {
+    id: 'nq_04_river_secret',
+    name: 'Bí Mật Đáy Sông',
+    type: 'npc_quest',
+    givenBy: 'lao_ngu_ong',
+    givenByName: 'Lão Ngư Ông',
+    givenByVillage: 'lam_hai_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.quests?.completed?.includes('nq_03_patrol_duty'),
+    desc: 'Lão Ngư Ông kéo ngươi ra chỗ vắng, nói nhỏ: Tháng trước lưới ta kéo lên được một thứ kỳ lạ — một phiến đá có linh khí. Ta giữ không dùng được, ngươi tu tiên thì mang đi. Nhưng trước hết hãy giúp ta một việc.',
+    objectives: [{ key: 'explore', label: 'Thám hiểm khu vực', required: 3 }],
+    rewards: {
+      items: [{ id: 'linh_thach_phien', qty: 1 }],  // phiến đá linh — có lore, không phải linh thạch thường
+      exp: 80,
+      unlocks: 'Lão Ngư Ông kể cho ngươi nghe về một hang nước cổ dưới đáy sông — chưa ai biết ngoài ông.'
+    },
+    lore: '"Cái đá này... nó ấm trong tay ta cả tuần. Ngươi tu tiên chắc hiểu được nó hơn lão ngư ông già này."',
+    nextQuest: null,
+    order: 2,
+  },
+
+  {
+    id: 'nq_05_forge_test',
+    name: 'Thử Lửa',
+    type: 'npc_quest',
+    givenBy: 'dao_khach_gia',
+    givenByName: 'Đao Khách Già',
+    givenByVillage: 'hoa_diem_thon',
+    giveCondition: (G) => G.setupDone && G.realmIdx === 0 && G.stage >= 1,
+    desc: 'Đao Khách Già nhìn ngươi từ đầu đến chân, gật đầu: Ta đã thấy quá nhiều kẻ vào rừng chưa đánh đã run. Ngươi muốn ta nói chuyện thật thì phải chứng minh trước — diệt năm con yêu thú rồi quay lại.',
+    objectives: [{ key: 'kill', label: 'Diệt yêu thú', required: 5 }],
+    rewards: {
+      // Phần thưởng là lời khuyên chiến đấu và mối quan hệ — không phải tài nguyên
+      exp: 55,
+      stone: 5,
+      unlocks: 'Đao Khách Già chỉ ngươi điểm yếu của yêu thú hệ Hỏa — tăng damage khi chiến đấu trong vùng núi lửa.'
+    },
+    lore: '"Ta không dạy kẻ yếu đuối. Không phải vì ta khinh — mà vì dạy kẻ chưa sẵn sàng chỉ tổ hại họ thêm."',
+    nextQuest: null,
+    order: 1,
+  },
+];
+
+// Map nhanh: npcId → danh sách quest có thể giao (theo thứ tự)
+export const NPC_QUEST_MAP = NPC_QUESTS.reduce((acc, q) => {
+  if (!acc[q.givenBy]) acc[q.givenBy] = [];
+  acc[q.givenBy].push(q);
+  return acc;
+}, {});
+
+// ============================================================
+// QUESTS — hệ thống cũ, GIỮ NGUYÊN (không xóa)
+// Các quest này hiện KHÔNG hiển thị trong tab trừ khi
+// được giao qua NPC (story quest) hoặc là daily/bounty/sect.
+// ============================================================
 export const QUESTS = [
 
   // ============================================================
   // STORY QUESTS — chain chính, theo thứ tự
-  // (Nhân Giới: sq_01 đến sq_10, Linh/Tiên Giới: sq_11+ cho tương lai)
   // ============================================================
   {
     id: 'sq_00_meet_elder',
@@ -15,11 +146,10 @@ export const QUESTS = [
     type: 'story', chain: 'main', order: 0,
     desc: 'Đến gặp Trưởng Lão tại làng để nghe lời chỉ dẫn ban đầu.',
     unlockRealm: 0,
-    autoAccept: true, // tự nhận khi bắt đầu game
+    autoAccept: true,
     objectives: [{ key: 'talk_npc', target: 'elder', label: 'Nói chuyện Trưởng Lão', required: 1 }],
-    // Quest giới thiệu: không thưởng tài nguyên lớn, chỉ mở hướng đi tiếp.
     rewards: { unlockQuest: 'sq_01_first_kill' },
-    lore: '\"Ngươi đã đến rồi. Ta chờ đã lâu. Trước tiên, hãy để ta nói cho ngươi nghe về con đường phía trước.\"',
+    lore: '"Ngươi đã đến rồi. Ta chờ đã lâu. Trước tiên, hãy để ta nói cho ngươi nghe về con đường phía trước."',
     npcHint: '👴 Trưởng Lão đang đứng ở trung tâm làng. Hãy đến nói chuyện để bắt đầu hành trình.',
   },
   {
@@ -125,10 +255,8 @@ export const QUESTS = [
   },
 
   // ============================================================
-  // SIDE QUESTS — không bắt buộc, phần thưởng tốt
+  // SIDE QUESTS
   // ============================================================
-
-  // --- Chiến đấu ---
   {
     id: 'side_hunter_01',
     name: 'Liệp Yêu Sơ Học',
@@ -197,8 +325,6 @@ export const QUESTS = [
     repeatable: false,
     lore: 'Cửu Vĩ Hồ hóa hình thiếu nữ mê hoặc tu sĩ, nhiều người mất cả công lực.',
   },
-
-  // --- Luyện đan ---
   {
     id: 'side_alchemy_01',
     name: 'Đan Sư Sơ Cấp',
@@ -234,8 +360,6 @@ export const QUESTS = [
     repeatable: false,
     lore: 'Trăm lần luyện đan — tên ngươi bắt đầu được nhắc đến trong giới đan sư.',
   },
-
-  // --- Thu thảo & Khám phá ---
   {
     id: 'side_explore_01',
     name: 'Khám Phá Bốn Phương',
@@ -258,8 +382,6 @@ export const QUESTS = [
     repeatable: false,
     lore: 'Hoa sen linh nở trong im lặng, ai biết nhẫn nại mới tìm thấy đủ.',
   },
-
-  // --- Đột phá ---
   {
     id: 'side_break_05',
     name: 'Ngũ Đột Kỳ Nhân',
@@ -284,7 +406,7 @@ export const QUESTS = [
   },
 
   // ============================================================
-  // SECT INTRO QUESTS — quest đầu tiên cho người gia nhập tông môn ngay
+  // SECT INTRO QUESTS
   // ============================================================
   {
     id: 'sq_sect_intro_kiem_tong',
@@ -332,7 +454,7 @@ export const QUESTS = [
   },
 
   // ============================================================
-  // DAILY QUESTS — reset mỗi ngày game (không phải thực)
+  // DAILY QUESTS
   // ============================================================
   {
     id: 'daily_kill_3',
@@ -435,8 +557,7 @@ export const QUESTS = [
   },
 
   // ============================================================
-  // BOUNTY QUESTS — tiêu diệt mục tiêu cụ thể, phần thưởng cao
-  // Reset theo tuần hoặc khi hoàn thành (repeatable với cooldown)
+  // BOUNTY QUESTS
   // ============================================================
   {
     id: 'bounty_wolf_pack',
@@ -536,7 +657,7 @@ export const QUESTS = [
   },
 
   // ============================================================
-  // SECT QUESTS — chỉ cho thành viên tông môn
+  // SECT QUESTS
   // ============================================================
   {
     id: 'sect_patrol_01',

@@ -6,7 +6,7 @@
 import { bus } from '../utils/helpers.js';
 import { addChronicle } from '../core/time-engine.js';
 import { moveToPhapDia } from '../core/phap-dia.js';
-import { calcMaxQi, calcQiRate } from '../core/state.js';
+import { calcMaxQi, calcQiRate, calcPurityThreshold } from '../core/state.js';
 import { getAvailableEnemies } from '../combat/combat-engine.js';
 import { checkAmbush, getAvailableTargets, robTarget, getNghiepLucPenalty } from '../core/kiep-tu-engine.js';
 import { _showLocationPopup, _setupDrag } from './location-popup.js';
@@ -61,18 +61,54 @@ export function updateMapStats(G) {
 // TẦNG 1 — WORLD MAP
 // ============================================================
 
-// Nút Đột Phá — hiển thị khi đủ điều kiện
+// Nút Đột Phá — hiển thị khi đủ điều kiện, bao gồm cảnh báo purity
 function _renderBreakthroughBtn(G) {
-  const maxQi  = calcMaxQi(G);
+  const maxQi   = calcMaxQi(G);
   const pctFull = G.qi >= maxQi;
   const pctVal  = Math.floor(Math.min(100, (G.qi / Math.max(1, maxQi)) * 100));
-  return `
-    <button id="btn-breakthrough"
-      class="btn-breakthrough-map ${pctFull ? 'ready' : ''}"
-      ${pctFull ? '' : 'disabled'}
-      title="${pctFull ? 'Linh lực đầy — có thể đột phá!' : `Tích lũy linh lực để đột phá (${pctVal}%)`}">
-      ${pctFull ? '⚡ ĐỘT PHÁ — SẴN SÀNG!' : `⚡ Đột Phá (${pctVal}%)`}
+
+  if (!pctFull) {
+    return `<button id="btn-breakthrough" class="btn-breakthrough-map" disabled
+      title="Tích lũy linh lực để đột phá (${pctVal}%)">
+      ⚡ Đột Phá (${pctVal}%)
     </button>`;
+  }
+
+  // Qi đầy — kiểm tra purity
+  const threshold = calcPurityThreshold(G);
+  const purity    = G.purity ?? 0;
+  const ratio     = purity / Math.max(1, threshold);
+  const purityPct = Math.floor(ratio * 100);
+
+  if (ratio < 0.5) {
+    // Bị block hoàn toàn (doBreakthrough sẽ reject)
+    return `<button id="btn-breakthrough" class="btn-breakthrough-map" disabled
+      title="Thuần Độ chưa đủ tối thiểu 50% ngưỡng (${purityPct}%)">
+      ⚡ Đột Phá (Thuần Độ ${purityPct}%)
+    </button>`;
+  }
+
+  if (ratio < 0.75) {
+    // NGUY HIỂM: allowed nhưng guaranteed fail (F_purity = 0.0 → chance = 0%)
+    return `<button id="btn-breakthrough" class="btn-breakthrough-map btn-breakthrough-danger"
+      title="CẢNH BÁO: Thuần Độ ${purityPct}% — xác suất đột phá = 0%! Sẽ mất Tâm Cảnh và tuổi thọ.">
+      ⚠ Đột Phá (${purityPct}% — Guaranteed Fail!)
+    </button>`;
+  }
+
+  if (ratio < 1.0) {
+    // Thuần độ 75-99%: thấp nhưng có xác suất
+    return `<button id="btn-breakthrough" class="btn-breakthrough-map btn-breakthrough-warn ready"
+      title="Thuần Độ ${purityPct}%/100% ngưỡng — có thể đột phá nhưng xác suất thấp">
+      ⚡ Đột Phá (Thuần Độ ${purityPct}%)
+    </button>`;
+  }
+
+  // Đủ ngưỡng: sẵn sàng
+  return `<button id="btn-breakthrough" class="btn-breakthrough-map ready"
+    title="Thuần Độ ${purityPct}% — đủ điều kiện đột phá!">
+    ⚡ ĐỘT PHÁ — SẴN SÀNG!
+  </button>`;
 }
 
 // ============================================================

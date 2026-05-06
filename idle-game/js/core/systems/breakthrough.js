@@ -153,7 +153,9 @@ export function doBreakthrough(G) {
     return {
       ok:false, type:isSevere?'fail_severe':'fail', chance:chance.toFixed(1), breakdown,
       msg: isSevere
-        ? `Đại thất bại! Linh lực hỗn loạn, kinh mạch tổn thương nặng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`
+        ? (purityRatio < 0.75
+            ? `Đại thất bại! Thuần Độ quá thấp (${Math.floor(purityRatio*100)}% / cần 75%+ để có cơ hội). Kinh mạch hỗn loạn nghiêm trọng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`
+            : `Đại thất bại! Linh lực hỗn loạn, kinh mạch tổn thương nặng. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`)
         : `Đột phá thất bại. Linh lực tán loạn. Tâm Cảnh -${tamCanhLoss}, mất ${lifeLoss} năm tuổi thọ.`,
     };
   }

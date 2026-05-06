@@ -4,6 +4,7 @@
 // ============================================================
 import { STARTER_VILLAGES, _setupDrag, _handleLocAction } from './location-popup.js';
 import { svgZoneLocLabel } from './map-data.js';
+import { getNpcPendingQuest } from '../quest/quest-engine.js';
 
 export function rollStarterVillage() {
   return STARTER_VILLAGES[Math.floor(Math.random() * STARTER_VILLAGES.length)];
@@ -123,6 +124,12 @@ function _buildLocNodes(village, G) {
     const exitLocked = isExit && !(G.worldMap?.starterQuestDone);
     const strokeMain = isExit ? (exitLocked ? '#555' : ac) : ac;
     const opRing = isExit ? (exitLocked ? 0.2 : 0.45) : 0.28;
+
+    // S-D: Indicator "!" khi NPC có quest chờ giao
+    const hasQuestIndicator = loc.type === 'npc' && loc.npcId
+      ? getNpcPendingQuest(G, loc.npcId) !== null
+      : false;
+
     return `
       <g class="znode${exitLocked ? ' znode-locked' : ''}" data-lid="${loc.id}"
          data-locked="${exitLocked ? '1' : '0'}">
@@ -134,6 +141,10 @@ function _buildLocNodes(village, G) {
         <text x="${loc.x}" y="${loc.y + 6}" text-anchor="middle" font-size="17">${loc.emoji}</text>
         ${svgZoneLocLabel(loc.name, loc.x, loc.y + 42, { fill: isExit && !exitLocked ? '#f0d47a' : '#d8dce4', fontSize: 8.5 })}
         ${exitLocked ? `<text x="${loc.x}" y="${loc.y + 54}" text-anchor="middle" font-size="7.5" fill="#8899aa">🔒 Quest</text>` : ''}
+        ${hasQuestIndicator ? `
+          <circle cx="${loc.x + 18}" cy="${loc.y - 18}" r="9" fill="#f0d47a" stroke="#1a1506" stroke-width="1.5"/>
+          <text x="${loc.x + 18}" y="${loc.y - 14}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a1506">!</text>
+        ` : ''}
       </g>`;
   }).join('');
 }

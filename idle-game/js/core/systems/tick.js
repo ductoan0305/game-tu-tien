@@ -7,7 +7,8 @@ import { calcQiRate, calcMaxQi, calcPurityRate, calcMaxHp } from '../state/compu
 import { calcMasteryGainPerTick } from '../phap-dia.js';
 import { fmtNum, bus }                   from '../../utils/helpers.js';
 import { tickTime }                      from '../time-engine.js';
-import { checkPhapDiaExpiry }            from '../phap-dia.js';
+import { checkPhapDiaExpiry,
+         checkLinhDiaFee }              from '../phap-dia.js';
 import { tickAlchemyBuffs }              from '../../alchemy/alchemy-engine.js';
 import { tickHunger, tickDuocDien, tickAmThuong, getHungerQiModifier } from '../duoc-dien-engine.js';
 import { tickNghiepLuc, getNghiepLucPenalty } from '../kiep-tu-engine.js';
@@ -73,6 +74,7 @@ export function gameTick(G, dt = 0.1) {
   if (timeResult?.gameOver) bus.emit('game:over', { chronicle: G.chronicle });
 
   checkPhapDiaExpiry(G);
+  checkLinhDiaFee(G);
 }
 
 export function checkAchievements(G) {
@@ -136,7 +138,7 @@ function _freshMini() {
     inventory: new Array(24).fill(null),
     combat:{ active:false, enemy:null, playerHp:0, playerMaxHp:0, playerMp:100, playerMaxMp:100, turn:0, phase:'idle', log:[], selectedSkill:null, comboCount:0 },
     quests:{ active:[], completed:[], daily:[], lastDailyReset:0 },
-    alchemy:{ knownRecipes:['basic_qi_pill'], ingredients:{}, furnaceLevel:1, totalCrafted:0, successStreak:0 },
+    alchemy:{ knownRecipes:['basic_qi_pill'], ingredients:{}, furnaceLevel:0, totalCrafted:0, successStreak:0 },
     breakthroughs:0, hunts:0, alchemySuccess:0, skillsLearned:0,
     totalTime:0, totalKills:0, totalQuestsCompleted:0,
     lastSave:Date.now(), activeTab:'cultivate',

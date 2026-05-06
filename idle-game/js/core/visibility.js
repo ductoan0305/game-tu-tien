@@ -74,7 +74,13 @@ export function getVisibleTabs(G) {
 
   if (profs.includes('alchemy')) visible.add('alchemy');   // fallback nếu đã dùng trước S-B
 
-  if (profs.some(p => CRAFT_SUBS.includes(p) || p === 'nghe_nghiep')) {
+  // S-G FIX: check điều kiện luyen_dan eligible trực tiếp (tránh chicken-and-egg:
+  // auto-unlock chỉ chạy khi renderNgheNghiepTab, nhưng tab không hiện khi chưa unlock).
+  // Nếu player đủ điều kiện luyen_dan → show nghe_nghiep để họ có thể mở tab + trigger unlock.
+  const luyenDanEligible = (G.spiritData?.points?.huo ?? 0) > 0 && (G.ngoTinh ?? 0) >= 40;
+
+  const ALL_PROF_IDS = [...CRAFT_SUBS, 'luyen_dan', 'luyen_khi'];
+  if (luyenDanEligible || profs.some(p => ALL_PROF_IDS.includes(p) || p === 'nghe_nghiep')) {
     visible.add('nghe_nghiep');
     for (const sub of CRAFT_SUBS) {
       if (profs.includes(sub)) visible.add(sub);

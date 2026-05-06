@@ -56,7 +56,7 @@ function addLog(G, text, type = 'system') {
  * Bắt đầu combat với enemy
  * @param {object} G - game state
  * @param {string} enemyId - enemy id từ ENEMIES
- * @param {object} options - { forced: bool, isTianJie: bool, wave: number }
+ * @param {object} options - { forced: bool }
  * @returns {{ ok: bool, enemy?, msg? }}
  */
 export function startCombat(G, enemyId, options = {}) {
@@ -95,10 +95,6 @@ export function startCombat(G, enemyId, options = {}) {
     lastSkillUsed: null,
     dodgeNextHit: false,
     playerDebuffs: [],
-    isTianJie: options.isTianJie || false,
-    tianJieWave: options.wave || 0,
-    tianJieTotalWaves: G.combat.tianJieTotalWaves || 3,
-    tianJieBoss: null,
   };
 
   addLog(G, `⚔ ${enemy.name} xuất hiện! HP: ${enemy.currentHp}`, 'system');
@@ -717,23 +713,6 @@ export function flee(G) {
     }
     return { ok: true, msg: `💨 Thoát thất bại! Bị thương -${dmg} HP` };
   }
-}
-
-/**
- * Bắt đầu Thiên Kiếp — chuỗi boss fights khi đại đột phá
- */
-export function startTianJie(G, nextRealmIdx) {
-  const waves = 3;
-  G.combat.tianJieActive = true;
-  G.combat.tianJieTotalWaves = waves;
-  G.combat.tianJieWave = 0;
-
-  // Wave 1: Thiên Lôi Thần Long scaled theo realm mới
-  return startCombat(G, 'tian_jie_dragon', {
-    forced: true,
-    isTianJie: true,
-    wave: 1,
-  });
 }
 
 /**

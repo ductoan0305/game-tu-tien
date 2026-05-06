@@ -345,8 +345,8 @@ function renderActiveCombat(G) {
 
       <!-- BOTTOM BAR -->
       <div class="combat-bottom-bar">
-        <button id="btn-combat-flee" class="btn-secondary btn-flee-combat" ${c.isTianJie?'disabled':''}>
-          💨 Thoát ${c.isTianJie?'(Không thể!)':'(60%)'}
+        <button id="btn-combat-flee" class="btn-secondary btn-flee-combat">
+          💨 Thoát (60%)
         </button>
         <span class="turn-label" id="turn-num">Lượt ${c.turn}</span>
       </div>

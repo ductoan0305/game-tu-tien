@@ -1,9 +1,13 @@
 // ============================================================
 // quest/quest-engine.js — Quest state machine
-// v2 — Thêm: bounty cooldown, sect quests, kill_tier,
-//      gather_specific, sectExp reward, meditate_time tracking
+// v3 — S-D: NPC-gated quest system
+//      - giveQuestFromNPC(G, npcId): NPC giao quest cho player
+//      - getNpcPendingQuest(G, npcId): lấy quest NPC muốn giao (chưa giao)
+//      - initQuestSystem: KHÔNG auto-accept side quests nữa
+//      - getActiveNpcQuests(G): query cho tab Nhiệm Vụ
 // ============================================================
-import { QUESTS, DAILY_QUEST_IDS, BOUNTY_QUEST_IDS, SECT_QUEST_IDS } from './quest-data.js';
+import { QUESTS, NPC_QUESTS, NPC_QUEST_MAP,
+         DAILY_QUEST_IDS, BOUNTY_QUEST_IDS, SECT_QUEST_IDS } from './quest-data.js';
 import { bus } from '../utils/helpers.js';
 import { unlockRecipe } from '../alchemy/alchemy-engine.js';
 
@@ -13,8 +17,16 @@ function getQuest(questId) {
   return QUESTS.find(q => q.id === questId);
 }
 
+function getNpcQuest(questId) {
+  return NPC_QUESTS.find(q => q.id === questId);
+}
+
 function findActiveQuest(G, questId) {
   return G.quests.active.find(q => q.questId === questId);
+}
+
+function findActiveNpcQuest(G, questId) {
+  return (G.quests.npcActive || []).find(q => q.questId === questId);
 }
 
 function isCompleted(G, questId) {
@@ -23,21 +35,15 @@ function isCompleted(G, questId) {
 
 function isAvailable(G, quest) {
   if (!quest) return false;
-  // Không lặp lại nếu không repeatable
   if (isCompleted(G, quest.id) && !quest.repeatable) return false;
-  // Realm requirement
   if (G.realmIdx < (quest.unlockRealm || 0)) return false;
-  // Prereq chain
   if (quest.prereq && !isCompleted(G, quest.prereq)) return false;
-  // Sect requirement
   if (quest.requireSect && !G.sectId) return false;
-  // Bounty cooldown
   if (quest.type === 'bounty' && quest.repeatable) {
     const cdKey = `_bountycd_${quest.id}`;
     const cd = G[cdKey] || 0;
     if (Date.now() < cd) return false;
   }
-  // Sect quest cooldown
   if (quest.type === 'sect' && quest.repeatable) {
     const cdKey = `_sectqcd_${quest.id}`;
     const cd = G[cdKey] || 0;
@@ -46,12 +52,172 @@ function isAvailable(G, quest) {
   return true;
 }
 
-// ---- Sect rank lookup ----
-function getSectRank(G) {
-  return G.sect?.rank || 0;
+// ============================================================
+// NPC QUEST SYSTEM — S-D core
+// ============================================================
+
+/**
+ * Lấy quest mà NPC này muốn giao cho player hiện tại.
+ * Trả về quest object hoặc null nếu không có.
+ * Dùng để hiển thị indicator "!" trên bản đồ.
+ */
+export function getNpcPendingQuest(G, npcId) {
+  const questsForNpc = NPC_QUEST_MAP[npcId] || [];
+  for (const q of questsForNpc) {
+    // Đã hoàn thành rồi → bỏ qua
+    if (isCompleted(G, q.id)) continue;
+    // Đang active rồi → bỏ qua (đã giao rồi)
+    if (findActiveNpcQuest(G, q.id)) continue;
+    // Kiểm tra điều kiện giao
+    if (typeof q.giveCondition === 'function' && !q.giveCondition(G)) continue;
+    // Quest này NPC muốn giao
+    return q;
+  }
+  return null;
 }
 
-// ---- Daily reset (mỗi 24h thực) ----
+/**
+ * NPC giao quest cho player.
+ * Gọi khi player bấm "Nhận Nhiệm Vụ" trong NPC dialog.
+ * Trả về { ok, msg, quest }
+ */
+export function giveQuestFromNPC(G, npcId) {
+  const quest = getNpcPendingQuest(G, npcId);
+  if (!quest) {
+    return { ok: false, msg: 'Hiện ta không có việc gì nhờ ngươi.' };
+  }
+
+  // Đảm bảo npcActive tồn tại
+  if (!G.quests.npcActive) G.quests.npcActive = [];
+
+  const progress = {};
+  for (const obj of quest.objectives) {
+    progress[obj.key] = 0;
+  }
+
+  G.quests.npcActive.push({
+    questId: quest.id,
+    npcId,
+    progress,
+    acceptedAt: G.gameTime?.currentYear || 0,
+  });
+
+  bus.emit('quest:update', { type: 'npc_quest_accepted', questId: quest.id });
+  return { ok: true, msg: `📜 Nhận nhiệm vụ: ${quest.name}`, quest };
+}
+
+/**
+ * Lấy danh sách NPC quest đang active (hiển thị trong tab Nhiệm Vụ).
+ */
+export function getActiveNpcQuests(G) {
+  if (!G.quests.npcActive) return [];
+  return G.quests.npcActive.map(entry => ({
+    ...entry,
+    quest: getNpcQuest(entry.questId),
+  })).filter(e => e.quest);
+}
+
+/**
+ * Cập nhật progress của NPC quests khi có event.
+ * Tương tự updateQuests nhưng cho npcActive list.
+ */
+function updateNpcQuests(G, eventType, data = {}) {
+  if (!G.quests.npcActive) return false;
+  let anyUpdated = false;
+
+  for (const entry of G.quests.npcActive) {
+    const quest = getNpcQuest(entry.questId);
+    if (!quest || entry.completed) continue;
+
+    for (const obj of quest.objectives) {
+      if (obj.key !== eventType) continue;
+
+      if (obj.key === 'kill_specific') {
+        const targetMatch = data.target === obj.target || data.enemyId === obj.target;
+        if (!targetMatch) continue;
+      }
+      if (obj.key === 'kill_tier') {
+        if (!data.enemyTier || data.enemyTier < (obj.minTier || 0)) continue;
+      }
+      if (obj.key === 'gather_specific') {
+        if (data.itemId !== obj.target) continue;
+      }
+      if (obj.key === 'reach_realm') {
+        if (data.realmIdx === undefined || data.realmIdx < obj.target) continue;
+      }
+
+      const prev = entry.progress[obj.key] || 0;
+      entry.progress[obj.key] = prev + (data.qty || 1);
+      anyUpdated = true;
+    }
+  }
+
+  if (anyUpdated) checkNpcQuestCompletions(G);
+  return anyUpdated;
+}
+
+function checkNpcQuestCompletions(G) {
+  if (!G.quests.npcActive) return;
+
+  const toComplete = G.quests.npcActive.filter(e => {
+    if (e.completed) return false;
+    const quest = getNpcQuest(e.questId);
+    if (!quest) return false;
+    return quest.objectives.every(obj => (e.progress[obj.key] || 0) >= obj.required);
+  });
+
+  for (const entry of toComplete) {
+    const quest = getNpcQuest(entry.questId);
+    entry.completed = true;
+    completeNpcQuest(G, entry.questId);
+    bus.emit('quest:completed', { questId: entry.questId, quest, isNpcQuest: true });
+  }
+}
+
+function completeNpcQuest(G, questId) {
+  const quest = getNpcQuest(questId);
+  if (!quest) return;
+
+  // Xóa khỏi npcActive
+  G.quests.npcActive = G.quests.npcActive.filter(e => e.questId !== questId);
+
+  // Mark completed
+  if (!G.quests.completed.includes(questId)) {
+    G.quests.completed.push(questId);
+    G.totalQuestsCompleted = (G.totalQuestsCompleted || 0) + 1;
+  }
+
+  // Apply rewards
+  const rewards = quest.rewards || {};
+  if (rewards.stone)   G.stone = (G.stone || 0) + rewards.stone;
+  if (rewards.exp) {
+    G.exp = (G.exp || 0) + rewards.exp;
+    while (G.exp >= G.maxExp) {
+      G.exp -= G.maxExp;
+      G.maxExp = Math.floor(G.maxExp * 1.4);
+    }
+  }
+  if (rewards.recipe) unlockRecipe(G, rewards.recipe);
+
+  // Thưởng items (nếu có — reward có lore, không phải mưa linh thạch)
+  if (rewards.items && Array.isArray(rewards.items)) {
+    if (!G.inventory) G.inventory = {};
+    for (const item of rewards.items) {
+      G.inventory[item.id] = (G.inventory[item.id] || 0) + (item.qty || 1);
+    }
+  }
+
+  // Danh Vọng nhỏ từ giải quyết nhu cầu NPC
+  const dvGain = 5;
+  G.danhVong = (G.danhVong ?? 0) + dvGain;
+  bus.emit('danhvong:gained', { amount: dvGain, source: quest.name });
+
+  bus.emit('quest:update', { type: 'npc_quest_complete', questId });
+}
+
+// ============================================================
+// LEGACY QUEST SYSTEM — giữ nguyên cho daily/bounty/sect/story
+// ============================================================
 
 export function checkDailyReset(G) {
   const now = Date.now();
@@ -80,8 +246,6 @@ export function checkDailyReset(G) {
   return true;
 }
 
-// ---- Accept / Start quest ----
-
 export function acceptQuest(G, questId) {
   const quest = getQuest(questId);
   if (!quest) return { ok: false, msg: 'Quest không tồn tại' };
@@ -105,8 +269,6 @@ export function acceptQuest(G, questId) {
   return { ok: true, msg: `📜 Nhận nhiệm vụ: ${quest.name}` };
 }
 
-// ---- Update quest progress ----
-
 export function updateQuests(G, eventType, data = {}) {
   let anyUpdated = false;
 
@@ -118,23 +280,16 @@ export function updateQuests(G, eventType, data = {}) {
       for (const obj of quest.objectives) {
         if (obj.key !== eventType) continue;
 
-        // kill_specific: cần đúng enemyId
         if (obj.key === 'kill_specific') {
           const targetMatch = data.target === obj.target || data.enemyId === obj.target;
           if (!targetMatch) continue;
         }
-
-        // kill_tier: enemy phải có tier >= minTier
         if (obj.key === 'kill_tier') {
           if (!data.enemyTier || data.enemyTier < (obj.minTier || 0)) continue;
         }
-
-        // gather_specific: cần đúng itemId
         if (obj.key === 'gather_specific') {
           if (data.itemId !== obj.target) continue;
         }
-
-        // reach_realm: chỉ tính khi đạt đúng realm target
         if (obj.key === 'reach_realm') {
           if (data.realmIdx === undefined || data.realmIdx < obj.target) continue;
         }
@@ -149,18 +304,18 @@ export function updateQuests(G, eventType, data = {}) {
   updateList(G.quests.active);
   updateList(G.quests.daily);
 
-  if (anyUpdated) {
+  // Cập nhật NPC quests cùng lúc
+  const npcUpdated = updateNpcQuests(G, eventType, data);
+
+  if (anyUpdated || npcUpdated) {
     checkCompletions(G);
     bus.emit('quest:progress', { eventType, data });
   }
 
-  return anyUpdated;
+  return anyUpdated || npcUpdated;
 }
 
-// ---- Check completions ----
-
 function checkCompletions(G) {
-  // Non-daily active quests
   const toComplete = G.quests.active.filter(e => {
     const quest = getQuest(e.questId);
     if (!quest || e.completed) return false;
@@ -174,7 +329,6 @@ function checkCompletions(G) {
     bus.emit('quest:completed', { questId: entry.questId, quest, rewards: result.rewards });
   }
 
-  // Daily quests
   for (const entry of G.quests.daily) {
     if (entry.completed) continue;
     const quest = getQuest(entry.questId);
@@ -187,27 +341,22 @@ function checkCompletions(G) {
   }
 }
 
-// ---- Complete quest + claim rewards ----
-
 export function completeQuest(G, questId) {
   const quest = getQuest(questId);
   if (!quest) return { ok: false, msg: 'Quest không tồn tại' };
 
   G.quests.active = G.quests.active.filter(e => e.questId !== questId);
 
-  // Mark completed (non-repeatable)
   if (!quest.repeatable && !G.quests.completed.includes(questId)) {
     G.quests.completed.push(questId);
     G.totalQuestsCompleted = (G.totalQuestsCompleted || 0) + 1;
   }
 
-  // Bounty/Sect cooldown sau khi hoàn thành
   if (quest.repeatable && quest.cooldownHours) {
     const prefix = quest.type === 'bounty' ? '_bountycd_' : '_sectqcd_';
     G[prefix + questId] = Date.now() + quest.cooldownHours * 3600 * 1000;
   }
 
-  // Apply rewards
   const rewards = quest.rewards || {};
   if (rewards.stone)   G.stone = (G.stone || 0) + rewards.stone;
   if (rewards.exp) {
@@ -219,25 +368,21 @@ export function completeQuest(G, questId) {
   }
   if (rewards.recipe) unlockRecipe(G, rewards.recipe);
 
-  // sectExp — tăng công lao tông môn
   if (rewards.sectExp && G.sectId) {
     if (!G.sect) G.sect = { rank: 0, exp: 0, totalContributions: 0 };
     G.sect.exp = (G.sect.exp || 0) + rewards.sectExp;
     _checkSectRankUp(G);
   }
 
-  // Danh Vọng — bounty/sect quest tăng danh tiếng
   if (quest.type === 'bounty' || quest.type === 'sect') {
     const dvGain = quest.type === 'bounty' ? 8 : 5;
     G.danhVong = (G.danhVong ?? 0) + dvGain;
     bus.emit('danhvong:gained', { amount: dvGain, source: quest.name });
   } else if (quest.type === 'story') {
-    // Story quest quan trọng hơn
     G.danhVong = (G.danhVong ?? 0) + 15;
     bus.emit('danhvong:gained', { amount: 15, source: quest.name });
   }
 
-  // Unlock chain quest
   if (rewards.unlockQuest) {
     const nextQuest = getQuest(rewards.unlockQuest);
     if (nextQuest && isAvailable(G, nextQuest)) {
@@ -246,14 +391,11 @@ export function completeQuest(G, questId) {
   }
 
   bus.emit('quest:update', { type: 'quest_complete', qty: 1 });
-
   return { ok: true, msg: `✅ Hoàn thành: ${quest.name}!`, rewards };
 }
 
-// ---- Sect rank up check ----
 function _checkSectRankUp(G) {
   if (!G.sect) return;
-  // Import SECT_RANKS lazily để tránh circular
   const RANK_THRESHOLDS = [0, 500, 2000, 5000, 12000, 30000, 80000, 200000];
   const currentRank = G.sect.rank || 0;
   const nextRank = currentRank + 1;
@@ -262,8 +404,6 @@ function _checkSectRankUp(G) {
     bus.emit('sect:rank_up', { rank: nextRank });
   }
 }
-
-// ---- Claim daily reward ----
 
 export function claimDailyReward(G, questId) {
   const entry = G.quests.daily.find(e => e.questId === questId && e.completed);
@@ -296,8 +436,6 @@ export function claimDailyReward(G, questId) {
   return { ok: true, msg: `🎁 Nhận thưởng: ${rewardStr}`, rewards };
 }
 
-// ---- Bounty: list available bounties ----
-
 export function getAvailableBounties(G) {
   return QUESTS.filter(q => {
     if (q.type !== 'bounty') return false;
@@ -306,13 +444,10 @@ export function getAvailableBounties(G) {
     if (Date.now() < (G[cdKey] || 0)) return false;
     return true;
   }).map(q => {
-    const cdKey = `_bountycd_${q.id}`;
     const active = findActiveQuest(G, q.id);
     return { ...q, isActive: !!active, progress: active?.progress || {} };
   });
 }
-
-// ---- Sect quests: list available ----
 
 export function getAvailableSectQuests(G) {
   if (!G.sectId) return [];
@@ -327,57 +462,42 @@ export function getAvailableSectQuests(G) {
   });
 }
 
-// ---- Init quest system ----
-
 export function initQuestSystem(G) {
+  // Đảm bảo npcActive tồn tại trong state
+  if (!G.quests.npcActive) G.quests.npcActive = [];
+
   checkDailyReset(G);
 
-  // Auto-accept quest đầu tiên phù hợp
+  // Story quest cho tông môn viên (vẫn giữ logic cũ)
   if (G.quests.active.length === 0 && G.quests.completed.length === 0) {
     if (G.sectId) {
-      // Gia nhập tông môn ngay — quest đầu là giới thiệu tông môn
       const sectIntroId = `sq_sect_intro_${G.sectId}`;
       const sectIntro = getQuest(sectIntroId);
       if (sectIntro) {
         acceptQuest(G, sectIntroId);
       } else {
-        // Fallback: nhiệm vụ đóng góp lần đầu
         acceptQuest(G, 'sq_01_first_kill');
       }
-    } else {
-      // Tán tu — auto-accept các quest có flag autoAccept
-      const autoQuests = QUESTS
-        .filter(q => q.autoAccept && !findActiveQuest(G, q.id) && !G.quests.completed.includes(q.id))
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-      for (const q of autoQuests) acceptQuest(G, q.id);
-      if (G.quests.active.length === 0) acceptQuest(G, 'sq_00_meet_elder');
     }
+    // Tán tu: KHÔNG auto-accept gì cả.
+    // Họ phải đi nói chuyện với NPC để nhận quest.
   }
 
-  // Auto-accept available side quests
-  const sideQuests = QUESTS.filter(q => q.type === 'side' && isAvailable(G, q));
-  for (const quest of sideQuests) {
-    if (!findActiveQuest(G, quest.id)) {
-      acceptQuest(G, quest.id);
-    }
-  }
+  // KHÔNG auto-accept side quests (S-D: triết lý Manifesto §6)
 
   // Lắng nghe bus events
   bus.on('quest:update', ({ type, ...data }) => {
     updateQuests(G, type, data);
   });
 
-  // Meditate time tracking
   bus.on('tick:meditate', ({ dt }) => {
     updateQuests(G, 'meditate_time', { qty: dt });
   });
 
-  // Dungeon floor completion
   bus.on('dungeon:floor_complete', ({ floor }) => {
     updateQuests(G, 'dungeon_floor', { qty: 1 });
   });
 
-  // Kill with tier info (combat-engine cần emit enemyTier)
   bus.on('combat:enemy_killed', ({ enemyId, enemyTier }) => {
     updateQuests(G, 'kill', { qty: 1 });
     updateQuests(G, 'kill_specific', { target: enemyId, qty: 1 });
@@ -386,7 +506,6 @@ export function initQuestSystem(G) {
     }
   });
 
-  // Gather with itemId info
   bus.on('gather:item', ({ itemId, qty }) => {
     updateQuests(G, 'gather', { qty: qty || 1 });
     if (itemId) {

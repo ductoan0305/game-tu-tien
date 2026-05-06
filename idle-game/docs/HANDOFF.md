@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session 16 — Tab-as-Popup + Resize System (2026-05-05)
+**Cập nhật lần cuối:** Session S-G — LK End-to-End Playtest & Balance (2026-05-06)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -501,11 +501,81 @@ G = {
 19. `renderTutorialObjectivePanel()` và `showTutorialAgeWarningModal()` đã có trong `render-core.js` ✅ ĐÃ DONE
 20. Wiring trong `main.js`: `trackMeditateSeconds` gọi mỗi tick khi bế quan, `trackStaminaAction` / `trackBreakthroughAttempt` gắn vào từng cultivate action, `trackTabOpen` gắn vào tab switch, Step 5 modal trigger trong tick loop ✅ ĐÃ DONE
 
-### S-B — Visibility Gate System (2026-05-05)
+### S-G — LK End-to-End Playtest & Balance (2026-05-06)
+
+32. **Chicken-and-egg: `luyen_dan` auto-unlock không bao giờ fire** → `_tryAutoUnlock` chỉ gọi trong `renderNgheNghiepTab`, nhưng `nghe_nghiep` tab không hiện trong nav khi `flags.unlockedProfessions` trống → player có Hỏa root + ngoTinh≥40 không bao giờ thấy tab nghề nghiệp → fix `visibility.js`: thêm check `luyenDanEligible` trực tiếp (spiritData.points.huo > 0 && ngoTinh >= 40) → show `nghe_nghiep` → mở tab → `_tryAutoUnlock` fires bình thường ✅ ĐÃ FIX
+
+33. **`fresh-state.js` tutorial thiếu `panelDismissed`** → default state không có field này; `ensureTutorialState()` patch được nhưng state không nhất quán → thêm `panelDismissed: false` vào `fresh-state.js` ✅ ĐÃ FIX
+
+**Playtest confirmations (không cần fix):**
+- Tutorial steps 0-6: logic đúng, wiring đúng (main.js tick + action handlers)
+- `panelDismissed` guard: panel không tự bật lại sau khi đóng ✅
+- Nút reopen "📖 Cẩm nang" hoạt động đúng ✅
+- Age warning modal step 5: trigger once, acknowledge → advance ✅
+- Gate system: shop ẩn khi chưa gặp NPC ✅, quest tab empty state ✅, profession locked card ✅
+- Time engine: 1s thực = 30 phút game (YEARS_PER_TICK × dt × 10 = đúng) ✅
+- Breakthrough chance Ngũ LC LK1 (purity đủ): P_base=0.90 × F_lingcan=0.4 × F_purity=1.0 × F_ngotinh=1.0 × F_tamcanh=0.9 ≈ **32.4%** — thấp nhưng không bằng 0 ✅ đúng thiết kế
+- purityThresholds LK đã calibrate từ S9, không cần thay đổi ✅
+- canCotBonus từ tay_tuy_quyet đã apply qua `calcEffectiveCanCot` ✅
+- Audit #1,2,6,7,8 đã fix từ S-F, không có regression ✅
+
+**UX concern ghi nhận (chưa fix — thấp priority):**
+- Purity 50-74% threshold cho phép attempt breakthrough (gate chỉ block < 50%) nhưng `F_purity=0.0` → guaranteed fail kèm stat loss (qi -20-40%, purity -30-50%, tamCanh -5-25, tuổi thọ -1-8). Không có warning rõ ràng cho người chơi về range "50-74% = guaranteed fail". → Đề xuất: thêm warning text trong breakthrough UI khi purity < 75% threshold.
+
+### S-E — Profession Gates (2026-05-06)
+31. Tab Nghề Nghiệp hiển thị nội dung Trận Pháp/Phù Chú/Khôi Lỗi dù chưa unlock → vi phạm triết lý "không phải ai cũng theo được mọi nghề" → tạo profession gate system:
+  - `js/ui/tabs/nghe-nghiep-tab.js`: sửa `_isUnlocked()` dùng `G.flags.unlockedProfessions` thay `unlockRealm/Stage`; thêm `_tryAutoUnlock(G)` (Luyện Đan: ngoTinh≥40 + Hỏa root; Linh Thực: kitchen≥1); thêm `_renderLockedCard(prof, G)` hiển thị tên+mô tả+điều kiện mờ; locked button vẫn clickable để xem điều kiện; kho nguyên liệu chỉ hiện khi nghề đã unlock
+  - `js/core/state/persistence.js`: fix `_inferUnlockedProfessions()` dùng đúng id `luyen_dan` (thay `alchemy`) và thêm `luyen_khi` inference
+  - `css/craft-popup.css`: thêm CSS cho `.nn-locked-card`, `.nn-lc-*`, `.nn-lock-grid`, `.nn-sidebar-hint`; sửa `.nn-prof-locked` cho phép click
+  ✅ ĐÃ FIX
+
+**Điều kiện mở nghề (S-E):**
+| Nghề | ID | Điều kiện |
+|---|---|---|
+| Luyện Đan | `luyen_dan` | ngoTinh ≥ 40 + linh căn Hỏa (auto-unlock), hoặc cơ duyên |
+| Luyện Khí | `luyen_khi` | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
+| Trận Pháp | `tran_phap` | Học từ NPC/tông môn, hoặc tìm Trận Kinh (flags only) |
+| Phù Chú   | `phu_chu`   | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
+| Khôi Lỗi  | `khoi_loi`  | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
+| Linh Thực | `linh_thuc` | Bếp Linh Thực level ≥ 1 (auto-unlock), hoặc Linh Địa |
+
+### S-D — Quest System Redesign LK (2026-05-06)
+30. Tab Nhiệm Vụ hiển thị danh sách quest dài sẵn có ngay từ đầu game, không ai giao → vi phạm Manifesto §6 → tạo hệ thống NPC-gated:
+  - `js/quest/quest-data.js`: thêm `NPC_QUESTS` (5 quest LK, có `givenBy`, `giveCondition`, `unlocks`) và `NPC_QUEST_MAP`
+  - `js/quest/quest-engine.js`: thêm `giveQuestFromNPC(G, npcId)`, `getNpcPendingQuest(G, npcId)`, `getActiveNpcQuests(G)`, `G.quests.npcActive[]`; bỏ auto-accept side quests trong `initQuestSystem`
+  - `js/ui/tabs/quest-tab.js`: empty state "Ngươi chưa nhận nhiệm vụ từ ai", hiển thị `npcActive` riêng, ẩn "Available Quests"
+  - `js/ui/location-popup.js`: NPC dialog nhận quest qua nút "Nghe Việc Nhờ", import `getNpcPendingQuest/giveQuestFromNPC`
+  - `js/ui/starter-village.js`: indicator `!` (vòng tròn vàng) trên node NPC khi `getNpcPendingQuest` trả về quest
+  ✅ ĐÃ FIX
+
+**NPC Quest List (LK):**
+| Quest ID | NPC | Làng | Điều kiện |
+|---|---|---|---|
+| `nq_01_clear_vermin` | `lao_duoc_su` | Thanh Phong Thôn | setupDone + LK tầng 1+ |
+| `nq_02_herb_knowledge` | `lao_duoc_su` | Thanh Phong Thôn | `nq_01` hoàn thành |
+| `nq_03_patrol_duty` | `lao_ngu_ong` | Lâm Hải Thôn | setupDone + LK tầng 1+ |
+| `nq_04_river_secret` | `lao_ngu_ong` | Lâm Hải Thôn | `nq_03` hoàn thành |
+| `nq_05_forge_test` | `dao_khach_gia` | Hỏa Diệm Thôn | setupDone + LK tầng 1+ |
+
+**State mới:**
+```js
+G.quests.npcActive = [   // quest đã được NPC giao, đang thực hiện
+  { questId, npcId, progress: {}, acceptedAt }
+]
+```
+
+Migration cần thêm vào `persistence.js` (save cũ chưa có `G.quests.npcActive`):
+```js
+if (!G.quests.npcActive) G.quests.npcActive = [];
+```
+(Logic này đã có trong `initQuestSystem` — safe cho save cũ.)
 29. Bottom nav hiển thị toàn bộ 19 tabs ngay từ đầu → vi phạm triết lý hardcore, overwhelm người mới → tạo `js/core/visibility.js` với `getVisibleTabs(G)`, wire vào `renderNav()` (ẩn button nếu tab chưa visible), wire vào `wireNavBtn` (toast nếu click button ẩn). Migration `_migrateFlags()` đảm bảo save cũ không mất tab. `G.flags` object thêm vào `fresh-state.js`. Programmatic tab switches (hunting, dungeon, combat end) KHÔNG bị gate. ✅ ĐÃ FIX
 
 ### S-A — Fix Tutorial Panel Re-trigger (2026-05-05)
 27. Tutorial panel tự bật lại ngay sau khi đóng — `renderTutorialObjectivePanel()` gọi mỗi tick, không có guard cho trạng thái "người chơi đã đóng tay" → thêm `G.tutorial.panelDismissed` flag; khi user bấm X, `onClose` callback set flag `true`; `renderTutorialObjectivePanel` không auto-open nếu flag đang `true`; flag reset về `false` tự động khi `_advance()` chuyển step mới ✅ ĐÃ FIX
+
+### S-C - Fix Shop + Linh Thu access ✅ ĐÃ FIX
+
 28. Không có nút mở lại tutorial panel sau khi đóng (HANDOFF §4 spec) → thêm `_renderTutorialReopenBtn()` trong `render-core.js`: nút `#tutorial-reopen-btn` class `.tutorial-reopen-btn` fixed-position góc phải màn hình, chỉ hiện khi `panelDismissed=true`, click → reset flag + reopen panel; CSS thêm vào `tutorial.css` ✅ ĐÃ FIX
 
 ### S11
@@ -518,14 +588,14 @@ G = {
 
 Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và code hiện tại:
 
-1. **Scope Nhân Giới lệch:** `data.js` vẫn có realm sau Hóa Thần (Luyện Hư, Hợp Thể...).
-2. **Thiên Kiếp lệch triết lý:** vẫn còn state/logic `tianJie` trong combat và content map.
-3. **Dead code lỗi:** `calcCultivationMultiplier()` dùng `congPhap.rateMultiplier` (không tồn tại) và không được dùng.
-4. **Stack vĩnh viễn:** `doArray()` cộng `qiBonus` permanent, chưa có cap/timer.
+1. ~~**Scope Nhân Giới lệch:** `data.js` vẫn có realm sau Hóa Thần (Luyện Hư, Hợp Thể...).~~ ✅ **ĐÃ FIX** (S-F) — `tian_jie_dragon` và `heaven_collapse` (unlockRealm:5) xóa khỏi `combat-data.js`; REALMS đã đúng 0-4.
+2. ~~**Thiên Kiếp lệch triết lý:** vẫn còn state/logic `tianJie` trong combat và content map.~~ ✅ **ĐÃ FIX** (S-F) — Xóa `startTianJie`, xóa `isTianJie/tianJieWave/tianJieTotalWaves/tianJieBoss` khỏi `fresh-state.js` và `combat-engine.js`; `combat-tab.js` flee button không còn check isTianJie.
+3. ~~**Dead code lỗi:** `calcCultivationMultiplier()` dùng `congPhap.rateMultiplier` (không tồn tại) và không được dùng.~~ ✅ **ĐÃ FIX** (S11)
+4. ~~**Stack vĩnh viễn:** `doArray()` cộng `qiBonus` permanent, chưa có cap/timer.~~ ✅ **ĐÃ FIX** (S11) — dùng `eventRateBonus`/`eventRateTimer` (buff 300s, tự expire)
 5. ~~**Buff không có tác dụng:** `tay_tuy_quyet` tạo `canCotBonus` nhưng chưa được apply vào hệ stat/chance.~~ ✅ **ĐÃ FIX** — `calcEffectiveCanCot(G)` trong `computed.js`, `breakthrough.js` dùng hàm này
-6. **Linh Địa chưa có phí định kỳ:** hiện chỉ trừ stone một lần khi chuyển map.
-7. **Prestige lệch mặc định lò:** `_freshMini()` đặt `furnaceLevel=1` trong khi state chuẩn là `0`.
-8. **Sect rank check không đồng bộ:** `phap-dia.js` tự tính rank bằng `Math.floor(exp/500)` thay vì dùng rank helper tông môn.
+6. ~~**Linh Địa chưa có phí định kỳ:** hiện chỉ trừ stone một lần khi chuyển map.~~ ✅ **ĐÃ FIX** (S-F) — `checkLinhDiaFee(G)` trong `phap-dia.js` gọi mỗi tick, trừ 150💎/năm game; cảnh báo khi thiếu stone nhưng không kick; wired qua `gameTick` trong `tick.js`.
+7. ~~**Prestige lệch mặc định lò:** `_freshMini()` đặt `furnaceLevel=1` trong khi state chuẩn là `0`.~~ ✅ **ĐÃ FIX** (S-F) — Sửa thành `furnaceLevel:0` trong `_freshMini()` (`tick.js`).
+8. ~~**Sect rank check không đồng bộ:** `phap-dia.js` tự tính rank bằng `Math.floor(exp/500)` thay vì dùng rank helper tông môn.~~ ✅ **ĐÃ FIX** (S-F) — Import `SECT_RANKS` từ `sect-data.js`, dùng loop đúng thay vì hardcode.
 
 ---
 

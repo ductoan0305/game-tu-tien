@@ -2,6 +2,7 @@
 // ui/location-popup.js — Location Popup, Hunt, NPC Dialog
 // ============================================================
 import { bus } from '../utils/helpers.js';
+import { getNpcPendingQuest, giveQuestFromNPC } from '../quest/quest-engine.js';
 import { addChronicle } from '../core/time-engine.js';
 import { moveToPhapDia } from '../core/phap-dia.js';
 import { calcMaxQi, calcQiRate } from '../core/state.js';
@@ -59,7 +60,7 @@ function _getLocActionBtns(G, loc) {
       btns.push(['combat','⚔ Săn Thú'],['gather','🌿 Thu Thảo']);
       break;
     case 'cultivate_spot':
-      btns.push(['cultivate','🧘 Bế Quan Tại Đây']);
+      btns.push(['cultivate','🧘 Nhập Định Tại Đây']);
       break;
     case 'alchemy':
       btns.push(['alchemy','⚗ Luyện Đan'],['gather','🌿 Thu Thảo']);
@@ -368,24 +369,24 @@ function _popupCultivate(G, loc) {
   const pdCurrent = G.phapDia?.currentId;
 
   return `
-    <div class="lp-section-title">Bế Quan Tu Luyện</div>
+    <div class="lp-section-title">Tu Luyện — Nhập Định</div>
     ${pdName ? `<div class="lp-cultivate-pd">✦ Pháp Địa: <strong>${pdName}</strong></div>` : ''}
     <div class="lp-cultivate-status">
       <span class="${isMed?'lp-med-on':'lp-med-off'}">
-        ${isMed ? '🧘 Đang bế quan' : '⚠ Chưa bế quan'}
+        ${isMed ? '🧘 Đang nhập định' : '⚠ Chưa vận công'}
       </span>
       ${pdCurrent === loc.phapDia ? '<span class="lp-pd-active">✓ Pháp Địa đang dùng</span>' : ''}
     </div>
     <div class="lp-cultivate-btns">
       ${loc.phapDia ? `<button class="lp-action-main" id="lp-btn-enter-phapdia">
-        🏔 Vào Pháp Địa${isMed ? ' (đang bế quan)' : ''}
+        🏔 Vào Pháp Địa${isMed ? ' (đang nhập định)' : ''}
       </button>` : ''}
       <button class="lp-action-main${isMed?' lp-action-active':''}" id="lp-btn-toggle-med">
-        ${isMed ? '⏹ Kết thúc Bế Quan' : '🧘 Bắt Đầu Bế Quan'}
+        ${isMed ? '⏹ Xuất Định' : '🧘 Nhập Định'}
       </button>
     </div>
     <div class="lp-cultivate-desc">
-      Bế quan tại đây để tận dụng linh khí. Rời bản đồ hoặc hành động sẽ gián đoạn bế quan.
+      Nhập định tại đây để tận dụng linh khí. Rời bản đồ hoặc hành động sẽ gián đoạn tu luyện.
     </div>`;
 }
 
@@ -406,13 +407,23 @@ function _popupDungeon(G, loc) {
 }
 
 function _popupShop(G, loc) {
+  // S-C: NPC chợ có lời chào — mở khóa shop lần đầu qua tương tác này
+  const isFirstVisit = !G.flags?.shopUnlocked;
+  const npcGreeting = isFirstVisit
+    ? `<div class="lp-npc-dialog" style="background:#1a1a26;border-left:3px solid #f0d47a;padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:12px;color:#e8d5a3;font-style:italic;line-height:1.6">
+        "Ngươi muốn xem hàng hóa của ta? Vào đây, vào đây — hàng tốt giá phải chăng, không lừa người tu tiên đâu."
+      </div>`
+    : `<div class="lp-npc-dialog" style="background:#1a1a26;border-left:3px solid #f0d47a;padding:8px 14px;border-radius:6px;margin-bottom:12px;font-size:11px;color:#b8a07a;font-style:italic">
+        "Chào lại ngươi! Hàng tốt hôm nay cũng nhiều — cứ từ từ xem."
+      </div>`;
   return `
     <div class="lp-section-title">🏮 Mua Bán</div>
-    <div class="lp-shop-hint">
+    ${npcGreeting}
+    <div class="lp-shop-hint" style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
       Tại ${loc.name} có thể mua bán đan dược, nguyên liệu và trang bị.
     </div>
     <div class="lp-shop-btns">
-      <button class="lp-action-main lp-action-switch" data-tab="shop">🏪 Mở Cửa Hàng →</button>
+      <button class="lp-action-main lp-action-switch" data-tab="shop" data-unlock="shop">🏪 Vào Cửa Hàng →</button>
       <button class="lp-action-main lp-action-switch" data-tab="inventory">🎒 Xem Túi Đồ →</button>
     </div>`;
 }
@@ -475,8 +486,15 @@ function _wireLocPopupActions(G, loc, mode, actions, modal) {
   // Switch tab buttons (các popup có data-tab)
   modal.querySelectorAll('.lp-action-switch').forEach(btn => {
     btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab;
+      // S-C: Khi người chơi lần đầu vào shop qua NPC → unlock + save + re-render nav
+      if (targetTab === 'shop' && btn.dataset.unlock === 'shop') {
+        if (!G.flags) G.flags = {};
+        G.flags.shopUnlocked = true;
+        actions.unlockShop?.();
+      }
       modal.remove();
-      actions.switchTab(btn.dataset.tab);
+      actions.switchTab(targetTab);
     });
   });
 
@@ -501,7 +519,7 @@ function _wireLocPopupActions(G, loc, mode, actions, modal) {
   // Cultivate: toggle meditating
   document.getElementById('lp-btn-toggle-med')?.addEventListener('click', () => {
     G.meditating = !G.meditating;
-    actions.toast(G.meditating ? '🧘 Bắt đầu bế quan' : '⏹ Kết thúc bế quan', 'jade');
+    actions.toast(G.meditating ? '🧘 Nhập định — bắt đầu tu luyện' : '⏹ Xuất định', 'jade');
     // Re-render content
     document.getElementById('loc-popup-body').innerHTML =
       _buildLocPopupContent(G, loc, 'cultivate', actions);
@@ -513,7 +531,7 @@ function _wireLocPopupActions(G, loc, mode, actions, modal) {
     if (loc.phapDia) {
       moveToPhapDia(G, loc.phapDia);
       if (!G.meditating) G.meditating = true;
-      actions.toast(`✦ Vào Pháp Địa ${loc.phapDia} — bắt đầu bế quan`, 'jade');
+      actions.toast(`✦ Vào Pháp Địa ${loc.phapDia} — bắt đầu nhập định`, 'jade');
       document.getElementById('loc-popup-body').innerHTML =
         _buildLocPopupContent(G, loc, 'cultivate', actions);
       _wireLocPopupActions(G, loc, 'cultivate', actions, modal);
@@ -779,6 +797,9 @@ function _showNpcDialog(G, loc, actions) {
   const name   = loc.name || npc?.name || 'NPC';
   const emoji  = npc?.emoji || '👤';
 
+  // Kiểm tra NPC có quest muốn giao không
+  const pendingQuest = getNpcPendingQuest(G, npcId);
+
   // Chọn greeting theo Danh Vọng
   const dv = G.danhVong ?? 0;
   let greeting = npc?.greeting || 'Chào tiểu hữu, ta có thể giúp gì cho ngươi?';
@@ -794,6 +815,18 @@ function _showNpcDialog(G, loc, actions) {
     ? `<div style="font-size:10px;color:#f0d47a;margin-top:3px">
          🌟 NPC biết danh tiếng của ngươi
        </div>`
+    : '';
+
+  // Nếu NPC có quest → greeting ưu tiên đề cập đến việc muốn nhờ
+  const questGreeting = pendingQuest
+    ? greeting + '<br><br><em style="color:#f0d47a">「Ta có việc muốn nhờ ngươi...」</em>'
+    : greeting;
+
+  // Nút nhận quest từ NPC (chỉ hiện khi NPC có quest)
+  const npcQuestBtn = pendingQuest
+    ? `<button class="npc-opt-btn npc-opt-quest" data-action="receive_npc_quest" title="${pendingQuest.name}">
+         📜 Nghe Việc Nhờ — ${pendingQuest.name}
+       </button>`
     : '';
 
   const existing = document.getElementById('modal-npc-dialog');
@@ -813,9 +846,10 @@ function _showNpcDialog(G, loc, actions) {
         </div>
       </div>
       <div class="npc-dialog-text" id="npc-dialog-text">
-        "${greeting}"
+        "${questGreeting}"
       </div>
       <div class="npc-dialog-options" id="npc-dialog-opts">
+        ${npcQuestBtn}
         ${(npc?.options||[{label:'📜 Xem Nhiệm Vụ', action:'quests'}]).map(opt => `
           <button class="npc-opt-btn" data-action="${opt.action}" title="${opt.hint||''}">
             ${opt.label}
@@ -829,6 +863,24 @@ function _showNpcDialog(G, loc, actions) {
     btn.addEventListener('click', () => {
       const act = btn.dataset.action;
       if (act === 'close') { modal.remove(); return; }
+
+      // S-D: Nhận quest từ NPC
+      if (act === 'receive_npc_quest') {
+        const result = giveQuestFromNPC(G, npcId);
+        if (result.ok) {
+          const q = result.quest;
+          // Hiển thị hội thoại giao quest
+          document.getElementById('npc-dialog-text').innerHTML =
+            `"${q.lore}"<br><br><span style="color:#c8f09a;font-size:11px">📜 Nhiệm vụ <strong>${q.name}</strong> đã được nhận. Kiểm tra tab Nhiệm Vụ để theo dõi.</span>`;
+          modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
+          if (actions?.toast) actions.toast(`📜 Nhận nhiệm vụ: ${q.name}`, 'jade');
+        } else {
+          document.getElementById('npc-dialog-text').innerHTML =
+            `"${result.msg}"`;
+          modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
+        }
+        return;
+      }
 
       if (act === 'lore' || act.startsWith('lore_')) {
         // Hiển thị lore variant, ẩn tất cả nút option (trừ nút đóng)

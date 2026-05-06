@@ -451,6 +451,15 @@ const mapActions = {
     if (result.ok) { showToast(result.msg,'jade'); appendLog(result.msg,'jade'); renderCurrentTab(); }
     return result;
   },
+  // S-C: Mở khóa shop khi người chơi lần đầu tương tác NPC chợ → save + re-render nav
+  unlockShop: () => {
+    if (!G.flags) G.flags = {};
+    if (!G.flags.shopUnlocked) {
+      G.flags.shopUnlocked = true;
+      saveGame(G);
+      renderNav(G);
+    }
+  },
 };
 
 const cultivateActions = {
@@ -845,6 +854,12 @@ function wireEvents() {
   document.getElementById('menu-reset')?.addEventListener('click', () => { menuDropdown.style.display='none'; showResetConfirm(G,{ clearIntervals:()=>{ clearInterval(_tickInterval); clearInterval(_saveInterval); } }); });
   document.getElementById('menu-guide')?.addEventListener('click', () => { if (menuDropdown) menuDropdown.style.display='none'; showFullGuide(G); });
   document.getElementById('menu-account')?.addEventListener('click', () => { menuDropdown.style.display='none'; showAccountMenu(() => G, showToast); });
+  document.getElementById('menu-logout')?.addEventListener('click', async () => {
+    menuDropdown.style.display = 'none';
+    const { logOut } = await import('./firebase/auth-engine.js');
+    await logOut();
+    window.location.reload();
+  });
   safeClick('btn-save', () => { saveGame(G); showToast('💾 Đã lưu!','jade'); });
   safeClick('btn-char-popup', () => showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab }));
 

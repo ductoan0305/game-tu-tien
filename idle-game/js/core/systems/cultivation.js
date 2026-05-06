@@ -110,8 +110,8 @@ export function toggleMeditate(G) {
   return {
     ok: true,
     msg: G.meditating
-      ? '🧘 Bế quan — Linh lực và Thuần Độ tích lũy. Vẫn có thể luyện đan, chế phù trong khi bế quan.'
-      : '👁 Xuất quan',
+      ? '🧘 Nhập định — Linh lực và Thuần Độ tích lũy. Vẫn có thể luyện đan, chế phù trong khi nhập định.'
+      : '👁 Xuất định',
     type: G.meditating ? 'jade' : '',
   };
 }
@@ -130,7 +130,7 @@ export function doRest(G) {
 }
 
 export function doExplore(G) {
-  if (G.meditating) return { ok:false, msg:'🧘 Đang bế quan — xuất quan trước!', type:'danger' };
+  if (G.meditating) return { ok:false, msg:'🧘 Đang nhập định — xuất định trước!', type:'danger' };
   if (!spendStamina(G, 10)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
 
   if ((G.tamCanh ?? 50) < 100) G.tamCanh = Math.min(100, (G.tamCanh ?? 50) + 0.5);
@@ -182,7 +182,7 @@ export function doExplore(G) {
 }
 
 export function doFish(G) {
-  if (G.meditating) return { ok:false, msg:'🧘 Đang bế quan — xuất quan trước!', type:'danger' };
+  if (G.meditating) return { ok:false, msg:'🧘 Đang nhập định — xuất định trước!', type:'danger' };
   if (!spendStamina(G, 5)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
   const roll = Math.random();
   if (roll < 0.35) {
@@ -230,7 +230,7 @@ export function doArray(G) {
 }
 
 export function doSpar(G) {
-  if (G.meditating) return { ok:false, msg:'🧘 Đang bế quan — xuất quan trước!', type:'danger' };
+  if (G.meditating) return { ok:false, msg:'🧘 Đang nhập định — xuất định trước!', type:'danger' };
   const now = Date.now();
   if (now - (G._sparCooldown||0) < 45000) {
     const wait = Math.ceil((45000 - (now - G._sparCooldown)) / 1000);

@@ -920,6 +920,32 @@
   0%,100% { box-shadow: 0 0 6px rgba(200,168,75,0.3); }
   50%      { box-shadow: 0 0 18px rgba(200,168,75,0.7); }
 }
+/* Purity warning states */
+.btn-breakthrough-map.btn-breakthrough-danger {
+  background: rgba(180, 30, 30, 0.15);
+  border-color: #c0392b;
+  color: #e74c3c;
+  cursor: pointer;
+  opacity: 1;
+  animation: pulse-danger 1.5s infinite;
+}
+.btn-breakthrough-map.btn-breakthrough-danger:hover {
+  background: rgba(180, 30, 30, 0.28);
+  box-shadow: 0 0 14px rgba(192, 57, 43, 0.5);
+}
+.btn-breakthrough-map.btn-breakthrough-warn {
+  background: rgba(180, 120, 0, 0.15);
+  border-color: #d4a017;
+  color: #d4a017;
+}
+.btn-breakthrough-map.btn-breakthrough-warn:hover {
+  background: rgba(180, 120, 0, 0.28);
+  box-shadow: 0 0 14px rgba(212, 160, 23, 0.4);
+}
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
 
 /* Kiếp Tu panel */
 .kt-panel {

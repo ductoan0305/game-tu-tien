@@ -607,28 +607,6 @@ export const ENEMIES = [
     deathText: 'Hỏa Thần Phụng bùng cháy dữ dội rồi tắt lịm!',
   },
 
-  // ============================================================
-  // BOSS ĐẶC BIỆT — chỉ xuất hiện qua sự kiện
-  // ============================================================
-  {
-    id: 'tian_jie_dragon',
-    name: 'Thiên Lôi Thần Long', emoji: '🐉',
-    minRealm: 0, tier: 10,
-    hpBase: 2000, atkBase: 100, defBase: 50, spdBase: 20,
-    hpScale: 2.0, atkScale: 1.8,
-    expReward: 1000, stoneReward: [300, 600],
-    skills: ['divine_thunder', 'dragon_breath', 'heavenly_judgement'],
-    drops: [
-      { itemId: 'dragon_scale', chance: 0.80, qty: [1, 2] },
-      { itemId: 'heaven_stone', chance: 0.50, qty: [1, 1] },
-      { itemId: 'dragon_core',  chance: 1.00, qty: [1, 1] },
-    ],
-    element_weakness: null,
-    lore: 'Thiên đạo phái xuống để thử thách kẻ dám vượt cõi! Không thể bỏ chạy.',
-    deathText: 'Thần Long rống lên, tan thành tia chớp vàng rực!',
-    isBoss: true,
-    canFlee: false,
-  },
 ];
 
 // ---- Enemy skills ----
@@ -827,15 +805,6 @@ export const COMBAT_SKILLS = [
     dmgMult: 4.5, effect: 'ignore_def',
     desc: 'Kiếm từ hư không, bỏ qua hoàn toàn phòng thủ địch.',
     combo: { after: 'dragon_claw', bonus: 'void_combo' },
-  },
-  // ---- Realm 5: Luyện Hư ----
-  {
-    id: 'heaven_collapse',
-    name: 'Thiên Địa Sụp Đổ', emoji: '☄',
-    unlockRealm: 5, mpCost: 100, cooldown: 8,
-    dmgMult: 6.0, effect: 'doom',
-    desc: 'Tuyệt kỹ tối thượng — hội tụ thiên địa linh lực vào một điểm.',
-    combo: null,
   },
 ];
 

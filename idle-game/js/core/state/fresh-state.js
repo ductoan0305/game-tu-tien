@@ -102,10 +102,6 @@ export function createFreshState() {
       selectedSkill: null,
       comboCount: 0,
       lastActionWin: false,
-      tianJieActive: false,
-      tianJieWave: 0,
-      tianJieTotalWaves: 3,
-      tianJieBoss: null,
     },
 
     // ---- Quest state ----
@@ -288,6 +284,7 @@ export function createFreshState() {
     phapDia: {
       currentId: 'pham_dia',
       expiresAt: null,
+      lastFeeYear: null, // null = chưa init; init về currentYear khi check lần đầu
     },
     congPhap: {
       currentId:  'vo_danh',
@@ -335,6 +332,7 @@ export function createFreshState() {
       completed: false,
       startedAt: 0,
       seenHints: {},
+      panelDismissed: false,  // true khi người chơi bấm X đóng panel; reset khi step mới
       progress: {
         meditateSec: 0,
         usedStaminaAction: false,

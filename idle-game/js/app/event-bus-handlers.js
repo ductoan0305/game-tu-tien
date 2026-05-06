@@ -82,6 +82,15 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
     appendLog('⏳ Động Phủ hết hạn, lui về Phàm Địa.', 'danger');
   });
 
+  bus.on('phapdia:fee_paid', ({ amount }) => {
+    appendLog(`🌿 Phí thuê Linh Địa −${amount}💎 (năm mới).`, 'jade');
+  });
+
+  bus.on('phapdia:fee_overdue', ({ owed, paid, shortfall }) => {
+    showToast(`⚠ Thiếu phí Linh Địa! Cần thêm ${shortfall}💎 — tu luyện bị ảnh hưởng.`, 'warning');
+    appendLog(`⚠ Phí Linh Địa ${owed}💎 — chỉ trả được ${paid}💎, thiếu ${shortfall}💎.`, 'danger');
+  });
+
   bus.on('lifespan:warning', ({ remaining, level }) => {
     const msgs  = { warning:`⚠ Tuổi thọ còn ${remaining} năm!`, danger:`🔴 NGUY HIỂM! Còn ${remaining} năm!`, critical:`💀 CỰC KỲ NGUY HIỂM! Chỉ còn ${remaining} năm!` };
     const types = { warning:'gold', danger:'danger', critical:'danger' };

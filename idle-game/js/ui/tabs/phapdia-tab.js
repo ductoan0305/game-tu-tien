@@ -172,7 +172,7 @@ export function renderPhapDiaTab(G, actions) {
         </div>
         <div class="pds-item">
           <span>🧘 Trạng Thái</span>
-          <strong>${G.meditating ? '🧘 Đang bế quan (thuần thục tăng)' : '👁 Xuất quan'}</strong>
+          <strong>${G.meditating ? '🧘 Đang nhập định (thuần thục tăng)' : '👁 Xuất định'}</strong>
         </div>
       </div>
 

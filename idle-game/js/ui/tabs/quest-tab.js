@@ -1,8 +1,13 @@
 // ============================================================
 // ui/tabs/quest-tab.js — Quest tab renderer
+// v3 — S-D: NPC-gated quest system
+//      - Tab trống khi chưa nhận quest từ NPC
+//      - Hiển thị NPC quests (npcActive) riêng biệt
+//      - Ẩn "Available Quests" section (vi phạm Manifesto §6)
 // ============================================================
-import { getActiveQuests, getDailyQuests, getAvailableQuests,
+import { getActiveQuests, getDailyQuests,
          getAvailableBounties, getAvailableSectQuests,
+         getActiveNpcQuests,
          acceptQuest, claimDailyReward } from '../../quest/quest-engine.js';
 import { fmtNum } from '../../utils/helpers.js';
 
@@ -10,20 +15,20 @@ export function renderQuestTab(G, actions) {
   const panel = document.getElementById('panel-quests');
   if (!panel) return;
 
-  const active    = getActiveQuests(G);
-  const daily     = getDailyQuests(G);
-  const available = getAvailableQuests(G);
-  const bounties  = getAvailableBounties(G);
+  const npcActive  = getActiveNpcQuests(G);
+  const active     = getActiveQuests(G);
+  const daily      = getDailyQuests(G);
+  const bounties   = getAvailableBounties(G);
   const sectQuests = G.sectId ? getAvailableSectQuests(G) : [];
 
-  // Time until daily reset
+  // Tổng số quest player đang theo dõi (chỉ NPC quest + story quest active)
+  const totalActive = npcActive.length + active.length;
+
+  // Reset time
   const now = Date.now();
   const resetAt = (G.quests.lastDailyReset || 0) + 24 * 3600 * 1000;
   const resetInSec = Math.max(0, Math.floor((resetAt - now) / 1000));
   const resetStr = formatTime(resetInSec);
-
-  // Banner hướng dẫn cho tân thủ chưa có quest nào
-  const isNewbie = active.length === 0 && (G.totalQuestsCompleted || 0) === 0;
 
   panel.innerHTML = `
     <div class="tab-content">
@@ -33,53 +38,42 @@ export function renderQuestTab(G, actions) {
         <span>Reset nhật tu: ${resetStr}</span>
       </div>
 
-      ${isNewbie ? `
-      <div class="quest-newbie-hint">
-        <div style="font-size:20px;margin-bottom:6px">👴</div>
-        <div style="font-weight:600;margin-bottom:4px">Bắt đầu từ đâu?</div>
-        <div style="font-size:12px;color:var(--text-dim)">Vào 🗺 Bản Đồ → Chọn Làng Khởi Điểm → Vào làng → Tìm <strong>Lão Dược Sư 👴</strong> để nhận nhiệm vụ đầu tiên.</div>
-      </div>` : ''}
+      ${renderNpcQuestSection(npcActive, G)}
 
-      <!-- Daily quests -->
-      <div class="quest-section">
-        <h3>⏰ Nhật Tu Nhiệm Vụ</h3>
-        ${daily.length === 0
-          ? '<p class="empty-msg">Không có nhật tu hôm nay</p>'
-          : daily.map(entry => renderDailyEntry(entry)).join('')
-        }
-      </div>
+      <!-- Story/Side quests được giao qua chain cũ (tông môn) -->
+      ${active.length > 0 ? `
+        <div class="quest-section">
+          <h3>📖 Nhiệm Vụ Đang Thực Hiện</h3>
+          ${active.map(entry => renderActiveEntry(entry)).join('')}
+        </div>
+      ` : ''}
+
+      <!-- Daily quests — chỉ hiện nếu đã có quest nào từ NPC -->
+      ${daily.length > 0 ? `
+        <div class="quest-section">
+          <h3>⏰ Nhật Tu Nhiệm Vụ</h3>
+          ${daily.map(entry => renderDailyEntry(entry)).join('')}
+        </div>
+      ` : ''}
 
       <!-- Bounty board -->
       ${bounties.length > 0 ? `
-      <div class="quest-section">
-        <h3>🎯 Bảng Truy Nã</h3>
-        <div class="bounty-hint">Nhiệm vụ repeatable — tiêu diệt mục tiêu để nhận thưởng. Có cooldown sau khi hoàn thành.</div>
-        ${bounties.map(q => renderBountyEntry(G, q)).join('')}
-      </div>` : ''}
+        <div class="quest-section">
+          <h3>🎯 Bảng Truy Nã</h3>
+          <div class="bounty-hint">Nhiệm vụ repeatable — tiêu diệt mục tiêu để nhận thưởng. Có cooldown sau khi hoàn thành.</div>
+          ${bounties.map(q => renderBountyEntry(G, q)).join('')}
+        </div>
+      ` : ''}
 
       <!-- Sect quests -->
       ${sectQuests.length > 0 ? `
-      <div class="quest-section">
-        <h3>🏯 Nhiệm Vụ Tông Môn</h3>
-        ${sectQuests.map(q => renderSectQuestEntry(G, q)).join('')}
-      </div>` : ''}
-
-      <!-- Active story/side quests -->
-      <div class="quest-section">
-        <h3>📖 Nhiệm Vụ Đang Thực Hiện</h3>
-        ${active.length === 0
-          ? '<p class="empty-msg">Không có nhiệm vụ nào đang thực hiện</p>'
-          : active.map(entry => renderActiveEntry(entry)).join('')
-        }
-      </div>
-
-      <!-- Available quests -->
-      ${available.length > 0 ? `
         <div class="quest-section">
-          <h3>❓ Có Thể Nhận</h3>
-          ${available.map(quest => renderAvailableQuest(quest)).join('')}
+          <h3>🏯 Nhiệm Vụ Tông Môn</h3>
+          ${sectQuests.map(q => renderSectQuestEntry(G, q)).join('')}
         </div>
       ` : ''}
+
+      <!-- KHÔNG hiển thị "Available Quests" — vi phạm Manifesto §6 -->
 
       <div class="quest-footer">
         <span>📜 Đã hoàn thành: ${G.quests.completed.length} nhiệm vụ</span>
@@ -90,6 +84,74 @@ export function renderQuestTab(G, actions) {
   wireQuestEvents(G, actions, panel);
 }
 
+// ============================================================
+// NPC Quest section — trung tâm của S-D
+// ============================================================
+function renderNpcQuestSection(npcActive, G) {
+  if (npcActive.length === 0) {
+    // Empty state — triết lý cốt lõi: không có danh sách sẵn
+    return `
+      <div class="quest-empty-state">
+        <div class="quest-empty-icon">📜</div>
+        <div class="quest-empty-title">Ngươi chưa nhận nhiệm vụ từ ai.</div>
+        <div class="quest-empty-hint">Hãy nói chuyện với người trong thôn.<br>
+          Khi họ có việc muốn nhờ, ngươi sẽ thấy dấu <strong style="color:#f0d47a">!</strong> trên bản đồ.</div>
+      </div>`;
+  }
+
+  return `
+    <div class="quest-section">
+      <h3>🤝 Nhiệm Vụ Từ NPC</h3>
+      ${npcActive.map(entry => renderNpcQuestEntry(entry)).join('')}
+    </div>`;
+}
+
+function renderNpcQuestEntry(entry) {
+  const { quest, progress } = entry;
+  if (!quest) return '';
+
+  const objectives = quest.objectives.map(obj => {
+    const current = Math.min(progress[obj.key] || 0, obj.required);
+    const pct = Math.min(100, Math.floor(current / obj.required * 100));
+    return `
+      <div class="objective">
+        <span>${obj.label}: ${current}/${obj.required}</span>
+        <div class="progress-bar small">
+          <div class="progress-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const rewardParts = [];
+  if (quest.rewards?.stone)   rewardParts.push(`💎 +${quest.rewards.stone} linh thạch`);
+  if (quest.rewards?.exp)     rewardParts.push(`📈 +${quest.rewards.exp} EXP`);
+  if (quest.rewards?.recipe)  rewardParts.push(`📜 Công thức luyện đan`);
+  if (quest.rewards?.items?.length) {
+    for (const item of quest.rewards.items) {
+      rewardParts.push(`🎁 ${item.id} ×${item.qty}`);
+    }
+  }
+  if (quest.rewards?.unlocks) rewardParts.push(`🔓 ${quest.rewards.unlocks}`);
+
+  const isCompleted = entry.completed;
+
+  return `
+    <div class="quest-card npc-quest ${isCompleted ? 'quest-completed' : ''}">
+      <div class="quest-header">
+        <span class="quest-type-badge npc-badge">🤝 ${quest.givenByName}</span>
+        <span class="quest-name">${quest.name}</span>
+        ${isCompleted ? '<span class="quest-badge done">✓ Xong</span>' : ''}
+      </div>
+      <p class="quest-desc">${quest.desc}</p>
+      <p class="quest-lore">${quest.lore}</p>
+      <div class="quest-objectives">${objectives}</div>
+      <div class="quest-rewards">🎁 ${rewardParts.join(' · ') || 'Không có'}</div>
+    </div>`;
+}
+
+// ============================================================
+// Legacy renderers (daily, bounty, sect, story/side active)
+// ============================================================
 function renderDailyEntry(entry) {
   const { quest, progress, completed, claimed } = entry;
   if (!quest) return '';
@@ -118,8 +180,7 @@ function renderDailyEntry(entry) {
         ? `<button class="btn-claim btn-primary" data-quest-id="${entry.questId}">🎁 Nhận Thưởng</button>`
         : claimed ? '<span class="claimed-text">✓ Đã nhận</span>' : ''
       }
-    </div>
-  `;
+    </div>`;
 }
 
 function renderBountyEntry(G, q) {
@@ -127,14 +188,12 @@ function renderBountyEntry(G, q) {
   const activeEntry = G.quests.active.find(e => e.questId === q.id);
   const progress = activeEntry?.progress || {};
 
-  // Cooldown display
   const cdKey = `_bountycd_${q.id}`;
   const cdEnd = G[cdKey] || 0;
   const now = Date.now();
   const onCd = cdEnd > now;
   const cdStr = onCd ? `⏳ Hồi chiêu: ${formatTime(Math.ceil((cdEnd - now) / 1000))}` : '';
 
-  // Progress display nếu đang active
   let progressHtml = '';
   if (isActive && q.objectives?.length) {
     const obj = q.objectives[0];
@@ -223,15 +282,13 @@ function renderActiveEntry(entry) {
         <div class="progress-bar small">
           <div class="progress-fill" style="width:${pct}%"></div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
   const rewards = [];
   if (quest.rewards?.stone)  rewards.push(`💎 +${quest.rewards.stone} linh thạch`);
   if (quest.rewards?.exp)    rewards.push(`📈 +${quest.rewards.exp} EXP`);
   if (quest.rewards?.recipe) rewards.push(`📜 Công thức đan`);
-  if (quest.rewards?.item)   rewards.push(`🎁 Vật phẩm`);
 
   const typeLabel = quest.type === 'story' ? '📖 Chính Tuyến' : '📌 Nhiệm Vụ Phụ';
   const npcHint = quest.npcHint ? `<p class="quest-npc-hint">💬 ${quest.npcHint}</p>` : '';
@@ -248,49 +305,26 @@ function renderActiveEntry(entry) {
       ${loreHtml}
       <div class="quest-objectives">${objectives}</div>
       <div class="quest-rewards">🎁 Phần thưởng: ${rewards.join(' · ') || 'Không có'}</div>
-    </div>
-  `;
-}
-
-function renderAvailableQuest(quest) {
-  return `
-    <div class="quest-card available-quest">
-      <div class="quest-header">
-        <span class="quest-name">${quest.name}</span>
-        <span class="quest-badge available">Có thể nhận</span>
-      </div>
-      <p class="quest-desc">${quest.desc}</p>
-    </div>
-  `;
+    </div>`;
 }
 
 function wireQuestEvents(G, actions, panel) {
-  // Claim daily reward
   panel.querySelectorAll('.btn-claim').forEach(btn => {
     btn.addEventListener('click', () => {
       const result = claimDailyReward(G, btn.dataset.questId);
-      if (result.ok) {
-        const rewardStr = [
-          result.rewards?.stone ? `+${result.rewards.stone}💎` : '',
-          result.rewards?.exp   ? `+${result.rewards.exp} EXP` : '',
-        ].filter(Boolean).join(' ');
-        // showToast thông qua actions nếu có, fallback console
-        if (actions?.toast) actions.toast(`🎁 Nhận thưởng: ${rewardStr}`, 'jade');
+      if (result.ok && actions?.toast) {
+        actions.toast(`🎁 ${result.msg}`, 'jade');
       }
-      // Re-render tab
       if (actions?.refresh) actions.refresh();
       else renderQuestTab(G, actions);
     });
   });
 
-  // Accept bounty / sect quest — dùng import trực tiếp, không qua actions
   panel.querySelectorAll('.btn-accept-quest').forEach(btn => {
     btn.addEventListener('click', () => {
       const questId = btn.dataset.questId;
       const result = acceptQuest(G, questId);
-      const msg = result.ok
-        ? `📋 Đã nhận: ${result.msg}`
-        : `⚠ ${result.msg}`;
+      const msg = result.ok ? `📋 Đã nhận: ${result.msg}` : `⚠ ${result.msg}`;
       if (actions?.toast) actions.toast(msg, result.ok ? 'jade' : 'danger');
       renderQuestTab(G, actions);
     });

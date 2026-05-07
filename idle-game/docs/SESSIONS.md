@@ -42,9 +42,10 @@
 
 ---
 
-## [S-H4] Feature: Tách Nav + Popup Tu Luyện mới ⬜ [LỚN — nên làm cuối]
+## [S-H4] Feature: Tách Nav + Popup Tu Luyện mới ✅
 
 **Đọc thêm:** `js/ui/render-core.js` (hàm `renderNav`), `js/core/visibility.js`, `js/ui/popup-manager.js`, `js/ui/tab-popup.js`
+**Done note:** Tạo `js/ui/tu-luyen-popup.js` — floating popup via PopupManager (id `tu-luyen`), width 300px, vị trí góc phải. Popup chứa: header (realm/stage + tuổi có màu theo cửa sổ), 3 progress bars (Linh Lực/HP/Thể Năng), stats grid 2×2 (tu tốc/thuần độ/công kích/phòng thủ), Pháp Địa + số Công Pháp, hunger/ám thương indicators, 6 action buttons (Nhập Định span toàn hàng, + Nghỉ Ngơi/Khám Phá/Tỉ Thí/Câu Cá/Cảm Ngộ), Đột Phá button với animation pulse. `wireNavBtn` trong `main.js`: special-case `tabId === 'cultivate'` → gọi `openTuLuyenPopup(G, cultivateActions)` thay vì `_switchTabWithPopup('cultivate')` (programmatic nav về map vẫn giữ nguyên). `updateTuLuyenPopup(G)` được thêm vào gameTick mỗi 2 ticks (≈0.2s). CSS thêm vào `systems.css`. Tab `cultivate` vẫn là background canvas — không popup-ize.
 **Context quan trọng:** Tab `cultivate` luôn là background canvas — KHÔNG popup-ize (xem HANDOFF lưu ý kỹ thuật). `_switchTabWithPopup('cultivate')` hiện switch về canvas chính, đó là lý do nav button mở map.
 
 **Phần A — Tách nav button (2 nút thay 1):**

@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session S-H3 — UX: Redesign section Hành Trình trong Char Popup (2026-05-07)
+**Cập nhật lần cuối:** Session S-H4 — Feature: Tách Nav + Popup Tu Luyện mới (2026-05-07)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -319,6 +319,11 @@ js/
 │   │                         closeTabPopup / closeAllTabPopups / isTabPopupOpen
 │   │                         TAB_POPUP_CFG: 18 tabs (không có cultivate)
 │   │                         DOM node move: panel vào .pm-body, trả về khi đóng
+│   ├── tu-luyen-popup.js     S-H4: MỚI — floating popup Tu Luyện (id: 'tu-luyen')
+│   │                         openTuLuyenPopup(G, cultivateActions) / updateTuLuyenPopup(G)
+│   │                         isTuLuyenPopupOpen() / closeTuLuyenPopup()
+│   │                         Nội dung: bars qi/hp/stamina, stats grid, pháp địa,
+│   │                         hunger/ám thương, 6 action buttons, breakthrough pulse
 │   ├── starter-village.js    S15: side panel → sv-side-popup (absolute overlay)
 │   │                         Xóa div.mst1-stats.sv-stats-top (map-stat-rate/age/stone)
 │   │                         Class mới: .sv-side-popup (không dùng .map-side-t2)
@@ -335,6 +340,9 @@ js/
                               alchemyActions.switchTab → _switchTabWithPopup
                               dungeonActions.enterDungeon → _switchTabWithPopup('combat')
                               hunt start / combat end / flee → _switchTabWithPopup
+                              S-H4: import openTuLuyenPopup/updateTuLuyenPopup
+                              wireNavBtn special-case 'cultivate' → openTuLuyenPopup
+                              gameTick: updateTuLuyenPopup mỗi 2 ticks
 ```
 
 ---
@@ -501,6 +509,10 @@ G = {
 19. `renderTutorialObjectivePanel()` và `showTutorialAgeWarningModal()` đã có trong `render-core.js` ✅ ĐÃ DONE
 20. Wiring trong `main.js`: `trackMeditateSeconds` gọi mỗi tick khi bế quan, `trackStaminaAction` / `trackBreakthroughAttempt` gắn vào từng cultivate action, `trackTabOpen` gắn vào tab switch, Step 5 modal trigger trong tick loop ✅ ĐÃ DONE
 
+### S-H4 — Feature: Tách Nav + Popup Tu Luyện mới (2026-05-07)
+
+36. **"Tu Luyện" nav button chỉ là nút "home" (close all popups) — không cung cấp UI cultivation** → Tạo `js/ui/tu-luyen-popup.js` với popup floating via PopupManager (id: `tu-luyen`, width 300px, góc phải màn hình). Popup hiển thị toàn bộ cultivation context: bars qi/hp/stamina, stats grid (tu tốc/thuần độ/atk/def), pháp địa + số công pháp đang tu, hunger/ám thương indicators, 6 action buttons (Nhập Định span toàn hàng + 5 action button 3-cột), Đột Phá button với pulse animation. `wireNavBtn` trong `main.js` special-case `tabId === 'cultivate'` → `openTuLuyenPopup(G, cultivateActions)`. `_switchTabWithPopup('cultivate')` (dùng cho programmatic nav như combat end/flee) **không đổi** — vẫn đóng tab popups về background canvas. `updateTuLuyenPopup(G)` gọi mỗi 2 ticks trong gameTick. CSS thêm vào `systems.css`. ✅ ĐÃ FIX
+
 ### S-H2 — Bug Fix: Nhập Định báo "hết linh thạch" khi mới tạo char (2026-05-07)
 
 35. **Notification "Hết linh thạch" fire ngay khi char mới bấm nhập định** → `fresh-state.js` khởi tạo `stone:0`; notification check trong `render-core.js` (`if G.meditating && stone <= 0`) kích ngay. Song song, `stoneMod=0.05` trong `tick.js` giảm qi rate 95% âm thầm. Phàm Địa có `costType:'none'` — không nên có stone drain hay penalty. Fix:
@@ -617,6 +629,15 @@ Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và co
 ## LƯU Ý KỸ THUẬT
 
 ```js
+// ---- Tu Luyện Popup (S-H4) ----
+// openTuLuyenPopup(G, cultivateActions) — mở/focus popup id 'tu-luyen' (300px, góc phải)
+// updateTuLuyenPopup(G) — cập nhật values, gọi mỗi 2 ticks trong gameTick
+// isTuLuyenPopupOpen() — PopupManager.isOpen('tu-luyen')
+// Nav "Tu Luyện" button → openTuLuyenPopup (KHÔNG phải _switchTabWithPopup('cultivate'))
+// _switchTabWithPopup('cultivate') vẫn dùng cho programmatic nav (combat end, flee, v.v.)
+// Popup KHÔNG phải tab-popup: không dùng TAB_POPUP_CFG, không move panel DOM
+// CSS: class .pm-tu-luyen trong systems.css, elements dùng prefix id tlp-*
+
 // ---- Popup System (S15/S16) ----
 // Tất cả tab (trừ cultivate) mở như floating popup qua openTabPopup()
 // Cultivate luôn là background canvas — KHÔNG popup hóa

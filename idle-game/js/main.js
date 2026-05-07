@@ -100,6 +100,9 @@ import { initHUD, updateHUD }                                         from './ui
 // ---- Tab Popup System (Session 15) ----
 import { openTabPopup, closeAllTabPopups, closeTabPopup }             from './ui/tab-popup.js';
 
+// ---- Tu Luyện Popup (S-H4) ----
+import { openTuLuyenPopup, updateTuLuyenPopup, isTuLuyenPopupOpen }  from './ui/tu-luyen-popup.js';
+
 // ---- Visibility Gate (Session S-B) ----
 import { getVisibleTabs }                                             from './core/visibility.js';
 
@@ -263,6 +266,8 @@ function tick() {
     renderCultivateStats(G);
     renderCombatStatus(G);
     if (G.activeTab === 'cultivate') updateMapStats(G);
+    // S-H4: Cập nhật Tu Luyện popup (nếu đang mở) mỗi 2 ticks (≈0.2s) — đủ mượt, không spam
+    if (G._tickCount % 2 === 0) updateTuLuyenPopup(G);
     // HUD bars update mỗi 20 ticks (≈2s) để tránh DOM churn
     if (G._tickCount % 20 === 0) updateHUD();
     if (G._tickCount % 30 === 0) {
@@ -792,6 +797,13 @@ function wireEvents() {
   function wireNavBtn(btn) {
     btn.addEventListener('click', () => {
       const tabId = btn.dataset.tab; if (!tabId) return;
+
+      // S-H4: "Tu Luyện" nav button → mở/focus Tu Luyện popup thay vì đóng hết popup
+      if (tabId === 'cultivate') {
+        openTuLuyenPopup(G, cultivateActions);
+        return;
+      }
+
       // S-B: Kiểm tra visibility gate trước (tab có được phép hiển thị không?)
       const visibleTabs = getVisibleTabs(G);
       if (!visibleTabs.includes(tabId)) {

@@ -20,7 +20,6 @@ import {
 } from '../core/state.js';
 import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus }      from '../core/duoc-dien-engine.js';
-import { fmtNum }                 from '../utils/helpers.js';
 
 const POPUP_ID = 'tu-luyen';
 

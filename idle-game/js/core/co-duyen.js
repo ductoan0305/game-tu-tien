@@ -717,6 +717,16 @@ export const CO_DUYEN_EVENTS = [
 // ENGINE
 // ============================================================
 
+// Mức trần khiVan theo loại linh căn — NGU LC không được > 45
+export function getKhiVanMax(G) {
+  const TYPE_MAXES = { NGU: 45, TU: 55, TAM: 65, SONG: 75, BIEN_DI: 90, TIEN: 100 };
+  const type = G.spiritData?.type;
+  if (TYPE_MAXES[type] !== undefined) return TYPE_MAXES[type];
+  // Legacy fallback (spiritRoot string cũ)
+  const LEGACY_MAXES = { tu:35, mu:40, jin:45, huo:45, shui:55, yin_yang:75, hun:95 };
+  return LEGACY_MAXES[G.spiritRoot] ?? 45;
+}
+
 export function getLuckMultiplier(G) {
   const khiVan = G.khiVan ?? 20;
   if (khiVan < 30) return 0;
@@ -906,7 +916,7 @@ export function applyCoduyen(G, event) {
     }
     case 'khivan_boost': {
       const prev = G.khiVan ?? 20;
-      G.khiVan = Math.min(100, prev + (effect.value || 5));
+      G.khiVan = Math.min(getKhiVanMax(G), prev + (effect.value || 5));
       detail = `+${effect.value || 5} Khí Vận (${prev} → ${G.khiVan})`;
       break;
     }
@@ -917,11 +927,12 @@ export function applyCoduyen(G, event) {
 
   // Cơ duyên tier cao có thể cải thiện khí vận (ngẫu nhiên)
   // tier2: +1~3 | tier3: +3~6 — phản ánh "thiên đạo ưu ái"
+  // Luôn clamp theo trần của loại linh căn
   if (event.tier >= 2) {
     const boost = event.tier === 3
       ? Math.floor(Math.random() * 4) + 3
       : Math.floor(Math.random() * 3) + 1;
-    G.khiVan = Math.min(100, (G.khiVan ?? 20) + boost);
+    G.khiVan = Math.min(getKhiVanMax(G), (G.khiVan ?? 20) + boost);
   }
 
   return {

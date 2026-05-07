@@ -810,7 +810,9 @@ function _renderStatusNotifs(G) {
   // 2. Đói (đã tắt hunger system)
 
   // 2b. R1 — Linh thạch thấp khi bế quan
-  if (G.meditating) {
+  // Không cảnh báo ở Phàm Địa (costType='none'): char mới stone=0 là bình thường,
+  // stone drain chỉ áp dụng từ Linh Địa trở lên
+  if (G.meditating && (G.phapDia?.currentId ?? 'pham_dia') !== 'pham_dia') {
     const stone = G.stone ?? 0;
     if (stone <= 0) {
       notifs.push({ icon:'⛔', text:'Hết linh thạch — tu luyện gần như vô hiệu', color:'#e05c4a', priority:11, tab:'cultivate' });

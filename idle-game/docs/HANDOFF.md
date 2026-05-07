@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session S-G — LK End-to-End Playtest & Balance (2026-05-06)
+**Cập nhật lần cuối:** Session S-H3 — UX: Redesign section Hành Trình trong Char Popup (2026-05-07)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -500,6 +500,21 @@ G = {
 18. `G.tutorial` default state đã có trong `fresh-state.js` và migration `_migrateTutorial()` trong `persistence.js` ✅ ĐÃ DONE
 19. `renderTutorialObjectivePanel()` và `showTutorialAgeWarningModal()` đã có trong `render-core.js` ✅ ĐÃ DONE
 20. Wiring trong `main.js`: `trackMeditateSeconds` gọi mỗi tick khi bế quan, `trackStaminaAction` / `trackBreakthroughAttempt` gắn vào từng cultivate action, `trackTabOpen` gắn vào tab switch, Step 5 modal trigger trong tick loop ✅ ĐÃ DONE
+
+### S-H2 — Bug Fix: Nhập Định báo "hết linh thạch" khi mới tạo char (2026-05-07)
+
+35. **Notification "Hết linh thạch" fire ngay khi char mới bấm nhập định** → `fresh-state.js` khởi tạo `stone:0`; notification check trong `render-core.js` (`if G.meditating && stone <= 0`) kích ngay. Song song, `stoneMod=0.05` trong `tick.js` giảm qi rate 95% âm thầm. Phàm Địa có `costType:'none'` — không nên có stone drain hay penalty. Fix:
+  - `tick.js`: R1 stone drain + stoneMod guard bằng `phapDia !== 'pham_dia'`; tại Phàm Địa `stoneMod=1.0`, `stoneStarved=false`
+  - `render-core.js`: notification R1 cũng guard `phapDia !== 'pham_dia'` — stone warning chỉ hiện từ Linh Địa trở lên
+  ✅ ĐÃ FIX
+
+### S-H1 — Bug Fix: Khí Vận cap theo linh căn (2026-05-07)
+
+34. **khiVan không có trần theo loại linh căn** → tick regen trong `main.js` dùng `Math.min(100, ...)` cho mọi LC → NGU LC có thể leo lên 100 sau đủ thời gian (100 ticks × giây). Ngoài ra `kvRanges` trong `applyCharacterSetup` thiếu key `kim`, `moc` (chỉ có `jin`, `mu`). Fix:
+  - Thêm `getKhiVanMax(G)` export từ `co-duyen.js` → NGU=45, TU=55, TAM=65, SONG=75, BIEN_DI=90, TIEN=100 (legacy fallback theo spiritRoot string)
+  - Thay `Math.min(100, ...)` bằng `Math.min(getKhiVanMax(G), ...)` ở 3 chỗ: tick regen `main.js`, tier boost & `khivan_boost` case trong `applyCoduyen`
+  - Fix `kvRanges` trong `cultivation.js`: thêm `kvTypeRanges` (ưu tiên) + key mới `kim:[20,45]`, `moc:[15,40]` vào legacy ranges
+  ✅ ĐÃ FIX
 
 ### S-G — LK End-to-End Playtest & Balance (2026-05-06)
 

@@ -6,7 +6,7 @@
 import { REALMS }                from '../../core/data.js';
 import { REALM_NAMES }           from '../../core/constants.js';
 import { calcMaxQi, calcQiRate, calcQiRateBreakdown, calcPurityThreshold, calcKienCoCeiling } from '../../core/state.js';
-import { getDanhVongTier }       from '../../core/danh-vong.js';
+import { getDanhVongTier, DANH_VONG_TIERS } from '../../core/danh-vong.js';
 import { getSpiritDisplayName, getSpiritMainColor, getSpiritProphecy,
          calcSpiritRateMulti, SPIRIT_ROOT_TYPES, SPIRIT_ELEMENTS } from '../../core/spirit-root.js';
 import PopupManager              from '../../ui/popup-manager.js';
@@ -103,6 +103,33 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
   const dv   = G.danhVong ?? 0;
   const tier = getDanhVongTier(dv);
 
+  // ---- Tuổi & cửa sổ đột phá ----
+  const currentAge = Math.floor(G.gameTime?.currentYear || 0);
+  let ageColor = '#56c46a', ageWindowText = 'Cửa sổ < 70';
+  if (currentAge >= 75) { ageColor = '#e05c4a'; ageWindowText = '☠ Cơ hội gần như 0'; }
+  else if (currentAge >= 70) { ageColor = '#f0d47a'; ageWindowText = '⚠ Đang suy giảm'; }
+
+  // ---- Danh Vọng progress bar đến tier tiếp theo ----
+  const _dvTiersSorted = [...DANH_VONG_TIERS].sort((a, b) => a.min - b.min);
+  const _nextTierEntry = _dvTiersSorted.find(t => t.min > dv);
+  let dvProgressHtml = '';
+  if (_nextTierEntry) {
+    const _prevMin = [..._dvTiersSorted].reverse().find(t => t.min <= dv)?.min ?? 0;
+    const _dvPct   = Math.min(100, Math.round((dv - _prevMin) / Math.max(1, _nextTierEntry.min - _prevMin) * 100));
+    dvProgressHtml = `
+      <div style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-bottom:3px">
+          <span>${tier.label}</span>
+          <span>${dv} / ${_nextTierEntry.min} → ${_nextTierEntry.label}</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${_dvPct}%;background:${tier.color};border-radius:3px"></div>
+        </div>
+      </div>`;
+  } else {
+    dvProgressHtml = `<div style="font-size:10px;color:${tier.color};margin-top:4px;text-align:center">✦ Đã đạt danh vọng tối cao</div>`;
+  }
+
   const bodyEl = document.createElement('div');
   bodyEl.className = 'char-popup char-popup-full';
   bodyEl.innerHTML = `
@@ -111,6 +138,10 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
       <div class="cp-header-info">
         <div class="char-popup-name">${G.name} <span style="font-size:12px;color:#888">${GENDER_EMOJI[G.gender||'male']}</span></div>
         <div class="char-popup-realm" style="color:var(--gold)">${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage}</div>
+        <div style="font-size:11px;margin-top:2px">
+          <span style="color:${ageColor}">⏳ ${currentAge} tuổi</span>
+          <span style="font-size:10px;color:${ageColor};opacity:0.85"> · ${ageWindowText}</span>
+        </div>
         <div class="char-popup-sect">${SECT_NAMES[G.sectId]||'🌿 Tán Tu'}</div>
         <div class="char-popup-direction" style="color:#7b9ef0">${HUONG_TU[G.huongTu]||'— Chưa xác định hướng tu'}</div>
       </div>
@@ -220,18 +251,32 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
         </div>`;
       })() : ''}
       <div class="cp-section">
-        <div class="cp-section-title">📊 Thành Tích</div>
+        <div class="cp-section-title">📜 Hành Trình</div>
         <div class="cps-grid">
-          <div class="cps-item"><span class="cps-label">⏳ Tuổi</span><span class="cps-val">${Math.floor(G.gameTime?.currentYear||0)}</span></div>
-          <div class="cps-item"><span class="cps-label">🔥 Đột Phá</span><span class="cps-val">${G.breakthroughs||0}</span></div>
-          <div class="cps-item"><span class="cps-label">🏆 Quái Đã Giết</span><span class="cps-val">${G.totalKills||0}</span></div>
-          <div class="cps-item"><span class="cps-label">⚗ Đan Đã Luyện</span><span class="cps-val">${G.alchemySuccess||0}</span></div>
-          <div class="cps-item"><span class="cps-label">📜 Nhiệm Vụ</span><span class="cps-val">${G.totalQuestsCompleted||0}</span></div>
+          <div class="cps-item">
+            <span class="cps-label">🔥 Đột Phá</span>
+            <span class="cps-val">${G.breakthroughs||0}<span style="font-size:10px;color:var(--text-dim);margin-left:2px">lần</span></span>
+          </div>
+          <div class="cps-item">
+            <span class="cps-label">🏆 Quái Đã Giết</span>
+            <span class="cps-val">${G.totalKills||0}<span style="font-size:10px;color:var(--text-dim);margin-left:2px">con</span></span>
+          </div>
+          <div class="cps-item">
+            <span class="cps-label">⚗ Đan Đã Luyện</span>
+            <span class="cps-val">${G.alchemySuccess||0}<span style="font-size:10px;color:var(--text-dim);margin-left:2px">viên</span></span>
+          </div>
+          <div class="cps-item">
+            <span class="cps-label">📜 Nhiệm Vụ</span>
+            <span class="cps-val">${G.totalQuestsCompleted||0}<span style="font-size:10px;color:var(--text-dim);margin-left:2px">hoàn thành</span></span>
+          </div>
         </div>
-        <div class="cp-danhvong-row" style="margin-top:10px;padding:8px;background:${tier.color}15;border:1px solid ${tier.color}44;border-radius:8px;display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:12px;color:var(--text-dim)">🌟 Danh Vọng</span>
-          <span style="font-size:13px;font-weight:700;color:${tier.color}">${dv} · ${tier.label}</span>
-          ${tier.discountPct>0?`<span style="font-size:11px;color:#56c46a">-${tier.discountPct}% shop</span>`:''}
+        <div class="cp-danhvong-row" style="margin-top:10px;padding:8px;background:${tier.color}15;border:1px solid ${tier.color}44;border-radius:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;color:var(--text-dim)">🌟 Danh Vọng</span>
+            <span style="font-size:13px;font-weight:700;color:${tier.color}">${dv} · ${tier.label}</span>
+            ${tier.discountPct>0?`<span style="font-size:11px;color:#56c46a">-${tier.discountPct}% shop</span>`:''}
+          </div>
+          ${dvProgressHtml}
         </div>
       </div>
     </div>

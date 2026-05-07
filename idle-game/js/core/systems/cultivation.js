@@ -76,12 +76,17 @@ export function applyCharacterSetup(G, { name, gender, spiritRootId, spiritData,
     };
   }
 
-  const kvRanges = {
-    tu:[10,35], mu:[15,40], jin:[20,45], huo:[20,45],
-    shui:[25,55], yin_yang:[45,75], hun:[65,95],
+  // Ranges theo loại linh căn (new system) — ưu tiên type trước
+  const kvTypeRanges = {
+    NGU:[15,40], TU:[20,50], TAM:[25,60], SONG:[45,75], BIEN_DI:[65,90], TIEN:[80,100],
+  };
+  // Ranges legacy (old spiritRoot string keys)
+  const kvLegacyRanges = {
+    tu:[10,35], mu:[15,40], moc:[15,40], jin:[20,45], kim:[20,45],
+    huo:[20,45], shui:[25,55], yin_yang:[45,75], hun:[65,95],
   };
   const rootId = spiritRootId || spiritData?.type || 'mu';
-  const [kvMin, kvMax] = kvRanges[rootId] || [15,40];
+  const [kvMin, kvMax] = kvTypeRanges[spiritData?.type] || kvLegacyRanges[rootId] || [15,40];
   G.khiVan = Math.floor(Math.random() * (kvMax - kvMin + 1)) + kvMin;
 
   // Ngộ Tính — ngẫu nhiên, phân phối có trọng số

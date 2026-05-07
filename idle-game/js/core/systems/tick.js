@@ -28,15 +28,22 @@ export function gameTick(G, dt = 0.1) {
 
   if (G.meditating) {
     // R1 — Resource Gate: tiêu hao linh thạch khi bế quan
-    // stoneCostPerYear = 2 (2 linh thạch/năm game — tán tu không tông môn)
-    const stoneCostPerYear = 2;
-    const stoneCostPerTick = stoneCostPerYear * YEARS_PER_TICK * dt * 10;
-    G.stone = Math.max(0, (G.stone ?? 0) - stoneCostPerTick);
-    G.stoneStarved = (G.stone <= 0);
-
-    const stoneMod = G.stone > 50 ? 1.0
-                   : G.stone > 10 ? 0.3
-                   : 0.05;
+    // Phàm Địa (costType='none') được miễn — không stone drain, không penalty
+    // Chỉ áp dụng khi đang ở Linh Địa trở lên (đã tốn công/tiền mới có)
+    const phapDiaId = G.phapDia?.currentId ?? 'pham_dia';
+    let stoneMod = 1.0;
+    if (phapDiaId !== 'pham_dia') {
+      const stoneCostPerYear = 2;
+      const stoneCostPerTick = stoneCostPerYear * YEARS_PER_TICK * dt * 10;
+      G.stone = Math.max(0, (G.stone ?? 0) - stoneCostPerTick);
+      G.stoneStarved = (G.stone <= 0);
+      const stone = G.stone ?? 0;
+      stoneMod = stone > 50 ? 1.0
+               : stone > 10 ? 0.3
+               : 0.05;
+    } else {
+      G.stoneStarved = false;
+    }
 
     const effRate = rate * hungerMod * nghiepMod * stoneMod;
     if ((G.qi ?? 0) < maxQ) {

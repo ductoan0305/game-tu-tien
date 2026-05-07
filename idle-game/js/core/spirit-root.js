@@ -39,9 +39,10 @@ export const ELEMENT_COUNTERS = {
 };
 
 // ---- Roll linh căn ----
-// v12 — Xác suất mới theo GDD mục 21:
+// v12.1 — Xác suất cân chỉnh lại cho đúng triết lý hardcore:
 //   Thiên    0.01% | Biến Dị 1.5% | Song 3.5%
-//   Tam       21%  | Tứ       39% | Ngũ    35%
+//   Tam       10%  | Tứ       35% | Ngũ    50%
+// Ngũ là số phận phổ biến nhất — đa số phàm nhân là thế
 // Dùng r trên 10000 để đủ precision cho Thiên 0.01%
 export function rollSpiritRoot() {
   const r = Math.random() * 10000;
@@ -63,17 +64,17 @@ export function rollSpiritRoot() {
     const [m, s] = _shuffle(BASE_ELEMENTS);
     return { type:'SONG', points:{ [m]: 52+_rand(10), [s]: 18+_rand(8) }, mainElement:m };
   }
-  if (r < 2601) {
-    // Tam Linh Căn 21% — thường, không phải hiếm
+  if (r < 1501) {
+    // Tam Linh Căn 10% — thiên tư khá, mới có cửa nhỏ Trúc Cơ
     const [a,b,c] = _shuffle(BASE_ELEMENTS);
     return { type:'TAM', points:{ [a]:28+_rand(6), [b]:15+_rand(6), [c]:10+_rand(5) }, mainElement:a };
   }
-  if (r < 6501) {
-    // Tứ Linh Căn 39%
+  if (r < 5001) {
+    // Tứ Linh Căn 35%
     const [a,b,c,d] = _shuffle(BASE_ELEMENTS);
     return { type:'TU', points:{ [a]:14+_rand(3),[b]:11+_rand(3),[c]:11+_rand(3),[d]:9+_rand(3) }, mainElement:a };
   }
-  // Ngũ Linh Căn 35% — phổ biến nhất
+  // Ngũ Linh Căn 50% — số phận của đa số phàm nhân
   const sh = _shuffle(BASE_ELEMENTS);
   const pts = [8,7,6,5,5].map(v => v+_rand(3));
   const points = {};

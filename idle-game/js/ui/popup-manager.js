@@ -132,13 +132,16 @@ function _makeResizable(popupEl) {
     }
 
     // --- Vertical ---
+    // effectiveMinH: nếu popup đang nhỏ hơn _MIN_H (vd char-compact fit-content),
+    // không để resize nhảy lên _MIN_H — dùng oh làm floor thay thế.
+    const effectiveMinH = Math.min(_MIN_H, oh);
     if (dir.includes('s')) {
       // Kéo xuống: chỉ thay đổi height
-      newH = Math.max(_MIN_H, Math.min(vh - oy, oh + dy));
+      newH = Math.max(effectiveMinH, Math.min(vh - oy, oh + dy));
     }
     if (dir.includes('n')) {
       // Kéo lên: height giảm, top tăng (giữ cạnh dưới cố định)
-      const maxShrink = oh - _MIN_H;
+      const maxShrink = Math.max(0, oh - effectiveMinH); // luôn >= 0
       const clampedDy = Math.max(-oy, Math.min(maxShrink, dy));
       newH = oh - clampedDy;
       newY = oy + clampedDy;
@@ -217,8 +220,8 @@ function _buildEl(id, opts = {}) {
     body.innerHTML = content;
   }
 
-  // Close button
-  el.querySelector('.pm-close').addEventListener('click', (e) => {
+  // Close button (optional — popup có thể không có nút đóng)
+  el.querySelector('.pm-close')?.addEventListener('click', (e) => {
     e.stopPropagation();
     PopupManager.close(id);
   });

@@ -59,6 +59,7 @@ function _buildCharCompactPopup() {
   if (PopupManager.isOpen('char-compact')) return; // idempotent
 
   const bodyEl = document.createElement('div');
+  bodyEl.id = 'btn-char-popup'; // dùng để safeClick() wire click handler từ main.js
   bodyEl.className = 'char-compact-body';
   bodyEl.innerHTML = `
     <div id="hud-avatar" title="Xem thông tin nhân vật" class="cc-avatar">
@@ -95,10 +96,8 @@ function _buildCharCompactPopup() {
     extraClass: 'pm-char-compact',
   });
 
-  // Avatar click → mở char popup đầy đủ
-  document.getElementById('hud-avatar')?.addEventListener('click', () => {
-    document.getElementById('btn-char-popup')?.click();
-  });
+  // Click handler cho toàn bộ char-compact body được wire từ main.js
+  // thông qua safeClick('btn-char-popup', ...) — chạy SAU initHUD().
 }
 
 // ============================================================

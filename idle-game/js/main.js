@@ -68,6 +68,7 @@ import { openMaDao, gainMaQi, toggleAnMa, doMaBreakthrough,
          completePurify, startPurifyQuest,
          getMaDaoStatus }                                           from './core/ma-dao-engine.js';
 import { getDanhVongTier }      from './core/danh-vong.js';
+import { getKhiVanMax }        from './core/co-duyen.js';
 import { resolveAmbushWin, resolveAmbushLoss } from './core/kiep-tu-engine.js';
 import { LINH_THU_DATA, tryTame, pickupEgg,
          feedBeast, buyLinhThuEgg, releaseBeast,
@@ -239,8 +240,11 @@ function tick() {
 
     if (!G._tickCount) G._tickCount = 0;
     G._tickCount++;
-    if (G._tickCount % 100 === 0 && (G.khiVan ?? 20) < 100)
-      G.khiVan = Math.min(100, (G.khiVan ?? 20) + 1);
+    if (G._tickCount % 100 === 0) {
+      const _kvMax = getKhiVanMax(G);
+      if ((G.khiVan ?? 20) < _kvMax)
+        G.khiVan = Math.min(_kvMax, (G.khiVan ?? 20) + 1);
+    }
 
     const newAchievements = checkAchievements(G);
     for (const a of newAchievements) {
@@ -861,7 +865,6 @@ function wireEvents() {
     window.location.reload();
   });
   safeClick('btn-save', () => { saveGame(G); showToast('💾 Đã lưu!','jade'); });
-  safeClick('btn-char-popup', () => showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab }));
 
   window._gameActions = { cultivateActions,combatActions,alchemyActions,questActions,skillActions,inventoryActions,shopActions,duocDienActions,maDaoActions };
   window._G = G;
@@ -871,7 +874,10 @@ function wireEvents() {
 
   // ── HUD (Session 14) ──
   // initHUD idempotent — gọi nhiều lần vẫn an toàn
+  // QUAN TRỌNG: initHUD() phải chạy TRƯỚC safeClick('btn-char-popup')
+  // vì bodyEl.id='btn-char-popup' chỉ tồn tại sau khi _buildCharCompactPopup() tạo nó.
   initHUD();
+  safeClick('btn-char-popup', () => showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab }));
 }
 
 function safeClick(id, handler) {

@@ -55,91 +55,6 @@
   <!-- ========== MAIN GAME LAYOUT ========== -->
   <div class="game-layout">
 
-    <!-- ===== LEFT PANEL — Character Info Only ===== -->
-    <aside class="panel-left">
-      <!-- Character card — click to open popup -->
-      <div class="left-char" id="btn-char-popup" style="cursor:pointer" title="Xem thông tin nhân vật">
-        <div id="char-portrait" class="char-portrait-wrap"></div>
-        <div class="char-info-compact">
-          <div id="hdr-name" class="char-name-compact">Vô Danh</div>
-          <div id="hdr-realm" class="char-realm-compact">🧘 Luyện Khí · Tầng 1</div>
-          <div id="hdr-title" class="char-title-compact" style="display:none"></div>
-        </div>
-      </div>
-
-      <!-- Bars -->
-      <div class="left-bars">
-        <div class="lb-row">
-          <span class="lb-label">⚡</span>
-          <div id="bar-qi" class="lb-bar qi-bar"><div class="bar-fill"></div><span class="bar-text">0/100</span></div>
-        </div>
-        <div class="lb-row">
-          <span class="lb-label">❤</span>
-          <div id="bar-hp" class="lb-bar hp-bar"><div class="bar-fill"></div><span class="bar-text">100/100</span></div>
-        </div>
-        <div class="lb-row">
-          <span class="lb-label">💪</span>
-          <div id="bar-stamina" class="lb-bar stamina-bar"><div class="bar-fill"></div><span class="bar-text">100/100</span></div>
-        </div>
-        <div class="lb-row">
-          <span class="lb-label">⏳</span>
-          <div class="lb-bar lifespan-bar-wrap">
-            <div id="lifespan-bar-fill" class="lifespan-bar-fill" style="width:100%;background:#56c46a"></div>
-          </div>
-          <span id="lifespan-text" class="lb-lifespan-text">--</span>
-        </div>
-      </div>
-
-      <!-- Resources row — chỉ giữ tuổi, stone/exp chuyển vào popup nhân vật -->
-      <div class="left-resources">
-        <div class="lr-item"><span id="gametime-display" class="lr-time"></span></div>
-        <div class="lr-item"><span id="hdr-danhvong" style="font-size:11px;font-weight:600;display:none"></span></div>
-      </div>
-
-      <!-- Hidden elements for compatibility -->
-      <div style="display:none">
-        <span id="hdr-stone"></span>
-        <span id="hdr-exp"></span>
-      </div>
-
-      <!-- Pháp Địa + Công Pháp -->
-      <div class="left-phapdia" id="stat-phapdia-left">--</div>
-
-      <!-- Quick action buttons -->
-      <div class="left-quick-btns">
-        <button id="btn-notif-bell" class="lq-btn" title="Thông Báo" style="position:relative">🔔<span id="notif-badge"></span></button>
-        <button id="btn-menu-icon" class="lq-btn" title="Menu">⚙</button>
-        <button id="btn-guide-icon" class="lq-btn" title="Cẩm Nang">📖</button>
-      </div>
-
-      <!-- Hidden elements kept for compatibility -->
-      <div style="display:none">
-        <span id="hdr-title-left"></span>
-        <strong id="stat-rate">0</strong>
-        <strong id="stat-atk">0</strong>
-        <strong id="stat-def">0</strong>
-        <strong id="stat-maxhp">0</strong>
-        <strong id="stat-time">0:00:00</strong>
-        <span id="stat-stage-name"></span>
-        <span id="stat-phapdia"></span>
-        <span id="stat-hunger"></span>
-        <span id="stat-am-thuong"></span>
-      </div>
-
-      <!-- Menu dropdown -->
-      <div class="menu-dropdown-left" id="menu-dropdown" style="display:none">
-        <button class="menu-item" id="menu-save">💾 Lưu Game</button>
-        <div class="menu-divider"></div>
-        <button class="menu-item" id="menu-account">👤 Tài Khoản</button>
-        <div class="menu-divider"></div>
-        <button class="menu-item menu-item-danger" id="menu-logout" style="color:#e05c4a">🚪 Đăng Xuất</button>
-        <div class="menu-divider"></div>
-        <button class="menu-item" id="menu-guide">📖 Cẩm Nang Tu Tiên</button>
-        <div class="menu-divider"></div>
-        <button class="menu-item menu-item-danger" id="menu-reset">🔄 Chơi Lại Từ Đầu</button>
-      </div>
-    </aside>
-
     <!-- ===== CENTER — World Scene ===== -->
     <main class="panel-center">
       <!-- Mobile only: compact char bar thay thế panel trái -->
@@ -275,6 +190,24 @@
       <button class="bmp-btn" data-tab="ranking"><span>🏆</span>Xếp Hạng</button>
       <button class="bmp-btn" data-tab="linh_thu"><span>🐾</span>Linh Thú</button>
     </div>
+  </div>
+
+  <!-- TOP-RIGHT ACTION BUTTONS — Thông Báo / Menu / Cẩm Nang -->
+  <div id="top-right-btns" class="top-right-btns">
+    <button id="btn-notif-bell" class="lq-btn" title="Thông Báo" style="position:relative">🔔<span id="notif-badge"></span></button>
+    <button id="btn-menu-icon" class="lq-btn" title="Menu">⚙</button>
+    <button id="btn-guide-icon" class="lq-btn" title="Cẩm Nang">📖</button>
+  </div>
+
+  <!-- Menu dropdown — di chuyển ra ngoài panel-left để không bị ẩn theo -->
+  <div class="menu-dropdown-left" id="menu-dropdown" style="display:none">
+    <button class="menu-item" id="menu-save">💾 Lưu Game</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item" id="menu-account">👤 Tài Khoản</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item menu-item-danger" id="menu-logout" style="color:#e05c4a">🚪 Đăng Xuất</button>
+    <div class="menu-divider"></div>
+    <button class="menu-item menu-item-danger" id="menu-reset">🔄 Chơi Lại Từ Đầu</button>
   </div>
 
   <!-- TOAST & FLOAT -->

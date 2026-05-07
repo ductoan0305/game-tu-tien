@@ -237,6 +237,22 @@ html, body { height: 100%; overflow: hidden; }
 /* compat — nav-btn giữ lại cho JS vẫn dùng */
 .nav-btn { display: none; }
 
+/* ── Top-right action buttons (Thông Báo / Menu / Cẩm Nang) ── */
+.top-right-btns {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: var(--z-hud);
+  display: flex;
+  gap: 4px;
+}
+@media (max-width: 767px) {
+  .top-right-btns {
+    top: 6px;
+    right: 6px;
+  }
+}
+
 /* ========== CENTER PANEL — full canvas (Session 13) ========== */
 .panel-center {
   position: fixed;
@@ -986,6 +1002,7 @@ html, body { height: 100%; overflow: hidden; }
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  cursor: pointer; /* toàn bộ body clickable để mở char popup */
 }
 
 /* cc-avatar = avatar trong compact popup */

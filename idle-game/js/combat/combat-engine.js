@@ -147,7 +147,8 @@ export function playerAction(G, actionType, data = {}) {
     }
 
     // Combo bonus
-    if (skillDef.combo && G.combat.lastSkillUsed === skillDef.combo.after) {
+    const wasCombo = skillDef.combo && G.combat.lastSkillUsed === skillDef.combo.after;
+    if (wasCombo) {
       G.combat.comboCount++;
       if (skillDef.combo.bonus === 'extra_hit') {
         dmg = Math.floor(dmg * 1.3);
@@ -174,7 +175,8 @@ export function playerAction(G, actionType, data = {}) {
     result.msgs.push(`${skillDef.emoji} ${skillDef.name}: -${dmg} HP địch`);
     G.combat.lastSkillUsed = skillId;
 
-    addLog(G, `🗡 ${skillDef.name} → ${G.combat.enemy.name} mất ${dmg} HP`, 'player');
+    // Log type: 'combo' cho combo hit, 'player' cho tấn công thường
+    addLog(G, `🗡 ${skillDef.name} → ${G.combat.enemy.name} mất ${dmg} HP`, wasCombo ? 'combo' : 'player');
 
     // --- Khôi Lỗi tấn công cùng lượt player ---
     const puppetResult = processPuppetAttack(G);
@@ -427,7 +429,7 @@ function processEnemyTurn(G) {
     return result;
   }
   if (enemyStunned) {
-    addLog(G, '💫 Địch bị choáng, bỏ lượt!', 'system');
+    addLog(G, '💫 Địch bị choáng, bỏ lượt!', 'debuff');
     return result;
   }
 
@@ -459,7 +461,7 @@ function processEnemyTurn(G) {
     if (G.combat.dodgeNextHit) {
       G.combat.dodgeNextHit = false;
       result.msgs.push(`💨 Ngươi né tránh đòn tấn công!`);
-      addLog(G, `💨 Né đòn thường của ${enemy.name}`, 'player');
+      addLog(G, `💨 Né đòn thường của ${enemy.name}`, 'miss');
     } else {
       // Puppet taunt: giảm 25% dmg về player, phần còn lại đánh vào puppet
       if (G.combat._puppetTaunt && G.khoiLoi?.activePuppet?.combatHp > 0) {
@@ -497,7 +499,7 @@ function processEnemyTurn(G) {
     const heal = Math.floor(enemy.maxHp * 0.3);
     enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + heal);
     result.msgs.push(`✨ ${enemy.name} HỒI SINH! +${heal} HP!`);
-    addLog(G, `✨ ${enemy.name} hồi phục ${heal} HP!`, 'enemy');
+    addLog(G, `✨ ${enemy.name} hồi phục ${heal} HP!`, 'heal');
     return result;
   }
 
@@ -506,7 +508,7 @@ function processEnemyTurn(G) {
     if (G.combat.dodgeNextHit && skillDef.dmgMult <= 2) {
       G.combat.dodgeNextHit = false;
       result.msgs.push(`💨 Ngươi né tránh ${skillDef.name}!`);
-      addLog(G, `💨 Né ${skillDef.name}`, 'player');
+      addLog(G, `💨 Né ${skillDef.name}`, 'miss');
     } else {
       G.combat.playerHp -= dmg;
       result.dmg = dmg;
@@ -538,17 +540,17 @@ function applyPlayerSkillEffect(G, effect, result) {
     case 'burn_3turn':
       G.combat.enemy.debuffs.push({ type: 'burn', turns: 3, dmgPerTurn: Math.floor(calcAtk(G) * 0.2) });
       result.msgs.push('🔥 Địch bị bỏng!');
-      addLog(G, '🔥 Địch bị đốt cháy 3 lượt', 'system');
+      addLog(G, '🔥 Địch bị đốt cháy 3 lượt', 'debuff');
       break;
     case 'dodge_next':
       G.combat.dodgeNextHit = true;
       result.msgs.push('💨 Tốc độ tăng vọt — né đòn tiếp theo!');
-      addLog(G, '💨 Sẵn sàng né đòn', 'player');
+      addLog(G, '💨 Sẵn sàng né đòn', 'miss');
       break;
     case 'stun_1turn':
       G.combat.enemy.debuffs.push({ type: 'stun', turns: 1 });
       result.msgs.push('💫 Địch bị choáng 1 lượt!');
-      addLog(G, '💫 Địch bị choáng!', 'system');
+      addLog(G, '💫 Địch bị choáng!', 'debuff');
       break;
   }
 }
@@ -596,7 +598,7 @@ function applyEnemySkillEffect(G, effect, result) {
       G.combat.enemy.atk = Math.floor(G.combat.enemy.atk * 1.5);
       G.combat.enemy.def = Math.floor(G.combat.enemy.def * 0.5);
       result.msgs.push('🔴 Địch điên cuồng — công mạnh hơn, thủ yếu đi!');
-      addLog(G, '🔴 Địch vào trạng thái bạo nộ!', 'enemy');
+      addLog(G, '🔴 Địch vào trạng thái bạo nộ!', 'debuff');
       break;
   }
 }
@@ -689,7 +691,7 @@ function endCombat(G, result, victory) {
     G.hp = Math.max(1, Math.floor(calcMaxHp(G) * 0.1));
     result.victory = false;
     result.msgs.push(`💀 Bại trận! Thoát hiểm, HP còn lại 10%`);
-    addLog(G, `💀 Bại trận, rút lui khỏi chiến trường`, 'system');
+    addLog(G, `💀 Bại trận, rút lui khỏi chiến trường`, 'flee');
     bus.emit('combat:end', { victory: false, enemy });
   }
 

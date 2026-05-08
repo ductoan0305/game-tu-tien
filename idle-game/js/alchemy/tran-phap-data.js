@@ -5,9 +5,9 @@
 // ============================================================
 
 // ---- Loại Trận Pháp ----
-// 'passive'  — Thường trực: tốn stone/phút game, buff liên tục, có thể huỷ
-// 'active'   — Kích hoạt: tốn stone 1 lần, buff X giây game-time
-// 'defense'  — Phòng ngự: tốn stone 1 lần, giảm damage nhận vào X giây
+// 'passive'  — Thường trực: tốn stone/phút THỰC (real-time), buff liên tục, có thể huỷ
+// 'active'   — Kích hoạt: tốn stone 1 lần, buff X giây THỰC (real-time)
+// 'defense'  — Phòng ngự: tốn stone 1 lần, giảm damage nhận vào X giây THỰC
 
 // ---- Cấp Bậc Trận Pháp Sư ----
 export const ARRAY_MASTER_RANKS = [
@@ -34,11 +34,12 @@ export function getNextArrayMasterRank(count) {
 }
 
 // ---- 35 Trận Pháp ----
-// stoneCostOnce: tốn 1 lần khi kích hoạt
-// stoneCostPerMin: tốn mỗi phút game-time (passive)
+// stoneCostOnce:   tốn 1 lần khi kích hoạt
+// stoneCostPerMin: tốn mỗi phút THỰC / real-time (passive) — drain mỗi 60 giây thực
 // effect: { type, value }
 //   type: rate_pct | atk_pct | def_pct | hp_max_pct | stone_pct | exp_pct | def_flat | hp_regen | stamina_regen | dmg_reduce
-// duration (giây game): chỉ dùng cho active/defense
+// duration (giây THỰC / real-time): chỉ dùng cho active/defense
+//   Ví dụ: duration:600 = 10 phút thực; 1 phút thực = 30 phút game
 export const ARRAY_RECIPES = [
 
   // ══════════════════════════════════════════

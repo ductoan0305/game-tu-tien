@@ -295,7 +295,7 @@ function renderActiveCombat(G) {
       <!-- COMBAT LOG -->
       <div class="combat-log" id="combat-log">
         ${c.log.slice(-10).reverse().map(l =>
-          `<div class="log-line log-${l.type}">${l.text}</div>`
+          `<div class="log-line log-${l.type}">${_formatLogLine(l.text, l.type)}</div>`
         ).join('')}
       </div>
 
@@ -386,35 +386,47 @@ function wireEnemySelectEvents(G, actions) {
   });
 }
 // ── Combat log formatter ──────────────────────────────────────────────────
+// Types: 'player' | 'enemy' | 'system' | 'gold' | 'miss' | 'heal' | 'debuff' | 'flee' | 'combo'
 function _formatLogLine(text, type) {
   // Escape HTML
   let t = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Highlight numbers (damage/heal amounts) — wrap in span
-  // Pattern: digits preceded by space and followed by space/end, e.g. "mất 123 HP" or "nhận 500"
-  t = t.replace(/\b(\d+)\s*(HP|linh thạch|EXP|MP)/g,
-    (_, n, unit) => `<span class="log-num">${n}</span> ${unit}`);
+  // Highlight damage/heal numbers — "N HP", "N linh thạch", "N EXP", "N MP"
+  // Dùng class log-num; CSS type-specific override màu (heal→xanh, enemy→đỏ, ...)
+  t = t.replace(/\b(\d+)\s*(HP|linh thạch|EXP|MP)\b/g,
+    (_, n, unit) => `<span class="log-num">${n}</span> ${unit}`);
 
-  // Badge prefix by type
+  // Standalone damage number sau "mất" hoặc "-" (không có unit)
+  // Ví dụ: "mất 123" cuối chuỗi, hoặc "-123 HP địch"
+  t = t.replace(/(mất\s+)(\d+)(?!\s*(?:HP|linh thạch|EXP|MP))/g,
+    (_, prefix, n) => `${prefix}<span class="log-num">${n}</span>`);
+
+  // Badge prefix — nhãn nhỏ đầu dòng phân loại nguồn gốc
   const badges = {
-    player:  '<span class="log-badge log-badge-player">TÔI</span> ',
-    enemy:   '<span class="log-badge log-badge-enemy">ĐỊCH</span> ',
-    system:  '',
-    gold:    '<span class="log-badge log-badge-gold">⭐</span> ',
+    player: '<span class="log-badge log-badge-player">TÔI</span> ',
+    enemy:  '<span class="log-badge log-badge-enemy">ĐỊCH</span> ',
+    system: '',
+    gold:   '<span class="log-badge log-badge-gold">⭐</span> ',
+    miss:   '<span class="log-badge log-badge-miss">NÉ</span> ',
+    heal:   '<span class="log-badge log-badge-heal">HỒI</span> ',
+    debuff: '<span class="log-badge log-badge-debuff">TRẠNG</span> ',
+    flee:   '',
+    combo:  '<span class="log-badge log-badge-combo">COMBO</span> ',
   };
 
-  // Critical / special keyword highlights
-  if (/chiến thắng|victory/i.test(text)) {
-    t = `<span class="log-hl-win">${t}</span>`;
-  } else if (/bại trận|thoát hiểm/i.test(text)) {
-    t = `<span class="log-hl-lose">${t}</span>`;
-  } else if (/combo/i.test(text)) {
+  // Full-line highlight theo type (ưu tiên type hơn keyword để tránh conflict)
+  if (type === 'combo' || /COMBO KẾT THÚC/i.test(text)) {
     t = `<span class="log-hl-combo">${t}</span>`;
-  } else if (/né đòn|né /i.test(text)) {
+  } else if (type === 'flee' || /bại trận|thoát hiểm/i.test(text)) {
+    t = `<span class="log-hl-lose">${t}</span>`;
+  } else if (/chiến thắng|victory/i.test(text)) {
+    t = `<span class="log-hl-win">${t}</span>`;
+  } else if (type === 'miss') {
     t = `<span class="log-hl-dodge">${t}</span>`;
-  } else if (/choáng|bị đốt|bạo nộ/i.test(text)) {
+  } else if (type === 'debuff') {
     t = `<span class="log-hl-debuff">${t}</span>`;
   }
+  // 'heal' và 'player'/'enemy' lấy màu từ CSS class .log-heal / .log-player / .log-enemy
 
   return (badges[type] || '') + t;
 }

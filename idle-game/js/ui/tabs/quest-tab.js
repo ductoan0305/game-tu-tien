@@ -24,6 +24,11 @@ export function renderQuestTab(G, actions) {
   // Tổng số quest player đang theo dõi (chỉ NPC quest + story quest active)
   const totalActive = npcActive.length + active.length;
 
+  // Gate bounty board + daily quests: chỉ hiện sau khi player đã tương tác
+  // với hệ thống quest (nhận NPC quest hoặc hoàn thành ít nhất 1 quest).
+  // Triết lý §6: mọi quest phải có người giao — không auto-appear từ bảng rỗng.
+  const hasQuestActivity = npcActive.length > 0 || G.quests.completed.length > 0;
+
   // Reset time
   const now = Date.now();
   const resetAt = (G.quests.lastDailyReset || 0) + 24 * 3600 * 1000;
@@ -48,16 +53,16 @@ export function renderQuestTab(G, actions) {
         </div>
       ` : ''}
 
-      <!-- Daily quests — chỉ hiện nếu đã có quest nào từ NPC -->
-      ${daily.length > 0 ? `
+      <!-- Daily quests — chỉ hiện sau khi có quest activity (§6) -->
+      ${hasQuestActivity && daily.length > 0 ? `
         <div class="quest-section">
           <h3>⏰ Nhật Tu Nhiệm Vụ</h3>
           ${daily.map(entry => renderDailyEntry(entry)).join('')}
         </div>
       ` : ''}
 
-      <!-- Bounty board -->
-      ${bounties.length > 0 ? `
+      <!-- Bounty board — chỉ hiện sau khi có quest activity (§6) -->
+      ${hasQuestActivity && bounties.length > 0 ? `
         <div class="quest-section">
           <h3>🎯 Bảng Truy Nã</h3>
           <div class="bounty-hint">Nhiệm vụ repeatable — tiêu diệt mục tiêu để nhận thưởng. Có cooldown sau khi hoàn thành.</div>

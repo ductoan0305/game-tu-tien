@@ -1,81 +1,81 @@
-# TU TIÊN — SESSION SPRINT BOARD
-**Quy tắc cho AI:** Đọc `HANDOFF.md` trước. Sau đó đọc đúng task được giao. Khi xong: đổi `⬜` → `✅`, ghi ngắn gọn những gì đã làm vào phần `Done note:`.
+ROADMAP — PHÁT TRIỂN TIẾP THEO
+SESSION P1 — Technical Cleanup: Realm Scope + Timer -- DONE
+Mô tả cho AI:
 
----
+Đọc HANDOFF.md và ARCHITECTURE.md. Nhiệm vụ: (1) Tìm và xóa tất cả dấu vết realm 5+ (Luyện Hư, Hợp Thể, Đại Thừa) còn sót trong code — kiểm tra data.js, combat-data.js, fresh-state.js, và toàn bộ js/ bằng grep. (2) Chuẩn hóa đơn vị timer Trận Pháp trong tran-phap-data.js và comment drain logic — thống nhất game-time vs real-time, đảm bảo drain formula dùng dtYears nhất quán như các engine khác. Không thay đổi balance, chỉ cleanup.
 
-## [S-H1] Bug: Khí Vận hiển thị sai giá trị ✅
 
-**Files cần đọc:** `js/core/co-duyen.js`, `js/core/systems/cultivation.js` (hàm `applyCharacterSetup`)
-**Vấn đề:** Nhân vật mới tạo Ngũ Linh Căn hiển thị `G.khiVan = 100`. Không đúng — theo code `applyCharacterSetup`, Ngũ LC fallback range `[15,40]`, max = 40. Không có path nào trong setup tạo ra 100.
-**Nghi vấn:** Một co-duyen event có thể fire sớm và set khiVan lên max. Cần kiểm tra `co-duyen.js` xem có event nào gán `G.khiVan = 100` hoặc tương tự không.
-**Fix:** Xác định nguồn gốc → clamp khiVan sau mọi modification theo đúng range của linh căn. Ngũ LC không được > 45.
-**Done khi:** Tạo char mới Ngũ LC nhiều lần, khiVan luôn nằm trong [15,40].
-**Done note:** Root cause: tick regen trong `main.js` dùng `Math.min(100, ...)` hardcode cho mọi loại LC → NGU có thể leo lên 100 sau đủ thời gian. Thêm nữa, `kvRanges` trong `applyCharacterSetup` dùng key cũ (`jin`, `mu`) không match với element mới (`kim`, `moc`) từ spirit-root.js. Fix: (1) Thêm `getKhiVanMax(G)` xuất từ `co-duyen.js` — trả về trần theo type: NGU=45, TU=55, TAM=65, SONG=75, BIEN_DI=90, TIEN=100; (2) Thay `Math.min(100,…)` bằng `Math.min(getKhiVanMax(G),…)` ở 3 chỗ: tick regen (`main.js`), tier boost & khivan_boost trong `applyCoduyen`; (3) Fix `kvRanges` trong `cultivation.js` — thêm type-based ranges (ưu tiên) và key mới `kim`, `moc`.
+SESSION P2 — Combat Log Formatting -- DONE
+Mô tả cho AI:
 
----
+Đọc HANDOFF.md. Nhiệm vụ: Cải thiện combat log trong js/ui/tabs/combat-tab.js — hiện đang là text thuần. Thêm color-coding (damage đỏ, heal xanh lá, miss/dodge xám, crit vàng) và icon prefix tương ứng (⚔️💥🛡️✨). Dùng CSS class thay inline style, thêm CSS vào combat.css. Giữ nguyên toàn bộ combat logic, chỉ sửa phần render log.
 
-## [S-H2] Bug: Nhập Định báo "hết linh thạch" khi mới tạo char ✅
 
-**Files cần đọc:** `js/core/systems/tick.js`, `js/core/phap-dia.js` (hàm `checkLinhDiaFee`), `js/main.js` (handler `cp-btn-meditate`)
-**Vấn đề:** Ngay sau tạo nhân vật, bấm nhập định xuất hiện thông báo hết linh thạch. Nhưng `toggleMeditate()` không check stone gì cả.
-**Nghi vấn 1:** `checkLinhDiaFee` có thể không check `costType !== 'none'` → cảnh báo dù đang ở Phàm Địa (cost=0).
-**Nghi vấn 2:** `tranPhap.activeArrays` có data cũ từ migration → drain stone ngay tick đầu tiên.
-**Nghi vấn 3:** Toast cảnh báo stone thấp fire độc lập, người chơi nhầm tưởng do nhập định.
-**Fix:** Tìm đúng nguồn → sửa điều kiện check. Phàm Địa không được có stone warning. Char mới không có active arrays.
-**Done khi:** Tạo char mới, bấm nhập định không có thông báo stone.
-**Done note:** Root cause: `fresh-state.js` khởi tạo `stone:0`. Khi char mới bấm nhập định, notification check `if (G.meditating && stone <= 0)` trong `render-core.js` fires ngay lập tức. Song song đó, `stoneMod=0.05` trong `tick.js` cũng áp dụng → qi rate -95% mà không có cảnh báo rõ. Fix 2 chỗ: (1) `tick.js`: R1 stone drain + stoneMod chỉ áp dụng khi `phapDia !== 'pham_dia'`; ở Phàm Địa `stoneMod=1.0`, `stoneStarved=false` — nhất quán với `costType:'none'` của Phàm Địa. (2) `render-core.js`: guard notification R1 thêm điều kiện `phapDia !== 'pham_dia'`. Stone warning chỉ còn hiện từ Linh Địa trở lên.
+SESSION P3 — Luyện Đan Gate Cứng -- DONE
+Mô tả cho AI:
 
----
+Đọc HANDOFF.md. Vấn đề: Hiện tại ai cũng có thể luyện đan ngay — vi phạm triết lý nghề phụ cần cơ duyên. Nhiệm vụ: (1) Nghề luyen_dan chỉ auto-unlock khi ngoTinh >= 40 VÀ có linh căn Hỏa (spiritData.points.huo > 0). (2) Người không đủ điều kiện có thể mở qua cơ duyên — thêm 1 event cơ duyên mới vào co-duyen.js (id: 'cd_dan_kinh_co_nhan', xác suất thấp, yêu cầu ngoTinh >= 20, effect: set flags.unlockedProfessions thêm luyen_dan). (3) UI nghe-nghiep-tab.js hiện điều kiện rõ trên locked card. Đừng thay đổi logic luyện đan hiện tại.
 
-## [S-H3] UX: Redesign section "Thành Tích" trong Char Popup ✅
 
-**File cần sửa:** `js/app/popups/char-popup.js` (phần cuối `bodyEl.innerHTML`, section `📊 Thành Tích`)
-**Vấn đề:** Section này gộp lẫn nhiều thứ không liên quan, label "Thành Tích" không mô tả đúng nội dung.
-**Thay đổi cần làm:**
-1. Đổi tên section → `📜 Hành Trình`
-2. Di chuyển **Tuổi** lên phần header nhân vật (kế bên tên, format: `10 tuổi | Cửa sổ < 70`)
-3. Thêm sub-label nhỏ cho từng counter để có context (ví dụ: Đột Phá thêm "lần", Danh Vọng thêm tier name đầy đủ hơn)
-4. Section Danh Vọng: hiển thị progress bar đến tier tiếp theo (dữ liệu tier đã có trong `danh-vong.js`)
-**Không đụng:** logic, state, các file khác.
-**Done khi:** Char popup hiển thị Tuổi ở header, section cuối đọc hiểu được không cần giải thích.
-**Done note:** Import thêm `DANH_VONG_TIERS` từ `danh-vong.js`. Thêm biến `currentAge`/`ageColor`/`ageWindowText` (xanh <70, vàng 70-74, đỏ 75+) và `dvProgressHtml` (progress bar tính từ min tier hiện tại → min tier tiếp theo, fallback "đạt tối cao" nếu Lừng Lẫy). Tuổi hiển thị trong header ngay dưới dòng realm. Section `📜 Hành Trình`: xóa row Tuổi, thêm unit nhỏ (lần/con/viên/hoàn thành) cho 4 counter, Danh Vọng wrap thành block riêng với progress bar bên dưới. Không đụng logic/state.
+SESSION P4 — Nghề Phụ Gate: 4 Nghề Còn Lại -- DONE
+Mô tả cho AI:
 
----
+Đọc HANDOFF.md phần S-E. Bốn nghề tran_phap, phu_chu, khoi_loi, linh_khi hiện chỉ có flags only — chưa có con đường mở cụ thể ngoài NPC/tông môn chưa implement. Nhiệm vụ: (1) Thêm 4 cơ duyên events vào co-duyen.js để mở từng nghề (xác suất rất thấp, yêu cầu điều kiện cảnh giới tối thiểu LK4+). (2) Trong nghe-nghiep-tab.js, locked card hiện gợi ý cụ thể "Học từ cao nhân, hoặc chờ cơ duyên". (3) Thêm _tryAutoUnlock check cho linh_thuc (bếp level ≥ 1 đã có) và luyen_khi (LK5+ tự động). Không đụng balance.
 
-## [S-H4] Feature: Tách Nav + Popup Tu Luyện mới ✅
 
-**Đọc thêm:** `js/ui/render-core.js` (hàm `renderNav`), `js/core/visibility.js`, `js/ui/popup-manager.js`, `js/ui/tab-popup.js`
-**Done note:** Tạo `js/ui/tu-luyen-popup.js` — floating popup via PopupManager (id `tu-luyen`), width 300px, vị trí góc phải. Popup chứa: header (realm/stage + tuổi có màu theo cửa sổ), 3 progress bars (Linh Lực/HP/Thể Năng), stats grid 2×2 (tu tốc/thuần độ/công kích/phòng thủ), Pháp Địa + số Công Pháp, hunger/ám thương indicators, 6 action buttons (Nhập Định span toàn hàng, + Nghỉ Ngơi/Khám Phá/Tỉ Thí/Câu Cá/Cảm Ngộ), Đột Phá button với animation pulse. `wireNavBtn` trong `main.js`: special-case `tabId === 'cultivate'` → gọi `openTuLuyenPopup(G, cultivateActions)` thay vì `_switchTabWithPopup('cultivate')` (programmatic nav về map vẫn giữ nguyên). `updateTuLuyenPopup(G)` được thêm vào gameTick mỗi 2 ticks (≈0.2s). CSS thêm vào `systems.css`. Tab `cultivate` vẫn là background canvas — không popup-ize.
-**Context quan trọng:** Tab `cultivate` luôn là background canvas — KHÔNG popup-ize (xem HANDOFF lưu ý kỹ thuật). `_switchTabWithPopup('cultivate')` hiện switch về canvas chính, đó là lý do nav button mở map.
+SESSION P5 — NPC Dialogs: Các Zone Chính -- DONE
+Mô tả cho AI:
 
-**Phần A — Tách nav button (2 nút thay 1):**
-- Xóa nút `cultivate` hiện tại khỏi bottom nav
-- Thêm nút **📍 Địa Điểm**: click → mở SV side popup hoặc world map (behavior hiện tại của cultivate button)
-- Thêm nút **🧘 Tu Luyện**: click → mở `CultivatePopup` mới (xem Phần B)
-- Sửa `renderNav()` trong `render-core.js` và `wireNavBtn` trong `main.js`
+Đọc HANDOFF.md. Nhiệm vụ: Thêm NPC dialog vào js/ui/location-popup.js trong object NPC_DIALOGS cho 5 zone hiện thiếu dialog: Vạn Linh Thị, Hắc Phong Lâm, Địa Phủ Môn, Ẩn Long Động, Linh Dược Cốc. Mỗi zone tối thiểu 2-3 dialog lines theo tone "tu tiên khắc nghiệt" (xem HANDOFF §G). Không cần thêm NPC quest, chỉ flavor text hiển thị khi player click vào NPC. Giữ format object hiện có.
 
-**Phần B — CultivatePopup mới (`js/app/popups/cultivate-popup.js`):**
-Dùng `PopupManager.open(...)`, 4 sections:
-1. **Trạng thái tu luyện** (rate breakdown, nút Nhập Định/Xuất Định — move từ char popup sang đây)
-2. **Công Pháp** (active slots 1-4, mastery bar, add/remove — UI hiện đã có ở phapdia-tab, có thể tái dùng logic)
-3. **Hỗ Trợ** (đan dược trong inventory có `boostCultivation` effect — click để dùng; có tooltip danDoc warning)
-4. **Trận Pháp** (active arrays, stone drain/giờ, toggle)
 
-**Ràng buộc thiết kế (KHÔNG vi phạm):**
-- Không tạo loop linh thạch → boost vô hạn. Mọi boost phải có cap hoặc cooldown.
-- Không hiển thị nút đột phá ở đây (giữ trong char popup hoặc cultivate canvas).
-- Nút Nhập Định sau khi move sang popup này thì XÓA khỏi char popup.
+SESSION P6 — Thêm NPC Quest: Zone 2 + 3
+Mô tả cho AI:
 
-**Done khi:** Nav có 2 nút riêng biệt, popup tu luyện mở được, nhập định hoạt động từ popup mới.
-**Done note:** _(để trống)_
+Đọc HANDOFF.md phần S-D. Hiện có 5 NPC quest (cả LK), cần thêm quest cho người chơi đã lên Trúc Cơ. Nhiệm vụ: Thêm 3-4 NPC quest mới vào js/quest/quest-data.js trong NPC_QUESTS — giao từ NPC các zone cấp cao hơn (Vạn Linh Thị hoặc Hắc Phong Lâm), giveCondition yêu cầu realm >= 1 (Trúc Cơ). Quest nội dung phải theo Manifesto §6 (người giao cụ thể, nhu cầu thật, mở quan hệ/thông tin). Wire quest indicator ! vào node NPC tương ứng trong map-data nếu chưa có.
 
----
 
-## Thứ tự đề xuất
+SESSION P7 — Cơ Duyên Events TC/KĐ/NA
+Mô tả cho AI:
 
-| Ưu tiên | Task | Lý do |
-|---------|------|-------|
-| 1 | S-H1 Bug khiVan | Ảnh hưởng balance, dễ fix |
-| 2 | S-H2 Bug stone | UX blocker cho người chơi mới |
-| 3 | S-H3 Char popup | UI polish, không rủi ro |
-| 4 | S-H4 Nav + popup | Feature lớn nhất, làm sau khi 1-3 ổn định |
+Đọc HANDOFF.md. Hiện co-duyen.js có ~52 events phần lớn cho LK. Nhiệm vụ: Thêm tối thiểu 15 events mới cho Trúc Cơ (realm 1), 10 events cho Kim Đan (realm 2), 5 events cho Nguyên Anh (realm 3). Events phải có unlockRealm đúng, không tạo power spike không có lore (HANDOFF §5), phần thưởng phải có rủi ro hoặc quan hệ xã hội tương ứng. Ưu tiên events mở công pháp bậc Trung/Thượng, events liên quan tông môn và đối thủ.
+
+
+SESSION P8 — Công Pháp Bổ Sung Tán Tu -- DONE
+Mô tả cho AI:
+
+Đọc HANDOFF.md phần CÔNG PHÁP. Nhiệm vụ: Thêm 4-6 công pháp mới vào CONG_PHAP_LIST trong js/core/phap-dia.js hướng tới tán tu (acquireType: 'co_duyen' hoặc 'buy'). Cần đa dạng hệ (Thủy, Thổ, không hệ), đa dạng cảnh giới. Mỗi công pháp có buffs(mastery, elementMatch) function trả về buff cân bằng với các công pháp hiện có — không vượt buff của công pháp tông môn cùng cấp. Thêm entry vào bảng công pháp trong HANDOFF.md cuối session.
+
+
+SESSION P9 — Trận Pháp Redesign
+Mô tả cho AI:
+
+Đọc HANDOFF.md. Nhiệm vụ: Redesign hệ Trận Pháp. Đổi vật liệu từ nguyên liệu hiện tại sang: trận kỳ + trận bàn + trận nhãn + linh thạch. Trận kỳ là item mới chế tạo từ nguyên liệu thô hoặc mua shop/cơ duyên. Cập nhật tran-phap-data.js (materials mới), tran-phap-tab.js (UI hiển thị vật liệu mới), crafting-data.js (recipe trận kỳ). Đảm bảo triết lý: Trận Pháp cần đầu tư và cơ duyên, không phải ai cũng deploy được. Không thay đổi combat bonus của active arrays.
+
+
+SESSION P10 — Balance Calibration TC/KĐ/NA
+Mô tả cho AI:
+
+Đọc HANDOFF.md phần BALANCE và STATE STRUCTURE. Nhiệm vụ: Calibrate purityThresholds cho Trúc Cơ (4 tầng), Kim Đan (4 tầng), Nguyên Anh (4 tầng) trong js/core/data.js — dựa theo nguyên tắc đã calibrate LK: Song LC tán tu LK tiêu thụ ~110 tuổi game. TC cần ~200 năm game, KĐ ~500, NA ~1000 (xem bảng tuổi thọ HANDOFF). Tính ngược từ qi rate tiêu chuẩn ở mỗi cảnh giới. Cũng calibrate thuần thục công pháp: tốc độ gain trong calcMasteryGainPerTick để đạt 50% thuần thục sau ~30 ngày thực casual play.
+
+
+SESSION P11 — NPC Rivals System
+Mô tả cho AI:
+
+Đọc HANDOFF.md phần STATE STRUCTURE. data.js đã định nghĩa NPC_RIVALS (9 đối thủ) nhưng chưa có encounter logic. Nhiệm vụ: (1) Thêm encounter trigger vào co-duyen.js — đối thủ xuất hiện theo cảnh giới tương đương player, xác suất thấp. (2) Khi gặp đối thủ, hiện dialog + 3 lựa chọn: "Thi đấu" (bắt đầu combat), "Trao đổi" (mua/đổi vật phẩm), "Bỏ qua". (3) Thắng đối thủ tăng Danh Vọng tương ứng tier. Wire vào event-bus-handlers.js. Không thêm đối thủ mới, chỉ dùng 9 NPC đã có.
+
+
+SESSION P12 — Multi-device Session Lock
+Mô tả cho AI:
+
+Đọc HANDOFF.md phần ⬜ Multi-device Session Lock. Implement đúng theo spec đã có trong HANDOFF: (1) Khi login, ghi sessionToken (UUID v4) + timestamp lên Firestore sessions/{uid}. (2) Polling mỗi 30s: nếu token không khớp → logout + toast "Tài khoản đăng nhập từ thiết bị khác". (3) Login mới → ghi token mới → kick thiết bị cũ. (4) Timeout 5 phút cho browser crash. Files: js/firebase/auth-ui.js, js/firebase/cloud-save.js. Test cả trường hợp offline.
+
+
+SESSION P13 — Mobile UI Polish
+Mô tả cho AI:
+
+Đọc HANDOFF.md phần LƯU Ý KỸ THUẬT (Layout S15). Nhiệm vụ: Cải thiện UX mobile. (1) Touch drag cho PopupManager — _makeDraggable() hiện dùng mousedown/mousemove/mouseup, thêm touchstart/touchmove/touchend tương đương. (2) Touch resize 8-direction trong _makeResizable() — tương tự. (3) Kiểm tra .panel-center trên màn hình nhỏ (<400px width) — đảm bảo bottom nav không che nội dung. (4) Test .sv-side-popup trên mobile — đảm bảo không overflow viewport. CSS trong layout.css và systems.css.
+
+
+Ghi Chú Về Thứ Tự
+Các session P1→P4 là nên làm trước vì P1 là cleanup, P2-P4 là hoàn thiện hệ thống đang thiếu. P5→P8 là content work có thể song song. P9 là redesign lớn nên để sau khi content ổn định. P10-P11 là depth sau khi có đủ content để test. P12-P13 là production/polish làm cuối cùng.

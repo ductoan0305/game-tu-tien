@@ -37,8 +37,8 @@ const PROFESSIONS = [
     name: 'Luyện Khí',
     color: '#7b9fd4',
     desc: 'Rèn giũa khí cụ và trang bị từ khoáng vật, gia cố khả năng chiến đấu.',
-    unlockHint: 'Học từ thợ rèn NPC hoặc tìm được bí quyết rèn luyện qua cơ duyên.',
-    // Unlock qua NPC hoặc flags
+    unlockHint: 'Học từ cao nhân, hoặc chờ cơ duyên (LK tầng 4+). Tự động mở khi đạt LK tầng 5.',
+    // Auto-unlock: LK5+ (realmIdx > 0 OR stage >= 5). Cũng unlock qua cơ duyên LK4+
   },
   {
     id: 'tran_phap',
@@ -46,8 +46,8 @@ const PROFESSIONS = [
     name: 'Trận Pháp',
     color: '#56c46a',
     desc: 'Bố trận phòng ngự và tấn công, vận dụng linh lực theo cấu hình trận đồ.',
-    unlockHint: 'Học từ NPC hoặc tông môn, hoặc tìm được Trận Kinh qua cơ duyên.',
-    // Unlock qua NPC/tông môn hoặc flags
+    unlockHint: 'Học từ cao nhân, hoặc chờ cơ duyên (LK tầng 4+). Khám phá phế tích có thể gặp Trận Kinh.',
+    // Unlock qua cơ duyên LK4+ (explore/array)
   },
   {
     id: 'phu_chu',
@@ -55,8 +55,8 @@ const PROFESSIONS = [
     name: 'Phù Chú',
     color: '#a855f7',
     desc: 'Vẽ bùa lên vật phẩm để tạo hiệu ứng đặc biệt trong chiến đấu và tu luyện.',
-    unlockHint: 'Học từ NPC hoặc tông môn, hoặc nhận cơ duyên Phù Chú.',
-    // Unlock qua NPC/tông môn hoặc flags
+    unlockHint: 'Học từ cao nhân, hoặc chờ cơ duyên (LK tầng 4+). Thiền định và khám phá để nhận duyên phận.',
+    // Unlock qua cơ duyên LK4+ (explore/meditate)
   },
   {
     id: 'khoi_loi',
@@ -64,8 +64,8 @@ const PROFESSIONS = [
     name: 'Khôi Lỗi',
     color: '#e05c4a',
     desc: 'Chế tạo và điều khiển bù nhìn chiến đấu bằng linh lực và vật liệu đặc biệt.',
-    unlockHint: 'Học từ NPC hoặc tông môn, hoặc nhận cơ duyên Khôi Lỗi.',
-    // Unlock qua NPC/tông môn hoặc flags
+    unlockHint: 'Học từ cao nhân, hoặc chờ cơ duyên (LK tầng 4+). Tìm tàn tích môn phái để gặp bí kíp.',
+    // Unlock qua cơ duyên LK4+ (explore/combat)
   },
   {
     id: 'linh_thuc',
@@ -112,6 +112,14 @@ function _tryAutoUnlock(G) {
   if (!profs.includes('linh_thuc')) {
     if ((G.linhThuc?.kitchen?.level ?? 0) >= 1) {
       addIfNew('linh_thuc');
+    }
+  }
+
+  // Luyện Khí: LK tầng 5+ (realmIdx > 0 OR stage >= 5)
+  if (!profs.includes('luyen_khi')) {
+    const isLK5Plus = (G.realmIdx ?? 0) > 0 || (G.stage ?? 1) >= 5;
+    if (isLK5Plus) {
+      addIfNew('luyen_khi');
     }
   }
 }
@@ -218,7 +226,7 @@ function _renderAllLockedOverview(G) {
 
 // Card chi tiết cho nghề chưa unlock
 function _renderLockedCard(prof, G) {
-  const progressHtml = _renderLuyenDanProgress(prof.id, G);
+  const progressHtml = _renderLockedProfProgress(prof.id, G);
 
   return `
     <div class="nn-locked-card" style="--prof-color:${prof.color}">
@@ -242,29 +250,137 @@ function _renderLockedCard(prof, G) {
     </div>`;
 }
 
-// Hiện progress bar nếu gần đạt điều kiện (chỉ cho luyen_dan)
-function _renderLuyenDanProgress(profId, G) {
-  if (profId !== 'luyen_dan') return '';
+// Hiện progress + hướng dẫn mở khoá — 2 con đường cho mỗi nghề
+function _renderLockedProfProgress(profId, G) {
+  const stage    = G.stage ?? 1;
+  const realmIdx = G.realmIdx ?? 0;
 
-  const ngoTinh = G.ngoTinh ?? 0;
-  const hasFireRoot = (G.spiritData?.points?.huo ?? 0) > 0;
-  const ngoTinhPct = Math.min(100, Math.round(ngoTinh / 40 * 100));
+  // ── Helper: block progress LK tầng ──────────────────────────────
+  const _lkStageBlock = (minStage, color, autoText) => {
+    const isHigherRealm = realmIdx > 0;
+    const stagePct = Math.min(100, Math.round(stage / minStage * 100));
+    const done = isHigherRealm || stage >= minStage;
+    const c = done ? '#56c46a' : color;
+    return `
+      <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid ${color}33">
+        <div style="font-size:10px;color:${color};font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
+          Con Đường 1 — ${autoText}
+        </div>
+        ${done ? `
+          <div style="color:#56c46a;font-size:11px">✓ Đủ điều kiện — tự động mở khi vào tab</div>` : `
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span style="color:var(--text-dim)">LK Tầng ${realmIdx === 0 ? stage : '∞'}</span>
+            <span style="color:${c}">Cần LK tầng ${minStage}</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden">
+            <div style="width:${stagePct}%;height:100%;background:${c};border-radius:4px;transition:width 0.3s"></div>
+          </div>
+          <div style="color:#888;font-size:10px;margin-top:4px">Tiếp tục đột phá để đạt tầng ${minStage}</div>`}
+      </div>`;
+  };
 
-  const fireStatus = hasFireRoot
-    ? `<span style="color:#56c46a">✓ Có linh căn Hỏa</span>`
-    : `<span style="color:#e05c4a">✗ Thiếu linh căn Hỏa</span>`;
+  // ── Helper: block cơ duyên ───────────────────────────────────────
+  const _coDuyenBlock = (minStage, actions, desc) => {
+    const ready = realmIdx > 0 || stage >= minStage;
+    const pct = Math.min(100, Math.round(stage / minStage * 100));
+    return `
+      <div style="margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(168,85,247,0.2)">
+        <div style="font-size:10px;color:#a855f7;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
+          Con Đường 2 — Cơ Duyên Cao Nhân
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;line-height:1.5">
+          ${desc}
+        </div>
+        ${!ready ? `
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span style="color:var(--text-dim)">LK tầng ${stage}</span>
+            <span style="color:#6b4f8a">Cần LK tầng ${minStage}</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:#6b4f8a;border-radius:4px;transition:width 0.3s"></div>
+          </div>` : `
+          <div style="color:#a855f7;font-size:11px">✦ Đủ điều kiện — ${actions} để gặp cơ duyên</div>`}
+      </div>`;
+  };
 
-  return `
-    <div class="nn-lc-progress" style="margin-top:10px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-        <span style="color:var(--text-dim)">Ngộ Tính</span>
-        <span style="color:${ngoTinh >= 40 ? '#56c46a' : '#f0d47a'}">${ngoTinh.toFixed(1)} / 40</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden">
-        <div style="width:${ngoTinhPct}%;height:100%;background:${ngoTinh >= 40 ? '#56c46a' : '#e8a020'};border-radius:4px;transition:width 0.3s"></div>
-      </div>
-      <div style="margin-top:6px;font-size:11px">${fireStatus}</div>
-    </div>`;
+  // ── Luyện Đan ────────────────────────────────────────────────────
+  if (profId === 'luyen_dan') {
+    const ngoTinh    = G.ngoTinh ?? 0;
+    const hasFireRoot = (G.spiritData?.points?.huo ?? 0) > 0;
+    const path1Pct    = Math.min(100, Math.round(ngoTinh / 40 * 100));
+    const path1Done   = ngoTinh >= 40;
+    const path1Color  = path1Done ? '#56c46a' : '#e8a020';
+    const fireIcon    = hasFireRoot
+      ? `<span style="color:#56c46a">✓ Có linh căn Hỏa</span>`
+      : `<span style="color:#888">✗ Không có linh căn Hỏa</span>`;
+
+    const path1Html = `
+      <div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(232,160,32,0.2)">
+        <div style="font-size:10px;color:#e8a020;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
+          Con Đường 1 — Thiên Phú Hỏa Căn
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="color:var(--text-dim)">Ngộ Tính</span>
+          <span style="color:${path1Color}">${ngoTinh.toFixed(1)} / 40</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden;margin-bottom:5px">
+          <div style="width:${path1Pct}%;height:100%;background:${path1Color};border-radius:4px;transition:width 0.3s"></div>
+        </div>
+        <div style="font-size:11px">${fireIcon}</div>
+        ${hasFireRoot && path1Done
+          ? `<div style="color:#56c46a;font-size:10px;margin-top:4px">✓ Đủ điều kiện — tự động mở khi vào tab</div>`
+          : hasFireRoot
+            ? `<div style="color:#888;font-size:10px;margin-top:4px">Cần thêm ${(40 - ngoTinh).toFixed(1)} Ngộ Tính nữa (thiền định)</div>`
+            : `<div style="color:#666;font-size:10px;margin-top:4px">Linh căn không phù hợp — thử con đường khác</div>`}
+      </div>`;
+
+    const path2Ready  = ngoTinh >= 20;
+    const path2Pct    = Math.min(100, Math.round(ngoTinh / 20 * 100));
+    const path2Color  = path2Ready ? '#a855f7' : '#6b4f8a';
+    const path2Html = `
+      <div style="margin-top:8px;padding:8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(168,85,247,0.2)">
+        <div style="font-size:10px;color:#a855f7;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">
+          Con Đường 2 — Cơ Duyên Gặp Cao Nhân
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;line-height:1.5">
+          Không cần Hỏa căn. Khi Ngộ Tính ≥ 20, có thể gặp cao nhân truyền thụ
+          trong lúc khám phá hoặc thiền định.
+        </div>
+        ${!path2Ready ? `
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span style="color:var(--text-dim)">Ngộ Tính</span>
+            <span style="color:${path2Color}">${ngoTinh.toFixed(1)} / 20</span>
+          </div>
+          <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden">
+            <div style="width:${path2Pct}%;height:100%;background:${path2Color};border-radius:4px;transition:width 0.3s"></div>
+          </div>` : `
+          <div style="color:#a855f7;font-size:11px">✦ Đủ điều kiện — tiếp tục khám phá và thiền định để gặp cơ duyên</div>`}
+      </div>`;
+    return path1Html + path2Html;
+  }
+
+  // ── Luyện Khí ────────────────────────────────────────────────────
+  if (profId === 'luyen_khi') {
+    return _lkStageBlock(5, '#7b9fd4', 'Đạt LK Tầng 5 (Tự Động)')
+      + _coDuyenBlock(4, 'khám phá và chiến đấu', 'Từ LK tầng 4, có thể gặp lão thợ rèn trong lúc phiêu lưu.');
+  }
+
+  // ── Trận Pháp ─────────────────────────────────────────────────────
+  if (profId === 'tran_phap') {
+    return _coDuyenBlock(4, 'khám phá phế tích', 'Từ LK tầng 4, phế tích cổ đại có thể ẩn giấu Trận Kinh tiền nhân.');
+  }
+
+  // ── Phù Chú ───────────────────────────────────────────────────────
+  if (profId === 'phu_chu') {
+    return _coDuyenBlock(4, 'khám phá và thiền định', 'Từ LK tầng 4, hoang miếu và linh địa có thể mang lại Phù Thư Bí Truyền.');
+  }
+
+  // ── Khôi Lỗi ──────────────────────────────────────────────────────
+  if (profId === 'khoi_loi') {
+    return _coDuyenBlock(4, 'khám phá và chiến đấu', 'Từ LK tầng 4, tàn tích môn phái bí ẩn đôi khi còn lưu Cuốn Ký Lục Khôi Lỗi.');
+  }
+
+  return '';
 }
 
 // ============================================================

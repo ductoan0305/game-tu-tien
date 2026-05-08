@@ -174,6 +174,129 @@ export const CONG_PHAP_LIST = [
   },
 
   // ══════════════════════════════════════════
+  // HẠ PHẨM TÁN TU — Thủy & Thổ (mua tại cửa hàng)
+  // ══════════════════════════════════════════
+  {
+    id: 'hoi_thuy_quyet',
+    name: 'Hồi Thủy Quyết',
+    emoji: '💧',
+    grade: 1, gradeName: 'Hạ Phẩm',
+    element: 'shui', // hệ Thủy
+    stages: 9, realmRange: [0, 0], // chỉ LK
+    acquireType: 'buy',
+    cost: 900,
+    sectId: null,
+    desc: 'Hệ Thủy. Pháp quyết nước xoáy tuần hoàn, kiên trì mà bền bỉ. Tán tu phù hợp.',
+    lore: 'Nước không tranh mà thắng, lặng lẽ mòn đá. Tán tu lĩnh ngộ từ quan sát dòng suối chảy qua đêm đông.',
+    buffs: (mastery, match) => ({
+      ratePct: Math.floor(mastery * (match ? 0.55 : 0.40)), // max 55% / 40% — Thủy thiên về tốc tu
+      hpPct:   Math.floor(mastery * 0.20),                  // max 20% HP — nước nuôi dưỡng
+    }),
+  },
+  {
+    id: 'cuong_tho_kinh',
+    name: 'Cương Thổ Kinh',
+    emoji: '🪨',
+    grade: 1, gradeName: 'Hạ Phẩm',
+    element: 'tu', // hệ Thổ
+    stages: 9, realmRange: [0, 0], // chỉ LK
+    acquireType: 'buy',
+    cost: 1000,
+    sectId: null,
+    desc: 'Hệ Thổ. Bí kinh rèn thân theo đạo đất, vững chắc và khó lay chuyển.',
+    lore: 'Đất sinh vạn vật, bền bỉ ngàn năm. Pháp môn này nhấn mạnh trường tồn hơn tốc độ — phù hợp tán tu thể chất.',
+    buffs: (mastery, match) => ({
+      defPct:  Math.floor(mastery * (match ? 0.50 : 0.35)), // max 50% / 35% — Thổ thiên về phòng
+      hpPct:   Math.floor(mastery * 0.15),                  // max 15% HP
+      ratePct: Math.floor(mastery * 0.10),                  // max 10% — đất chậm mà chắc
+    }),
+  },
+
+  // ══════════════════════════════════════════
+  // TRUNG PHẨM TÁN TU — Thủy & Null (mua)
+  // ══════════════════════════════════════════
+  {
+    id: 'bac_minh_thuy_kinh',
+    name: 'Bắc Minh Thủy Kinh',
+    emoji: '🌊',
+    grade: 2, gradeName: 'Trung Phẩm',
+    element: 'shui', // hệ Thủy
+    stages: 13, realmRange: [1, 2], // TC + KĐ
+    acquireType: 'buy',
+    cost: 6500,
+    sectId: null,
+    desc: 'Hệ Thủy. Bí kinh nói về biển bắc vô tận — thủy lực tuần hoàn không ngừng nghỉ.',
+    lore: 'Có cá nằm trong biển bắc, tên gọi là Côn. Nước tích lại ngàn dặm, người tu thấm nhuần trí tuệ của sự rộng lớn.',
+    buffs: (mastery, match) => ({
+      ratePct: Math.floor(mastery * (match ? 0.60 : 0.45)), // max 60% / 45% — Thủy tốc tu cao
+      defPct:  Math.floor(mastery * (match ? 0.35 : 0.25)), // max 35% / 25% — nước thích nghi
+    }),
+  },
+  {
+    id: 'hon_nguyen_hoa_kinh',
+    name: 'Hỗn Nguyên Hóa Kinh',
+    emoji: '☯',
+    grade: 2, gradeName: 'Trung Phẩm',
+    element: null, // không thuộc hệ nào — viên dung vạn hệ
+    stages: 13, realmRange: [1, 2], // TC + KĐ
+    acquireType: 'buy',
+    cost: 7500,
+    sectId: null,
+    desc: 'Không thuộc hệ. Tổng hợp nhiều luồng pháp lực, viên dung mà không thiên lệch. Tán tu dễ lĩnh ngộ.',
+    lore: 'Hỗn Nguyên là trước khi trời đất phân chia. Không mạnh về một hướng nhưng không yếu ở đâu — con đường của tán tu không căn.',
+    buffs: (mastery, match) => ({
+      ratePct: Math.floor(mastery * 0.30), // max 30%
+      atkPct:  Math.floor(mastery * 0.25), // max 25%
+      defPct:  Math.floor(mastery * 0.25), // max 25%
+      hpPct:   Math.floor(mastery * 0.15), // max 15%
+      // Tổng 95% — tương đương thanh_nguyen_kiem_quyet (90% với match) nhưng cân bằng hơn
+    }),
+  },
+
+  // ══════════════════════════════════════════
+  // THƯỢNG PHẨM TÁN TU — Thổ & Null (cơ duyên)
+  // ══════════════════════════════════════════
+  {
+    id: 'dia_tang_chon_kinh',
+    name: 'Địa Tạng Chân Kinh',
+    emoji: '🏔',
+    grade: 3, gradeName: 'Thượng Phẩm',
+    element: 'tu', // hệ Thổ
+    stages: 17, realmRange: [3, 4], // NA + HT
+    acquireType: 'co_duyen',
+    cost: 0,
+    sectId: null,
+    desc: 'Hệ Thổ. Chân kinh tuyệt học về đạo đất — bất hoại chi thân, vạn vật không phá.',
+    lore: 'Thổ tàng vạn vật, kiên bất khả hủy. Địa Tạng Chân Kinh là bí pháp mà đại địa truyền lại cho người hữu duyên — chỉ ai ngộ được sự trường tồn mới lĩnh hội được.',
+    buffs: (mastery, match) => ({
+      defPct:  Math.floor(mastery * (match ? 0.90 : 0.70)), // max 90% / 70% — Thổ phòng tối thượng
+      hpPct:   Math.floor(mastery * 0.50),                  // max 50% HP — thân thể bất hoại
+      ratePct: Math.floor(mastery * 0.30),                  // max 30% — đất bền, không ngừng
+      // Tổng với match: 170% — bằng kiem_quyet_thuong (170%) nhưng thiên DEF thay ATK
+    }),
+  },
+  {
+    id: 'hon_nguyen_chon_kinh',
+    name: 'Hỗn Nguyên Chân Kinh',
+    emoji: '🌀',
+    grade: 3, gradeName: 'Thượng Phẩm',
+    element: null, // không hệ — đỉnh cao của viên dung
+    stages: 17, realmRange: [3, 4], // NA + HT
+    acquireType: 'co_duyen',
+    cost: 0,
+    sectId: null,
+    desc: 'Không thuộc hệ. Chân kinh tột đỉnh của tán tu — dung hợp tất cả ngũ hành, không thiên không lệch.',
+    lore: 'Không phải tông môn nào có thể truyền thụ — đây là pháp mà trời đất trao cho kẻ không cửa không môn, tự ngộ ra đạo lý trước khi âm dương phân lập.',
+    buffs: (mastery, match) => ({
+      ratePct: Math.floor(mastery * 0.50), // max 50%
+      atkPct:  Math.floor(mastery * 0.40), // max 40%
+      defPct:  Math.floor(mastery * 0.35), // max 35%
+      hpPct:   Math.floor(mastery * 0.25), // max 25%
+      // Tổng 150% — thấp hơn sect Thượng (170%) bù lại không cần căn hệ khớp
+    }),
+  },
+
+  // ══════════════════════════════════════════
   // TÔNG MÔN — nhận khi gia nhập
   // ══════════════════════════════════════════
   {

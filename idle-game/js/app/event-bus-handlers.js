@@ -23,6 +23,10 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
     showToast(`✅ Hoàn thành: ${quest.name}! +${rewards.stone}💎`, 'gold');
     appendLog(`📜 Nhiệm vụ hoàn thành: ${quest.name}`, 'quest');
     if (rewards.recipe) showToast(`📜 Học được công thức: ${rewards.recipe}`, 'spirit');
+    // Wire flags từ quest completion
+    if (questId === 'side_dungeon_01' && G.flags) {
+      G.flags.dungeonQuestDone = true;
+    }
     renderCurrentTab();
   });
 

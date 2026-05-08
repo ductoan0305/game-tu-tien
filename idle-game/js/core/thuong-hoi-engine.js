@@ -123,7 +123,7 @@ function _checkCost(G, q) {
   }
   if (c.type==='stamina' && (G.stamina??0) < c.qty) return { ok:false, msg:`Cần ${c.qty} thể năng` };
   if (c.type==='dungeon_run' && (G.dungeon?.highestFloor??0) < 3) return { ok:false, msg:'Cần chinh phục Địa Phủ tầng 3+' };
-  if (c.type==='special' && c.id==='nghiepLuc_low' && (G.nghiepLuc??0) >= 30) return { ok:false, msg:`Nghiệp Lực quá cao (${Math.floor(G.nghiepLuc??0)}/30)` };
+  if (c.type==='special' && c.id==='nghiepLuc_low' && (G.kiepTu?.nghiepLuc??0) >= 30) return { ok:false, msg:`Nghiệp Lực quá cao (${Math.floor(G.kiepTu?.nghiepLuc??0)}/30)` };
   return { ok:true };
 }
 
@@ -196,7 +196,7 @@ export function buyIntel(G, intelId) {
   else if (ef.type==='ambushWard')        { th.ambushWardExpires=now+ef.duration/31536000; th.ambushWardValue=ef.value; }
   else if (ef.type==='purityBoost')       { th.purityBoostExpires=now+ef.duration/31536000; th.purityBoostValue=ef.value; }
   else if (ef.type==='breakthroughBonus') { G._breakthroughCoDuyenBonus=(G._breakthroughCoDuyenBonus??0)+ef.value; }
-  else if (ef.type==='nghiepCleanse')     { G.nghiepLuc=Math.max(0,(G.nghiepLuc??0)*ef.value); }
+  else if (ef.type==='nghiepCleanse')     { if (G.kiepTu) G.kiepTu.nghiepLuc=Math.max(0,(G.kiepTu.nghiepLuc??0)*ef.value); }
 
   return { ok:true, msg:`${intel.emoji} ${intel.name}! ${intel.desc}`, type:'epic' };
 }

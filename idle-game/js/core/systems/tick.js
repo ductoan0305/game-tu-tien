@@ -140,7 +140,9 @@ export function learnSkill(G, skillId) {
   return { ok:true, msg:`✦ ${sk.name} lên Lv${lv+1}`, type:'spirit' };
 }
 
-export function canPrestige(G) { return G.realmIdx >= 7; }
+// Luân Hồi / Prestige — chưa implement UI, gate tại Hóa Thần hoàn thành (realmIdx 4)
+// Nhân Giới chỉ có realm 0-4; realmIdx >= 7 là sai scope (đã cleanup P1)
+export function canPrestige(G) { return G.realmIdx >= 4; }
 
 export function doPrestige(G) {
   if (!canPrestige(G)) return { ok:false, msg:'Chưa đủ điều kiện Luân Hồi!' };

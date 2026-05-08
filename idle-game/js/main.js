@@ -15,7 +15,7 @@ import { gameTick, checkAchievements, applyCharacterSetup,
          calcBreakthroughChance }                                    from './core/actions.js';
 import { REALMS, SKILLS, ITEMS }                                     from './core/data.js';
 import { REALM_NAMES }                                              from './core/constants.js';
-import { isTabUnlocked as isTabUnlocked_ }                           from './ui/nav-progression.js';
+import { isTabVisible, getUnlockMessages }                           from './core/visibility.js';
 import { startCombat, playerAction, flee,
          getAvailableEnemies, getUnlockedSkills }                    from './combat/combat-engine.js';
 import { craftPill, gatherIngredient, upgradeFurnace,
@@ -98,10 +98,12 @@ import { ensureTutorialState, updateTutorialStep,
 import { initHUD, updateHUD }                                         from './ui/hud.js';
 
 // ---- Tab Popup System (Session 15) ----
-import { openTabPopup, closeAllTabPopups, closeTabPopup }             from './ui/tab-popup.js';
+import { openTabPopup, closeAllTabPopups, closeTabPopup,
+         isAnyTabPopupOpen }                                          from './ui/tab-popup.js';
 
 // ---- Tu Luyện Popup (S-H4) ----
-import { openTuLuyenPopup, updateTuLuyenPopup, isTuLuyenPopupOpen }  from './ui/tu-luyen-popup.js';
+import { openTuLuyenPopup, updateTuLuyenPopup, isTuLuyenPopupOpen,
+         closeTuLuyenPopup }                                          from './ui/tu-luyen-popup.js';
 
 // ---- Visibility Gate (Session S-B) ----
 import { getVisibleTabs }                                             from './core/visibility.js';
@@ -220,6 +222,9 @@ function startGame() {
   wireEvents();
   renderAll();
   switchTab('cultivate', G); // luôn bắt đầu tại cultivate (map background)
+  // Màn hình khởi đầu là canvas chính → home button active, không phải Tu Luyện
+  document.querySelectorAll('.bnav-btn, .bmp-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('bnav-btn-home')?.classList.add('active');
   setTimeout(() => restoreLog(G), 50);
 }
 
@@ -297,18 +302,7 @@ function renderAll() {
 
 function renderCurrentTab() {
   const tab = G.activeTab || 'cultivate';
-  if (tab !== 'cultivate') {
-    import('./ui/nav-progression.js').then(({ isTabUnlocked, getTabLockInfo }) => {
-      if (!isTabUnlocked(tab, G)) {
-        const info  = getTabLockInfo(tab, G);
-        const panel = document.getElementById(`panel-${tab}`);
-        if (panel) panel.innerHTML = `<div class="locked-panel"><div class="lp-icon">🔒</div><div class="lp-title">${info?.label||tab}</div><div class="lp-desc">${info?.desc||'Chưa mở khóa.'}</div></div>`;
-        return;
-      }
-      _doRenderTab(tab);
-    });
-    return;
-  }
+  // Tab visible = tab dùng được (Phase1: không còn locked panel)
   _doRenderTab(tab);
 }
 
@@ -798,27 +792,47 @@ function wireEvents() {
     btn.addEventListener('click', () => {
       const tabId = btn.dataset.tab; if (!tabId) return;
 
-      // S-H4: "Tu Luyện" nav button → mở/focus Tu Luyện popup thay vì đóng hết popup
+      // S-TL1: "Tu Luyện" nav button — 3-way toggle:
+      //   1. Có tab popup đang mở → đóng tất cả (về world map canvas)
+      //   2. Tu Luyện popup đang mở → đóng nó (về world map canvas)
+      //   3. Không có gì mở → mở Tu Luyện popup
       if (tabId === 'cultivate') {
-        openTuLuyenPopup(G, cultivateActions);
+        const _setHomeActive = () => {
+          document.querySelectorAll('.bnav-btn, .bmp-btn').forEach(b => b.classList.remove('active'));
+          document.getElementById('bnav-btn-home')?.classList.add('active');
+        };
+        if (isAnyTabPopupOpen()) {
+          closeAllTabPopups();
+          _setHomeActive();
+        } else if (isTuLuyenPopupOpen()) {
+          closeTuLuyenPopup();
+          _setHomeActive();
+        } else {
+          openTuLuyenPopup(G, cultivateActions);
+          // Tu Luyện button active — switchTab đã handle qua data-tab='cultivate'
+          document.querySelectorAll('.bnav-btn, .bmp-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.tab === 'cultivate'));
+        }
         return;
       }
 
-      // S-B: Kiểm tra visibility gate trước (tab có được phép hiển thị không?)
-      const visibleTabs = getVisibleTabs(G);
-      if (!visibleTabs.includes(tabId)) {
-        showToast('🔒 Chưa mở khóa', 'danger');
-        return;
-      }
-      import('./ui/nav-progression.js').then(({ isTabUnlocked, getTabLockInfo }) => {
-        if (!isTabUnlocked(tabId, G)) { const info=getTabLockInfo(tabId,G); showToast(`🔒 ${info?.desc||'Chưa mở khóa'}`,'danger'); appendLog(`🔒 ${info?.label}: ${info?.desc}`,'danger'); return; }
-        trackTabOpen(G, tabId);
-        updateTutorialStep(G);
-        _switchTabWithPopup(tabId);
-      });
+      // Phase1: single-gate từ visibility.js. Button đã bị ẩn nếu chưa visible.
+      // Guard phòng thủ: nếu click đến từ source không phải nav button.
+      if (!isTabVisible(tabId, G)) return;
+      trackTabOpen(G, tabId);
+      updateTutorialStep(G);
+      _switchTabWithPopup(tabId);
     });
   }
   document.querySelectorAll('.nav-btn, .bnav-btn, .bmp-btn').forEach(wireNavBtn);
+
+  document.getElementById('bnav-btn-home')?.addEventListener('click', () => {
+    closeAllTabPopups();
+    closeTuLuyenPopup();
+    // Home không có data-tab nên phải tự set active
+    document.querySelectorAll('.bnav-btn, .bmp-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('bnav-btn-home')?.classList.add('active');
+  });
 
   document.getElementById('bnav-btn-world-map')?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -853,6 +867,12 @@ function wireEvents() {
     if (!tabId) return;
     trackTabOpen(G, tabId);
     updateTutorialStep(G);
+  });
+
+  // Notification bar click → mở tab popup đúng cách (dispatch từ render-core.js)
+  document.addEventListener('tab:open-popup', (e) => {
+    const tabId = e?.detail?.tabId;
+    if (tabId) _switchTabWithPopup(tabId);
   });
 
   safeClick('btn-meditate',   () => cultivateActions.meditate());
@@ -939,8 +959,7 @@ function _checkSmartNotifications(G) {
 
   // 4. Đột phá sẵn sàng (qi đầy + purity đủ) — nhắc nếu đang không ở cultivate
   if (G.activeTab !== 'cultivate') {
-    const { calcMaxQi: cmq, calcPurityThreshold: cpt } = window._stateComputedCache || {};
-    const maxQi = (G.qi ?? 0) >= (G._lastMaxQi ?? 999);
+    const maxQi = (G.qi ?? 0) >= calcMaxQi(G);
     const threshold = REALMS[G.realmIdx]?.purityThresholds?.[(G.stage ?? 1) - 1] ?? 999999;
     const purityOk  = (G.purity ?? 0) >= threshold * 0.5;
     if (maxQi && purityOk && !_notifiedThisSession.has('bt_ready')) {
@@ -963,7 +982,7 @@ function _checkSmartNotifications(G) {
   }
 
   // 6. Dungeon chưa vào hôm nay (nhắc 1 lần/session vào buổi tối)
-  if (isTabUnlocked_('dungeon', G) && !_notifiedThisSession.has('dungeon_reminder')) {
+  if (isTabVisible('dungeon', G) && !_notifiedThisSession.has('dungeon_reminder')) {
     const dv = G.danhVong ?? 0;
     const maxAttempts = dv >= 500 ? 8 : dv >= 300 ? 6 : dv >= 150 ? 5 : dv >= 50 ? 4 : 3;
     const attempts = G.dungeon?.attemptsToday ?? 0;

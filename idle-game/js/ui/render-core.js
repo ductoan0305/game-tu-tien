@@ -9,8 +9,7 @@ import { renderPortrait } from './portrait.js';
 import { getActiveTitle } from '../core/title-engine.js';
 import { getRemainingLifespan, getMaxLifespan, getLifespanColor, getLifespanPercent, formatYear } from '../core/time-engine.js';
 import { formatCurrencyShort, migrateCurrency } from '../core/currency.js';
-import { isTabUnlocked, getTabLockInfo, TAB_UNLOCK_CONFIG } from './nav-progression.js';
-import { getVisibleTabs } from '../core/visibility.js';
+import { getVisibleTabs, isTabVisible, getUnlockMessages } from '../core/visibility.js';
 import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus } from '../core/duoc-dien-engine.js';
 import { getDanhVongTier } from '../core/danh-vong.js';
@@ -78,76 +77,47 @@ export function getCurrentTab() {
 
 // ---- Header render (gọi mỗi tick) ----
 
-// ---- Render nav với unlock states ----
+// ---- Render nav (Phase1: single-gate từ visibility.js) ----
 export function renderNav(G) {
-  // Tính notification dots
-  const dots = _calcNavDots(G);
-
-  // S-B: tính danh sách tab được phép visible
+  const dots       = _calcNavDots(G);
   const visibleSet = new Set(getVisibleTabs(G));
 
-  document.querySelectorAll('.bnav-btn[data-tab], .bmp-btn[data-tab]').forEach(btn => {
-    const tabId = btn.dataset.tab;
-    if (!tabId) return;
+  // Ẩn/hiện buttons — nếu tab visible = hiện + dùng được; không visible = ẩn hoàn toàn.
+  // Không còn khái niệm "hiện nhưng 🔒" (gây overwhelm).
+  document.querySelectorAll('.bnav-btn[data-tab], .bmp-btn[data-tab], .nav-btn[data-tab]')
+    .forEach(btn => {
+      const tabId = btn.dataset.tab;
+      if (!tabId) return;
 
-    // S-B: Ẩn button nếu tab chưa visible theo progression gate
-    if (!visibleSet.has(tabId)) {
-      btn.style.display = 'none';
-      return;
-    }
-    btn.style.display = '';
-
-    // Lock state (nav-progression.js)
-    const unlocked = isTabUnlocked(tabId, G);
-    if (!unlocked) {
-      btn.classList.add('nav-locked');
-      return;
-    }
-    btn.classList.remove('nav-locked');
-    btn.querySelector('.nav-lock-icon')?.remove();
-
-    // Notification dot
-    let dot = btn.querySelector('.nav-dot');
-    if (dots[tabId]) {
-      if (!dot) {
-        dot = document.createElement('span');
-        dot.className = `nav-dot nav-dot-${dots[tabId]}`;
-        btn.appendChild(dot);
-      } else {
-        dot.className = `nav-dot nav-dot-${dots[tabId]}`;
+      if (!visibleSet.has(tabId)) {
+        btn.style.display = 'none';
+        // Dọn lock icon cũ nếu còn
+        btn.querySelector('.nav-lock-icon')?.remove();
+        btn.classList.remove('nav-locked');
+        return;
       }
-    } else {
-      dot?.remove();
-    }
-  });
+      btn.style.display = '';
+      btn.classList.remove('nav-locked');
+      btn.querySelector('.nav-lock-icon')?.remove();
 
-  // S-B: Ẩn nút "Thêm" nếu toàn bộ bmp-btn đều bị hide
-  const morePanelBtns = document.querySelectorAll('#bnav-more-panel .bmp-btn[data-tab]');
-  const anyMoreVisible = [...morePanelBtns].some(btn => {
-    const tabId = btn.dataset.tab;
-    return tabId && visibleSet.has(tabId);
-  });
+      // Notification dot
+      let dot = btn.querySelector('.nav-dot');
+      if (dots[tabId]) {
+        if (!dot) {
+          dot = document.createElement('span');
+          btn.appendChild(dot);
+        }
+        dot.className = `nav-dot nav-dot-${dots[tabId]}`;
+      } else {
+        dot?.remove();
+      }
+    });
+
+  // Ẩn nút "Thêm" nếu không có bmp-btn nào visible
+  const morePanelBtns  = document.querySelectorAll('#bnav-more-panel .bmp-btn[data-tab]');
+  const anyMoreVisible = [...morePanelBtns].some(b => b.dataset.tab && visibleSet.has(b.dataset.tab));
   const moreBtn = document.getElementById('bnav-more-btn');
   if (moreBtn) moreBtn.style.display = anyMoreVisible ? '' : 'none';
-
-  // Compat: nav-btn cũ
-  document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
-    const tabId = btn.dataset.tab;
-    if (!tabId || tabId === 'cultivate') return;
-    const unlocked = isTabUnlocked(tabId, G);
-    btn.classList.toggle('nav-locked', !unlocked);
-    if (!unlocked) {
-      const lockInfo = getTabLockInfo(tabId, G);
-      if (lockInfo && !btn.querySelector('.nav-lock-icon')) {
-        const lock = document.createElement('span');
-        lock.className = 'nav-lock-icon';
-        lock.textContent = '🔒';
-        btn.appendChild(lock);
-      }
-    } else {
-      btn.querySelector('.nav-lock-icon')?.remove();
-    }
-  });
 }
 
 // Tính notification dots cho từng tab
@@ -188,7 +158,7 @@ function _calcNavDots(G) {
   if (G.sectId && _hasSectActivityReady(G)) dots.sect = 'yellow';
 
   // ---- dungeon ----
-  if (isTabUnlocked('dungeon', G)) {
+  if (isTabVisible('dungeon', G)) {
     const dv = G.danhVong ?? 0;
     const maxAttempts = dv >= 500 ? 8 : dv >= 300 ? 6 : dv >= 150 ? 5 : dv >= 50 ? 4 : 3;
     const attemptsToday = G.dungeon?.attemptsToday ?? G.dungeon?.runsToday ?? 0;
@@ -196,7 +166,7 @@ function _calcNavDots(G) {
   }
 
   // ---- linh_thu (Linh Thú) ----
-  if (isTabUnlocked('linh_thu', G)) {
+  if (isTabVisible('linh_thu', G)) {
     const slots = G.linhThu?.slots || [];
     const now   = G.gameTime?.currentYear ?? 0;
     const eggReady   = (G.linhThu?.eggs || []).some(e => now >= e.hatchAt);
@@ -206,7 +176,7 @@ function _calcNavDots(G) {
   }
 
   // ---- cultivate: Nghiệp Lực cao ----
-  if ((G.nghiepLuc ?? 0) >= 50 && !dots.cultivate) {
+  if ((G.kiepTu?.nghiepLuc ?? 0) >= 50 && !dots.cultivate) {
     dots.cultivate = 'yellow'; // chỉ nếu chưa có dot đỏ từ đột phá/đói
   }
 
@@ -223,19 +193,19 @@ function _calcNavDots(G) {
   }
 
   // ---- shop ----
-  if (isTabUnlocked('shop', G)) {
+  if (isTabVisible('shop', G)) {
     const stone = G.stone ?? 0;
     const noFurnace = (G.alchemy?.furnaceLevel ?? 0) === 0 && stone >= 200;
     const noForge   = (G.alchemy?.forge?.level ?? 0) === 0 && stone >= 250;
     const noKitchen = (G.linhThuc?.kitchen?.level ?? 0) === 0 && stone >= 200
-                      && isTabUnlocked('nghe_nghiep', G);
+                      && isTabVisible('nghe_nghiep', G);
     // Gợi ý Linh Địa nếu đang ở Phàm Địa
     const wantPhapDia = (G.phapDia?.currentId ?? 'pham_dia') === 'pham_dia' && stone >= 500;
     if (noFurnace || noForge || noKitchen || wantPhapDia) dots.shop = 'yellow';
   }
 
   // ---- passive ----
-  if (isTabUnlocked('passive', G)) {
+  if (isTabVisible('passive', G)) {
     const passiveTree = G.passiveTree || {};
     const canUpgrade  = Object.values(passiveTree).some(n => !n.maxed && (G.stone ?? 0) >= (n.nextCost ?? 999999));
     if (canUpgrade) dots.passive = 'yellow';
@@ -261,16 +231,15 @@ function _hasSectActivityReady(G) {
 
 // Kiểm tra và thông báo tab vừa mở khóa
 let _prevUnlockState = {};
+// _prevVisibleSet — lưu trạng thái lần trước để detect tab vừa mở
+let _prevVisibleSet = null;
+
 export function checkAndNotifyUnlocks(G, showToastFn, appendLogFn) {
-  for (const [tabId, cfg] of Object.entries(TAB_UNLOCK_CONFIG)) {
-    if (!cfg.unlockMsg) continue;
-    const key = `unlock_notified_${tabId}`;
-    if (G[key]) continue; // đã thông báo rồi
-    if (isTabUnlocked(tabId, G)) {
-      G[key] = true;
-      if (showToastFn) showToastFn(cfg.unlockMsg, 'jade');
-      if (appendLogFn) appendLogFn(`🔓 ${cfg.unlockMsg}`, 'jade');
-    }
+  const msgs = getUnlockMessages(G, _prevVisibleSet);
+  _prevVisibleSet = new Set(getVisibleTabs(G));
+  for (const msg of msgs) {
+    if (showToastFn) showToastFn(msg, 'jade');
+    if (appendLogFn) appendLogFn(`🔓 ${msg}`, 'jade');
   }
 }
 
@@ -801,10 +770,10 @@ function _renderStatusNotifs(G) {
   const purity   = G.purity ?? 0;
   const thresh   = calcPurityThreshold(G);
   if ((G.qi ?? 0) >= maxQi && purity >= thresh * 0.5) {
-    notifs.push({ icon:'⚡', text:'Đột phá sẵn sàng!', color:'#f0d47a', priority:10, tab:'cultivate' });
+    notifs.push({ key:'breakthrough_ready', icon:'⚡', text:'Đột phá sẵn sàng!', color:'#f0d47a', priority:10, tab:'cultivate' });
   } else if ((G.qi ?? 0) >= maxQi) {
     const pct = Math.round(purity / thresh * 100);
-    notifs.push({ icon:'🌀', text:`Linh lực đầy — tích Thuần Độ (${pct}%)`, color:'#4a9eff', priority:7, tab:'cultivate' });
+    notifs.push({ key:'qi_full_purity', icon:'🌀', text:`Linh lực đầy — tích Thuần Độ (${pct}%)`, color:'#4a9eff', priority:7, tab:'cultivate' });
   }
 
   // 2. Đói (đã tắt hunger system)
@@ -824,7 +793,7 @@ function _renderStatusNotifs(G) {
   // 3. Dược Điền chín
   const readyCrops = (G.duocDien?.slots || []).filter(s => s && now >= (s.harvestAt ?? Infinity));
   if (readyCrops.length > 0) {
-    notifs.push({ icon:'🌾', text:`${readyCrops.length} ô Dược Điền có thể thu hoạch!`, color:'#56c46a', priority:9, tab:'nghe_nghiep' });
+    notifs.push({ key:'duoc_dien_ready', icon:'🌾', text:`${readyCrops.length} ô Dược Điền có thể thu hoạch!`, color:'#56c46a', priority:9, tab:'nghe_nghiep' });
   }
 
   // 4. Linh thú đói / trứng nở
@@ -836,13 +805,13 @@ function _renderStatusNotifs(G) {
       s && (now - (s.lastFedAt ?? 0)) * 365 >= 5
     );
     if (hungryBeast) {
-      notifs.push({ icon:'🐾', text:`${hungryBeast.name ?? 'Linh Thú'} đang đói!`, color:'#e07030', priority:11, tab:'linh_thu' });
+      notifs.push({ key:'linh_thu_hungry', icon:'🐾', text:`${hungryBeast.name ?? 'Linh Thú'} đang đói!`, color:'#e07030', priority:11, tab:'linh_thu' });
     }
   }
 
   // 5. Ám Thương nặng
   if ((G.amThuong?.points ?? 0) >= 50) {
-    notifs.push({ icon:'🩸', text:`Ám Thương ${Math.floor(G.amThuong.points)}/100 — dùng Tái Sinh Đan`, color:'#e05c4a', priority:6, tab:'inventory' });
+    notifs.push({ key:'am_thuong_warning', icon:'🩸', text:`Ám Thương ${Math.floor(G.amThuong.points)}/100 — dùng Tái Sinh Đan`, color:'#e05c4a', priority:6, tab:'inventory' });
   }
 
   // 6. Tuổi thọ cảnh báo
@@ -851,18 +820,18 @@ function _renderStatusNotifs(G) {
     const maxLife = G.gameTime.lifespanMax + (G.gameTime.lifespanBonus ?? 0);
     const remPct  = rem / maxLife;
     if (remPct < 0.1 && rem > 0) {
-      notifs.push({ icon:'⏳', text:`Tuổi thọ chỉ còn ${Math.floor(rem)} năm!`, color:'#e05c4a', priority:14, tab:'cultivate' });
+      notifs.push({ key:'lifespan_critical', icon:'⏳', text:`Tuổi thọ chỉ còn ${Math.floor(rem)} năm!`, color:'#e05c4a', priority:14, tab:'cultivate' });
     } else if (remPct < 0.2) {
-      notifs.push({ icon:'⏳', text:`Tuổi thọ còn ${Math.floor(rem)} năm`, color:'#f0d47a', priority:5, tab:'cultivate' });
+      notifs.push({ key:'lifespan_warning', icon:'⏳', text:`Tuổi thọ còn ${Math.floor(rem)} năm`, color:'#f0d47a', priority:5, tab:'cultivate' });
     }
   }
 
   // 7. Nghiệp Lực cao — đang phạt qi rate
-  const nghiep = G.nghiepLuc ?? 0;
+  const nghiep = G.kiepTu?.nghiepLuc ?? 0;
   if (nghiep >= 70) {
-    notifs.push({ icon:'👹', text:`Nghiệp Lực ${Math.floor(nghiep)}/100 — qi rate giảm nặng!`, color:'#e05c4a', priority:8, tab:'cultivate' });
+    notifs.push({ key:'nghiep_high', icon:'👹', text:`Nghiệp Lực ${Math.floor(nghiep)}/100 — qi rate giảm nặng!`, color:'#e05c4a', priority:8, tab:'cultivate' });
   } else if (nghiep >= 40) {
-    notifs.push({ icon:'👹', text:`Nghiệp Lực ${Math.floor(nghiep)}/100 — tu luyện chậm lại`, color:'#f0d47a', priority:4, tab:'cultivate' });
+    notifs.push({ key:'nghiep_medium', icon:'👹', text:`Nghiệp Lực ${Math.floor(nghiep)}/100 — tu luyện chậm lại`, color:'#f0d47a', priority:4, tab:'cultivate' });
   }
 
   // 8. Trận Pháp passive — stone sắp hết
@@ -873,9 +842,9 @@ function _renderStatusNotifs(G) {
       const stoneLeft = G.stone ?? 0;
       const minsLeft  = stoneLeft / totalDrain;
       if (minsLeft < 10) {
-        notifs.push({ icon:'🔯', text:`Trận pháp sắp tắt — còn ~${Math.floor(minsLeft)} phút stone!`, color:'#e05c4a', priority:9, tab:'tran_phap' });
+        notifs.push({ key:'tranphap_critical', icon:'🔯', text:`Trận pháp sắp tắt — còn ~${Math.floor(minsLeft)} phút stone!`, color:'#e05c4a', priority:9, tab:'tran_phap' });
       } else if (minsLeft < 30) {
-        notifs.push({ icon:'🔯', text:`Trận pháp cần stone — còn ~${Math.floor(minsLeft)} phút`, color:'#f0d47a', priority:3, tab:'tran_phap' });
+        notifs.push({ key:'tranphap_warning', icon:'🔯', text:`Trận pháp cần stone — còn ~${Math.floor(minsLeft)} phút`, color:'#f0d47a', priority:3, tab:'tran_phap' });
       }
     }
   }
@@ -919,8 +888,8 @@ function _renderStatusNotifs(G) {
     return;
   }
 
-  // Tính content key (không tính timer — tránh re-show liên tục)
-  const contentKey = shown.map(n => n.icon + n.text).join('|');
+  // Tính content key dùng stable key khi có — tránh re-show khi số thay đổi mỗi tick
+  const contentKey = shown.map(n => n.key || (n.icon + n.text)).join('|');
 
   // Nếu đang dismiss và content chưa thay đổi → giữ ẩn
   if (contentKey === _notifDismissedKey) {
@@ -952,11 +921,12 @@ function _renderStatusNotifs(G) {
 
   bar.innerHTML = itemsHtml + `<button class="sn-close-btn" title="Ẩn thông báo">✕</button>`;
 
-  // Wire tab clicks
+  // Wire tab clicks — dispatch event để main.js xử lý qua _switchTabWithPopup
+  // (tránh circular import render-core → tab-popup → render-core)
   bar.querySelectorAll('.sn-clickable').forEach(item => {
     item.addEventListener('click', () => {
       const tabId = item.dataset.tab;
-      if (tabId) switchTab(tabId, G);
+      if (tabId) document.dispatchEvent(new CustomEvent('tab:open-popup', { detail: { tabId } }));
     });
   });
 

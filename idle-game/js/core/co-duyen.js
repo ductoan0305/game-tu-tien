@@ -398,6 +398,77 @@ export const CO_DUYEN_EVENTS = [
     conditions: ['explore', 'cultivate'],
   },
 
+  // --- Mở Nghề Phụ qua Cơ Duyên ---
+  {
+    id: 'cd_dan_kinh_co_nhan',
+    name: 'Đan Kinh Từ Cao Nhân', tier: 2, emoji: '📜',
+    desc: 'Một vị cao nhân ẩn cư nhận ra thiên phú luyện đan của ngươi và truyền lại bí quyết căn bản.',
+    lore: 'Lão nhân không hỏi linh căn ngươi là gì. Ông chỉ nói: "Ngộ Tính đủ sâu, lửa có thể mượn từ đất trời."',
+    baseChance: 0.006,
+    effect: { type: 'unlock_profession', profId: 'luyen_dan' },
+    unlockRealm: 0,
+    conditions: ['explore', 'meditate'],
+    // extraCondition: chỉ xuất hiện khi chưa mở luyen_dan và ngoTinh >= 20
+    // (không cần Hỏa căn — đây là path thay thế cho tán tu không có Hỏa)
+    extraCondition: (G) =>
+      (G.ngoTinh ?? 0) >= 20 &&
+      !(G.flags?.unlockedProfessions ?? []).includes('luyen_dan'),
+  },
+  // --- Mở 4 Nghề Phụ Còn Lại (S-P4) ---
+  {
+    id: 'cd_luyen_khi_lo_ren',
+    name: 'Lão Thợ Rèn Truyền Nghề', tier: 2, emoji: '⚒',
+    desc: 'Gặp một lão thợ rèn ẩn cư, ông nhận ra chất liệu trong xương ngươi và truyền lại bí quyết tôi luyện.',
+    lore: 'Lão nhân ngắm bàn tay ngươi hồi lâu: "Tay ngươi biết lắng nghe kim loại. Ta chỉ ngươi cách để nó lắng nghe lại."',
+    baseChance: 0.005,
+    effect: { type: 'unlock_profession', profId: 'luyen_khi' },
+    unlockRealm: 0,
+    conditions: ['explore', 'combat'],
+    extraCondition: (G) =>
+      ((G.realmIdx ?? 0) > 0 || (G.stage ?? 1) >= 4) &&
+      !(G.flags?.unlockedProfessions ?? []).includes('luyen_khi'),
+  },
+  {
+    id: 'cd_tran_kinh_phe_tich',
+    name: 'Trận Kinh Phế Tích', tier: 2, emoji: '🔮',
+    desc: 'Trong phế tích cổ đại, tìm thấy mảnh Trận Kinh còn nguyên vẹn — tinh hoa trận đạo tiền nhân.',
+    lore: 'Những nét khắc trên đá mờ nhạt, nhưng hễ tâm tĩnh ngồi xuống là chúng tự dưng hiện rõ trong tâm trí.',
+    baseChance: 0.004,
+    effect: { type: 'unlock_profession', profId: 'tran_phap' },
+    unlockRealm: 0,
+    conditions: ['explore', 'array'],
+    extraCondition: (G) =>
+      ((G.realmIdx ?? 0) > 0 || (G.stage ?? 1) >= 4) &&
+      !(G.flags?.unlockedProfessions ?? []).includes('tran_phap'),
+  },
+  {
+    id: 'cd_phu_chu_bi_thu',
+    name: 'Phù Thư Bí Truyền', tier: 2, emoji: '📿',
+    desc: 'Một bức thư pháp bỏ lại trong hoang miếu — nhìn vào, các phù văn tự nhiên thấm vào tâm khảm.',
+    lore: 'Người xưa viết phù không bằng mực mà bằng linh lực. Ai đủ duyên nhìn vào thì linh lực tự khắc hiểu.',
+    baseChance: 0.004,
+    effect: { type: 'unlock_profession', profId: 'phu_chu' },
+    unlockRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) =>
+      ((G.realmIdx ?? 0) > 0 || (G.stage ?? 1) >= 4) &&
+      !(G.flags?.unlockedProfessions ?? []).includes('phu_chu'),
+  },
+  {
+    id: 'cd_khoi_loi_cuon_ky',
+    name: 'Cuốn Ký Lục Khôi Lỗi', tier: 2, emoji: '🤖',
+    desc: 'Trong tàn tích môn phái cũ, tìm thấy cuốn ký lục về Khôi Lỗi — sơ đồ cấu trúc còn đọc được.',
+    lore: 'Môn phái này đã diệt từ trăm năm trước, nhưng bí thuật Khôi Lỗi họ để lại vẫn chờ người có duyên.',
+    baseChance: 0.004,
+    effect: { type: 'unlock_profession', profId: 'khoi_loi' },
+    unlockRealm: 0,
+    conditions: ['explore', 'combat'],
+    extraCondition: (G) =>
+      ((G.realmIdx ?? 0) > 0 || (G.stage ?? 1) >= 4) &&
+      !(G.flags?.unlockedProfessions ?? []).includes('khoi_loi'),
+  },
+
+
   // ============================================================
   // TIER 3 — Đại Cơ Duyên (cực hiếm)
   // ============================================================
@@ -777,6 +848,9 @@ export function rollCoDuyen(G, actionType) {
     if (e.maxRealm !== undefined && G.realmIdx > e.maxRealm) return false;
     if (_isOnCooldown(G, e.id)) return false;
     if (e.requireSect && !G.sectId) return false;
+    // extraCondition(G): điều kiện bổ sung dành riêng cho event đặc biệt
+    // (ví dụ: chưa unlock nghề, chưa có linh thú, cần stat ngưỡng cụ thể, ...)
+    if (e.extraCondition && !e.extraCondition(G)) return false;
     return true;
   });
 
@@ -914,7 +988,25 @@ export function applyCoduyen(G, event) {
       detail = `Tất cả chỉ số +5% vĩnh viễn`;
       break;
     }
-    case 'khivan_boost': {
+    case 'unlock_profession': {
+      if (!G.flags) G.flags = {};
+      if (!Array.isArray(G.flags.unlockedProfessions)) G.flags.unlockedProfessions = [];
+      const { profId } = effect;
+      const PROF_NAMES = {
+        luyen_dan: 'Luyện Đan', luyen_khi: 'Luyện Khí',
+        tran_phap: 'Trận Pháp', phu_chu: 'Phù Chú',
+        khoi_loi: 'Khôi Lỗi', linh_thuc: 'Linh Thực',
+      };
+      if (!G.flags.unlockedProfessions.includes(profId)) {
+        G.flags.unlockedProfessions.push(profId);
+        detail = `Mở khoá nghề phụ: ${PROF_NAMES[profId] || profId}!`;
+      } else {
+        detail = `Đã biết ${PROF_NAMES[profId] || profId} — nhận thêm kinh nghiệm`;
+        G.exp = (G.exp || 0) + 1000;
+      }
+      break;
+    }
+        case 'khivan_boost': {
       const prev = G.khiVan ?? 20;
       G.khiVan = Math.min(getKhiVanMax(G), prev + (effect.value || 5));
       detail = `+${effect.value || 5} Khí Vận (${prev} → ${G.khiVan})`;

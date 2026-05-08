@@ -435,14 +435,16 @@ export function tickAlchemyBuffs(G, dtSec) {
 
   // Tick Trận Pháp — active arrays (trừ timer), passive (trừ stone/phút)
   if (Array.isArray(G.tranPhap?.activeArrays)) {
-    // Tick timers cho active/defense arrays
+    // Tick timers cho active/defense arrays (dtSec = giây thực / real-time)
+    // duration trong tran-phap-data.js đơn vị giây thực; ví dụ: 600 = 10 phút thực
     G.tranPhap.activeArrays = G.tranPhap.activeArrays
       .map(a => a.timer !== undefined ? { ...a, timer: a.timer - dtSec } : a)
       .filter(a => a.timer === undefined || a.timer > 0);
 
-    // Trừ stone cho passive arrays (mỗi phút game = 2s thực)
+    // Trừ stone cho passive arrays mỗi 60 giây THỰC (= 1 phút thực = 30 phút game)
+    // stoneCostPerMin trong data = stone trừ mỗi real-minute (KHÔNG phải game-minute)
     G.tranPhap.stoneDrainTimer = (G.tranPhap.stoneDrainTimer || 0) + dtSec;
-    if (G.tranPhap.stoneDrainTimer >= 60) { // 60 giây game = 1 phút
+    if (G.tranPhap.stoneDrainTimer >= 60) { // 60 giây thực = 1 phút thực
       G.tranPhap.stoneDrainTimer -= 60;
       const passiveArrays = G.tranPhap.activeArrays.filter(a => a.category === 'passive');
       for (const arr of passiveArrays) {

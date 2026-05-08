@@ -1,7 +1,8 @@
 import { REALM_NAMES } from '../core/constants.js';
 // ============================================================
 // ui/portrait.js — SVG generative character portrait
-// Thay đổi theo realmIdx (0-7) và spiritRoot (kim/mu/shui/huo/tu/yin_yang/hun)
+// Thay đổi theo realmIdx (0-4) và spiritRoot (kim/mu/shui/huo/tu/yin_yang/hun)
+// Nhân Giới: LK(0) / TC(1) / KĐ(2) / NA(3) / HT(4) — KHÔNG có realm 5+
 // Không cần file ảnh — toàn bộ là SVG inline
 // ============================================================
 
@@ -76,7 +77,7 @@ function seededRand(seed) {
 
 // ---- Build SVG portrait ----
 export function buildPortraitSVG(G) {
-  const realmIdx = Math.min(G.realmIdx || 0, 7);
+  const realmIdx = Math.min(G.realmIdx || 0, 4); // max realm Nhân Giới = 4 (Hóa Thần)
   const cfg = REALM_PORTRAIT[realmIdx];
   const root = ROOT_OVERLAY[G.spiritRoot] || ROOT_OVERLAY['shui'];
 

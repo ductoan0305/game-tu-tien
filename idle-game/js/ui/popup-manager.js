@@ -28,6 +28,9 @@ const _order = [];
 /** Map<id, Function> — callbacks gọi khi popup đóng */
 const _cleanups = new Map();
 
+/** Z-index stacking — bắt đầu từ --z-popup (400), tăng mỗi lần focus */
+let _zCounter = 400;
+
 // ---- Layer ----
 
 function _getLayer() {
@@ -226,6 +229,12 @@ function _buildEl(id, opts = {}) {
     PopupManager.close(id);
   });
 
+  // Bring-to-front khi click vào bất kỳ chỗ nào trong popup
+  el.addEventListener('mousedown', () => {
+    _zCounter += 1;
+    el.style.zIndex = _zCounter;
+  }, true); // capture phase để luôn fire trước child handlers
+
   return el;
 }
 
@@ -263,6 +272,10 @@ const PopupManager = {
     // Kích hoạt drag (header) + resize (8 handles)
     _makeDraggable(el, el.querySelector('.pm-header'));
     _makeResizable(el);
+
+    // Popup mới luôn ở trên cùng
+    _zCounter += 1;
+    el.style.zIndex = _zCounter;
 
     _popups.set(id, { el, opts });
     _order.push(id);

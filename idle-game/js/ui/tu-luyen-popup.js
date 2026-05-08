@@ -27,9 +27,21 @@ const POPUP_ID = 'tu-luyen';
 
 function _el(id) { return document.getElementById(id); }
 
+// Guard textContent update theo ID
 function _set(id, val) {
   const el = _el(id);
   if (el && el.textContent !== String(val)) el.textContent = String(val);
+}
+
+// Guard textContent trực tiếp trên element ref
+function _setText(el, val) {
+  const s = String(val);
+  if (el && el.textContent !== s) el.textContent = s;
+}
+
+// Guard style property — tránh trigger repaint khi giá trị không đổi
+function _setStyle(el, prop, val) {
+  if (el && el.style[prop] !== val) el.style[prop] = val;
 }
 
 function _setBar(prefix, value, max) {
@@ -115,14 +127,10 @@ function _buildBody() {
     <div class="tl-status-row" id="tlp-hunger"    style="display:none"></div>
     <div class="tl-status-row" id="tlp-am-thuong" style="display:none"></div>
 
-    <!-- Action Buttons — 3 cột -->
+    <!-- Action Buttons — chỉ idle actions (không phụ thuộc địa điểm) -->
     <div class="tl-actions">
       <button class="tl-btn-meditate" id="tlp-btn-meditate">🧘 Nhập Định</button>
       <button class="tl-btn-action"   id="tlp-btn-rest">😴 Nghỉ Ngơi</button>
-      <button class="tl-btn-action"   id="tlp-btn-explore">🗺 Khám Phá</button>
-      <button class="tl-btn-action"   id="tlp-btn-spar">⚔ Tỉ Thí</button>
-      <button class="tl-btn-action"   id="tlp-btn-fish">🎣 Câu Cá</button>
-      <button class="tl-btn-action"   id="tlp-btn-meditation">🔮 Cảm Ngộ</button>
     </div>
 
     <!-- Đột Phá — nổi bật riêng -->
@@ -142,28 +150,29 @@ function _wireButtons(G, actions) {
 
   on('tlp-btn-meditate',    () => { actions.meditate();    updateTuLuyenPopup(G); });
   on('tlp-btn-rest',        () => { actions.rest();        updateTuLuyenPopup(G); });
-  on('tlp-btn-explore',     () => { actions.explore();     updateTuLuyenPopup(G); });
-  on('tlp-btn-spar',        () => { actions.spar();        updateTuLuyenPopup(G); });
-  on('tlp-btn-fish',        () => { actions.fish();        updateTuLuyenPopup(G); });
-  on('tlp-btn-meditation',  () => { actions.meditation();  updateTuLuyenPopup(G); });
   on('tlp-btn-breakthrough',() => { actions.breakthrough(); updateTuLuyenPopup(G); });
 }
 
 // ---- Breakthrough button state ----
 
+// Guard tất cả 3 property của một button trong 1 lần
+function _applyBtn(btn, text, cls, disabled) {
+  _setText(btn, text);
+  if (btn.className  !== cls)      btn.className  = cls;
+  if (btn.disabled   !== disabled) btn.disabled   = disabled;
+}
+
 function _updateBreakthroughBtn(G) {
   const btBtn = _el('tlp-btn-breakthrough');
   if (!btBtn) return;
 
-  const maxQi = calcMaxQi(G);
-  const qi    = G.qi ?? 0;
+  const maxQi  = calcMaxQi(G);
+  const qi     = G.qi ?? 0;
   const qiFull = qi >= maxQi;
 
   if (!qiFull) {
     const pct = Math.floor(Math.min(100, (qi / Math.max(1, maxQi)) * 100));
-    btBtn.disabled    = true;
-    btBtn.textContent = `⚡ Đột Phá (${pct}% Linh Lực)`;
-    btBtn.className   = 'tl-btn-breakthrough';
+    _applyBtn(btBtn, `⚡ Đột Phá (${pct}% Linh Lực)`, 'tl-btn-breakthrough', true);
     return;
   }
 
@@ -173,14 +182,11 @@ function _updateBreakthroughBtn(G) {
 
   if (canAttempt) {
     const { chance } = calcBreakthroughChance(G);
-    btBtn.disabled    = false;
-    btBtn.textContent = `⚡ ĐỘT PHÁ! (${chance.toFixed(1)}%)`;
-    btBtn.className   = 'tl-btn-breakthrough ready' + (purRatio >= 1.0 ? ' purity-ready' : '');
+    const cls = 'tl-btn-breakthrough ready' + (purRatio >= 1.0 ? ' purity-ready' : '');
+    _applyBtn(btBtn, `⚡ ĐỘT PHÁ! (${chance.toFixed(1)}%)`, cls, false);
   } else {
-    const purPct      = Math.floor(purRatio * 100);
-    btBtn.disabled    = true;
-    btBtn.textContent = `✨ Tinh Luyện Thuần Độ (${purPct}%)`;
-    btBtn.className   = 'tl-btn-breakthrough';
+    const purPct = Math.floor(purRatio * 100);
+    _applyBtn(btBtn, `✨ Tinh Luyện Thuần Độ (${purPct}%)`, 'tl-btn-breakthrough', true);
   }
 }
 
@@ -191,7 +197,7 @@ function _updateBreakthroughBtn(G) {
 /**
  * Mở (hoặc focus) popup Tu Luyện.
  * @param {object} G               — game state
- * @param {object} cultivateActions — object với meditate/rest/explore/spar/fish/meditation/breakthrough
+ * @param {object} cultivateActions — object với meditate/rest/breakthrough
  */
 export function openTuLuyenPopup(G, cultivateActions) {
   if (PopupManager.isOpen(POPUP_ID)) {
@@ -238,8 +244,8 @@ export function updateTuLuyenPopup(G) {
   const ageColor = age < 70 ? '#56c46a' : age < 75 ? '#f0d47a' : '#e05c4a';
   const ageEl    = _el('tlp-age');
   if (ageEl) {
-    ageEl.textContent = `${Math.floor(age)} tuổi`;
-    ageEl.style.color = ageColor;
+    _setText(ageEl, `${Math.floor(age)} tuổi`);
+    _setStyle(ageEl, 'color', ageColor);
   }
 
   // ── Bars ──
@@ -282,26 +288,29 @@ export function updateTuLuyenPopup(G) {
   const hungerEl = _el('tlp-hunger');
   if (hungerEl) {
     if (G.realmIdx === 0) {
-      const h     = G.hunger;
-      const days  = h?.hungerDays ?? 0;
+      const h      = G.hunger;
+      const days   = h?.hungerDays ?? 0;
       const lingme = h?.linhMeCount ?? 0;
-      const ích   = h?.ichCocDanDays ?? 0;
-      if (ích > 0) {
-        hungerEl.textContent = `💊 Ích Cốc Đan (còn ${Math.ceil(ích)} ngày)`;
-        hungerEl.style.color = '#56c46a';
+      const ich    = h?.ichCocDanDays ?? 0;
+      let hText, hColor;
+      if (ich > 0) {
+        hText  = `💊 Ích Cốc Đan (còn ${Math.ceil(ich)} ngày)`;
+        hColor = '#56c46a';
       } else if (days === 0) {
-        hungerEl.textContent = `🌾 No đủ — còn ${lingme} phần Linh Mễ`;
-        hungerEl.style.color = lingme <= 2 ? '#f0d47a' : '#56c46a';
+        hText  = `🌾 No đủ — còn ${lingme} phần Linh Mễ`;
+        hColor = lingme <= 2 ? '#f0d47a' : '#56c46a';
       } else if (days < 5) {
-        hungerEl.textContent = `⚠ Đói ${days} ngày — mất HP dần`;
-        hungerEl.style.color = '#f0d47a';
+        hText  = `⚠ Đói ${days} ngày — mất HP dần`;
+        hColor = '#f0d47a';
       } else {
-        hungerEl.textContent = `💀 Đói nặng ${days} ngày — nguy hiểm!`;
-        hungerEl.style.color = '#e05c4a';
+        hText  = `💀 Đói nặng ${days} ngày — nguy hiểm!`;
+        hColor = '#e05c4a';
       }
-      hungerEl.style.display = '';
+      _setText(hungerEl, hText);
+      _setStyle(hungerEl, 'color',   hColor);
+      _setStyle(hungerEl, 'display', '');
     } else {
-      hungerEl.style.display = 'none';
+      _setStyle(hungerEl, 'display', 'none');
     }
   }
 
@@ -310,22 +319,25 @@ export function updateTuLuyenPopup(G) {
   const status = getAmThuongStatus(G);
   if (atEl) {
     if (status?.points > 0) {
-      const sev   = status.severity;
-      const color = (sev === 'critical' || sev === 'heavy') ? '#e05c4a' : '#f0d47a';
-      atEl.textContent = `🩸 Ám Thương ${status.points} điểm (Căn Cốt -${status.canCotPenalty})`;
-      atEl.style.color = color;
-      atEl.style.display = '';
+      const sev    = status.severity;
+      const color  = (sev === 'critical' || sev === 'heavy') ? '#e05c4a' : '#f0d47a';
+      const atText = `🩸 Ám Thương ${status.points} điểm (Căn Cốt -${status.canCotPenalty})`;
+      _setText(atEl, atText);
+      _setStyle(atEl, 'color',   color);
+      _setStyle(atEl, 'display', '');
     } else {
-      atEl.style.display = 'none';
+      _setStyle(atEl, 'display', 'none');
     }
   }
 
   // ── Nút Nhập Định ──
   const medBtn = _el('tlp-btn-meditate');
   if (medBtn) {
-    const med = !!G.meditating;
-    medBtn.textContent = med ? '🧘 Xuất Định' : '🧘 Nhập Định';
-    medBtn.classList.toggle('active', med);
+    const med     = !!G.meditating;
+    const medText = med ? '🧘 Xuất Định' : '🧘 Nhập Định';
+    _setText(medBtn, medText);
+    // classList.toggle chỉ fire khi state thực sự thay đổi
+    if (medBtn.classList.contains('active') !== med) medBtn.classList.toggle('active', med);
   }
 
   // ── Nút Đột Phá ──

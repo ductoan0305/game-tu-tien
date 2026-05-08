@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session S-H4 — Feature: Tách Nav + Popup Tu Luyện mới (2026-05-07)
+**Cập nhật lần cuối:** Session P5 — NPC Dialogs: Các Zone Chính (2026-05-08)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -401,7 +401,7 @@ G = {
 
 ---
 
-## CÔNG PHÁP — THIẾT KẾ S10
+## CÔNG PHÁP — THIẾT KẾ S10 (cập nhật P8)
 
 **Tối đa 4 công pháp tu cùng lúc** (`CONG_PHAP_MAX_SLOTS = 4`)
 
@@ -415,22 +415,30 @@ G = {
 
 **Danh sách công pháp:**
 
-| id | Tên | Hệ | Cảnh giới | Nguồn |
-|---|---|---|---|---|
-| vo_danh | Vô Danh Công Pháp | — | LK only | Mặc định |
-| truong_xuan_cong | Trường Xuân Công | Mộc | LK only | Mua 800💎 |
-| tay_tuy_quyet | Tẩy Tủy Quyết | — | LK+TC | Mua 1500💎 |
-| thanh_nguyen_kiem_quyet | Thanh Nguyên Kiếm Quyết | Kim | TC trở lên | Mua 8000💎 |
-| kiem_quyet_ha | Thanh Vân Kiếm Quyết (Hạ) | Kim | LK | Tông môn |
-| dan_kinh_ha | Vạn Linh Đan Kinh (Hạ) | Hỏa | LK | Tông môn |
-| tran_phap_ha | Huyền Cơ Trận Kinh (Hạ) | Thổ | LK | Tông môn |
-| the_tu_ha | Thiết Cốt Thần Công (Hạ) | — | LK | Tông môn |
-| kiem_quyet_trung | Thanh Vân Kiếm Quyết (Trung) | Kim | TC+KĐ | Tông môn 5000💎 |
-| dan_kinh_trung | Vạn Linh Đan Kinh (Trung) | Hỏa | TC+KĐ | Tông môn 5000💎 |
-| tran_phap_trung | Huyền Cơ Trận Kinh (Trung) | Thổ | TC+KĐ | Tông môn 5000💎 |
-| the_tu_trung | Thiết Cốt Thần Công (Trung) | — | TC+KĐ | Tông môn 5000💎 |
-| kiem_quyet_thuong | Thanh Vân Kiếm Quyết (Thượng) | Kim | NA+HT | Cơ Duyên |
-| dan_kinh_thuong | Vạn Linh Đan Kinh (Thượng) | Hỏa | NA+HT | Cơ Duyên |
+| id | Tên | Hệ | Grade | Cảnh giới | Nguồn |
+|---|---|---|---|---|---|
+| vo_danh | Vô Danh Công Pháp | — | Tạp | LK only | Mặc định |
+| truong_xuan_cong | Trường Xuân Công | Mộc | Hạ | LK only | Mua 800💎 |
+| tay_tuy_quyet | Tẩy Tủy Quyết | — | Hạ | LK+TC | Mua 1500💎 |
+| hoi_thuy_quyet | Hồi Thủy Quyết | Thủy | Hạ | LK only | Mua 900💎 |
+| cuong_tho_kinh | Cương Thổ Kinh | Thổ | Hạ | LK only | Mua 1000💎 |
+| thanh_nguyen_kiem_quyet | Thanh Nguyên Kiếm Quyết | Kim | Trung | TC trở lên | Mua 8000💎 |
+| bac_minh_thuy_kinh | Bắc Minh Thủy Kinh | Thủy | Trung | TC+KĐ | Mua 6500💎 |
+| hon_nguyen_hoa_kinh | Hỗn Nguyên Hóa Kinh | — | Trung | TC+KĐ | Mua 7500💎 |
+| kiem_quyet_ha | Thanh Vân Kiếm Quyết (Hạ) | Kim | Hạ | LK | Tông môn |
+| dan_kinh_ha | Vạn Linh Đan Kinh (Hạ) | Hỏa | Hạ | LK | Tông môn |
+| tran_phap_ha | Huyền Cơ Trận Kinh (Hạ) | Thổ | Hạ | LK | Tông môn |
+| the_tu_ha | Thiết Cốt Thần Công (Hạ) | — | Hạ | LK | Tông môn |
+| kiem_quyet_trung | Thanh Vân Kiếm Quyết (Trung) | Kim | Trung | TC+KĐ | Tông môn 5000💎 |
+| dan_kinh_trung | Vạn Linh Đan Kinh (Trung) | Hỏa | Trung | TC+KĐ | Tông môn 5000💎 |
+| tran_phap_trung | Huyền Cơ Trận Kinh (Trung) | Thổ | Trung | TC+KĐ | Tông môn 5000💎 |
+| the_tu_trung | Thiết Cốt Thần Công (Trung) | — | Trung | TC+KĐ | Tông môn 5000💎 |
+| kiem_quyet_thuong | Thanh Vân Kiếm Quyết (Thượng) | Kim | Thượng | NA+HT | Cơ Duyên |
+| dan_kinh_thuong | Vạn Linh Đan Kinh (Thượng) | Hỏa | Thượng | NA+HT | Cơ Duyên |
+| dia_tang_chon_kinh | Địa Tạng Chân Kinh | Thổ | Thượng | NA+HT | Cơ Duyên (tán tu) |
+| hon_nguyen_chon_kinh | Hỗn Nguyên Chân Kinh | — | Thượng | NA+HT | Cơ Duyên (tán tu) |
+
+**Ghi chú balance (P8):** Công pháp tán tu buy ≤ sect cùng grade. Tán tu co_duyen không vượt sect co_duyen: tổng buff null-Thượng = 150% (vs sect 170%); Thổ-Thượng với match = 170% = bằng kiem_quyet_thuong nhưng thiên DEF thay ATK.
 
 **Tốc độ thuần thục:** `calcMasteryGainPerTick(G, cpId)` — base 0.01 + (ngoTinh/100)×0.04, ×1.3 nếu khớp hệ
 **Buff áp dụng:** `calcCongPhapMasteryBonus(G)` → { ratePct, atkPct, defPct, hpPct, danBonus }
@@ -509,6 +517,76 @@ G = {
 19. `renderTutorialObjectivePanel()` và `showTutorialAgeWarningModal()` đã có trong `render-core.js` ✅ ĐÃ DONE
 20. Wiring trong `main.js`: `trackMeditateSeconds` gọi mỗi tick khi bế quan, `trackStaminaAction` / `trackBreakthroughAttempt` gắn vào từng cultivate action, `trackTabOpen` gắn vào tab switch, Step 5 modal trigger trong tick loop ✅ ĐÃ DONE
 
+### S-Phase3 — State Mismatch Bug Fixes (2026-05-07)
+
+46. **`G.nghiepLuc` mismatch — notification/dot/Thương Hội không bao giờ fire** → Code đọc `G.nghiepLuc` (top-level, luôn `undefined`) thay vì `G.kiepTu.nghiepLuc` (nơi engine thực sự ghi). Hậu quả: (a) dot indicator nghiệp lực `render-core.js:179` không hiện; (b) notification nghiepLuc `render-core.js:830` không fire; (c) Thương Hội check `nghiepLuc_low` luôn pass dù player có nghiệp cao; (d) `nghiepCleanse` effect ghi vào field sai, không giảm được nghiệp lực. Fix: đổi tất cả 4 chỗ sang `G.kiepTu?.nghiepLuc`. ✅ ĐÃ FIX
+
+47. **Dungeon tab không hiện ở Trúc Cơ — chicken-and-egg** → `visibility.js` check `dungeonQuestDone || realm >= 2`, nhưng `dungeonQuestDone` không bao giờ được set `true` ở bất kỳ đâu. TC player (realm 1) cần tab dungeon để làm `side_dungeon_01` nhưng tab chỉ hiện ở KĐ (realm 2). Fix: (a) đổi condition sang `realm >= 1`; (b) wire `G.flags.dungeonQuestDone = true` trong `event-bus-handlers.js` khi `questId === 'side_dungeon_01'` hoàn thành. ✅ ĐÃ FIX
+
+48. **bt_ready toast dùng `G._lastMaxQi` không tồn tại** → `_checkSmartNotifications` dùng `G._lastMaxQi ?? 999` để check qi đầy — field này không bao giờ được set, fallback 999 khiến condition luôn `false`. `calcMaxQi` đã được import sẵn trong `main.js`. Fix: thay `G._lastMaxQi ?? 999` bằng `calcMaxQi(G)`. ✅ ĐÃ FIX
+
+**Files thay đổi trong S-Phase3:** `render-core.js`, `thuong-hoi-engine.js`, `visibility.js`, `event-bus-handlers.js`, `main.js`
+
+### P1 — Technical Cleanup: Realm Scope + Timer (2026-05-08)
+
+49. **`canPrestige` dùng `realmIdx >= 7` — sai scope Nhân Giới** → Game chỉ có realm 0-4 (LK/TC/KĐ/NA/HT). Condition `>= 7` là dead code từ ARCHITECTURE.md v2 cũ. Fix: đổi thành `>= 4` (gate tại Hóa Thần hoàn thành), thêm comment giải thích feature chưa có UI. `doPrestige` không được gọi từ đâu hiện tại — vẫn giữ code để implement sau. (`js/core/systems/tick.js`) ✅ ĐÃ FIX
+
+50. **`portrait.js` clamp `realmIdx` về 7 — array `REALM_PORTRAIT` chỉ có index 0-4** → `Math.min(G.realmIdx || 0, 7)` sẽ không crash vì realmIdx không vượt 4, nhưng comment `(0-7)` gây nhầm lẫn và nếu bug nào khác làm realmIdx tăng lên 5/6 sẽ crash (`REALM_PORTRAIT[5]` là `undefined`). Fix: đổi thành `Math.min(G.realmIdx || 0, 4)`, cập nhật comment dòng đầu file. (`js/ui/portrait.js`) ✅ ĐÃ FIX
+
+51. **Comment Trận Pháp sai đơn vị: "game-time" vs "thực"** → `tran-phap-data.js` comment ghi "phút game-time" và "giây game" nhưng engine thực sự dùng giây thực (real-time): `stoneDrainTimer` tích lũy `dtSec` (giây thực, không phải giây game) và fire khi `>= 60` (60 giây thực). Comment trong `alchemy-engine.js` cũng ghi "60 giây game = 1 phút" — sai. Fix: cập nhật tất cả comment để ghi rõ "giây THỰC / real-time"; thêm ghi chú quy đổi "1 phút thực = 30 phút game". Logic drain giữ nguyên — chỉ làm rõ đơn vị. (`js/alchemy/tran-phap-data.js`, `js/alchemy/alchemy-engine.js`) ✅ ĐÃ FIX
+
+**Files thay đổi trong P1:** `tick.js`, `portrait.js`, `tran-phap-data.js`, `alchemy-engine.js`, `HANDOFF.md`
+
+### P2 — Combat Log Formatting (2026-05-08)
+
+52. **Static HTML build không gọi formatter** → `renderCombatTab` có 2 code path: initial build (HTML template) và dynamic update (setEl). Path dynamic đã gọi `_formatLogLine` đúng, nhưng initial build dùng `l.text` raw. Fix: đổi initial build dùng `_formatLogLine(l.text, l.type)` — cả 2 path nhất quán. (`js/ui/tabs/combat-tab.js`) ✅ ĐÃ FIX
+
+53. **addLog dùng sai type — mọi line đều player/enemy/system** → Engine phân loại log không theo ngữ nghĩa, làm mất màu sắc phân biệt. Fix: reclassify 8 addLog calls: dodge → `'miss'`, stun/burn/berserk → `'debuff'`, enemy heal → `'heal'`, bại trận → `'flee'`, combo hit → `'combo'`. Thêm `wasCombo` flag trước damage calc để detect combo. (`js/combat/combat-engine.js`) ✅ ĐÃ FIX
+
+54. **CSS thiếu class cho 5 log type mới + `_formatLogLine` thiếu badge** → Thêm vào `combat.css`: `.log-miss` (xanh nhạt italic), `.log-heal` (xanh lá + bg mờ), `.log-debuff` (tím + bg mờ), `.log-flee` (cam italic), `.log-combo` (vàng + bg mờ); 4 badge CSS; override `.log-num` màu theo type (heal→xanh, combo→vàng sáng+glow). Thêm vào `_formatLogLine`: badge entries cho 5 type mới; regex bắt "mất N" không có unit; full-line highlight theo type thay vì keyword để tránh conflict. (`css/combat.css`, `js/ui/tabs/combat-tab.js`) ✅ ĐÃ FIX
+
+**Files thay đổi trong P2:** `combat-engine.js`, `combat-tab.js`, `combat.css`, `HANDOFF.md`
+
+### P3 — Luyện Đan Gate Cứng (2026-05-08)
+
+55. **`rollCoDuyen` không có `extraCondition` hook** → Các event có điều kiện phức tạp (ví dụ: "chưa mở nghề X" hoặc "ngoTinh ≥ N") không thể express qua `conditions` array thông thường — phải dùng string flag, gây coupling. Fix: thêm `extraCondition(G)` optional field vào filter loop của `rollCoDuyen`; nếu field tồn tại và return `false` thì event bị loại. Không breaking change — event không có field này vẫn pass. (`js/core/co-duyen.js`) ✅ ĐÃ FIX
+
+56. **`applyCoduyen` không có effect type `unlock_profession`** → Không có cách cơ duyên mở nghề nghiệp. Fix: thêm `case 'unlock_profession'` vào switch — đảm bảo `G.flags.unlockedProfessions` là array, push `effect.profId` nếu chưa có, hiện thông báo tên nghề. Nếu đã có nghề rồi → fallback thưởng 500 linh thạch (tránh waste roll). (`js/core/co-duyen.js`) ✅ ĐÃ FIX
+
+57. **Không có cơ duyên mở Luyện Đan cho người không có Hỏa căn** → Player thiếu Hỏa căn không có đường mở Luyện Đan (auto-unlock yêu cầu Hỏa + ngoTinh ≥ 40). Fix: thêm event `cd_dan_kinh_co_nhan` (tier 2, baseChance 0.006) — điều kiện `ngoTinh ≥ 20` + chưa có `luyen_dan`, trigger khi `explore` hoặc `meditate`, unlockRealm 0. Effect: `unlock_profession` mở `luyen_dan`. Đây là path thay thế cho player không Hỏa căn. (`js/core/co-duyen.js`) ✅ ĐÃ FIX
+
+58. **Locked card Luyện Đan chỉ hiển thị 1 điều kiện mơ hồ** → UI cũ chỉ show "Cần Hỏa căn + ngoTinh 40" — không giải thích path thay thế (cơ duyên), không có progress bar, không có context. Fix: viết lại `_renderLuyenDanProgress` thành 2 path box riêng biệt: **Path 1** (border cam) — auto-unlock qua Hỏa căn: show linh căn hiện tại + progress bar ngoTinh → 40 + contextual message (không Hỏa / Hỏa nhưng chưa đủ / Hỏa + đủ điều kiện). **Path 2** (border tím) — cơ duyên: giải thích hệ thống cơ duyên + progress bar ngoTinh → 20 (hoặc "✦ Đủ điều kiện" nếu đã ≥ 20). (`js/ui/tabs/nghe-nghiep-tab.js`) ✅ ĐÃ FIX
+
+**Files thay đổi trong P3:** `co-duyen.js`, `nghe-nghiep-tab.js`, `HANDOFF.md`
+
+### S-Phase2 — UX Polish (2026-05-07)
+
+43. **Notification bar click ẩn world map** → click notification gọi `switchTab(tabId, G)` trong `render-core.js` — hàm này hide tất cả panels trừ target, làm mất world map background. Fix: thay bằng `document.dispatchEvent(new CustomEvent('tab:open-popup', { detail: { tabId } }))`. Main.js lắng nghe event này và gọi `_switchTabWithPopup(tabId)`. Tránh circular import `render-core → tab-popup → render-core`. ✅ ĐÃ FIX
+
+44. **Popup không bring-to-front khi click** → PopupManager không có z-index stacking — popup bị che khuất sau popup khác, click vào không lên trên. Fix: thêm `_zCounter = 400` module-level; trong `_buildEl` thêm `mousedown` listener (capture phase) tăng counter và set `el.style.zIndex`; khi `open()` popup mới cũng set z-index để luôn ở trên cùng. ✅ ĐÃ FIX
+
+45. **Dead code `_showHuntPopup` chứa pattern sai** → `_showHuntPopup` trong `location-popup.js` gọi `actions.switchTab('combat')` sau `actions.startHunt()` (race condition — combat chưa start mà đã mở popup). Hàm này KHÔNG BAO GIỜ được gọi (dead code). Fix: xóa toàn bộ hàm khỏi `location-popup.js`. Live paths (`_wireLocPopupActions → lp-enemy-row click`) đã đúng — chỉ gọi `actions.startHunt()`, tab switch do `mapActions.startHunt` xử lý nội bộ sau travel overlay. ✅ ĐÃ FIX
+
+**Files thay đổi trong S-Phase2:** `render-core.js`, `main.js`, `popup-manager.js`, `location-popup.js`
+
+### S-Phase1 — Refactor: Tab Visibility + Bug Fixes (2026-05-07)
+
+40. **Notification spam: "Linh lực đầy — tích Thuần Độ (X%)" re-appear sau dismiss** → `contentKey` dùng `icon + text` làm key; `pct` thay đổi mỗi tick → key thay đổi → `_notifDismissedKey` không khớp → notification tái hiện. Fix: thêm `key` field vào tất cả notification objects có variable content (`qi_full_purity`, `breakthrough_ready`, `duoc_dien_ready`, `linh_thu_hungry`, `am_thuong_warning`, `lifespan_critical`, `lifespan_warning`, `nghiep_high`, `nghiep_medium`, `tranphap_critical`, `tranphap_warning`). Đổi `contentKey = shown.map(n => n.key || (n.icon + n.text)).join('|')` trong `render-core.js`. ✅ ĐÃ FIX
+
+41. **Warning purity 50-74% trước đột phá thiếu hậu quả cụ thể** → Button chỉ nói "Guaranteed Fail" nhưng không nêu stat loss. Fix: thêm div cảnh báo đỏ bên dưới button khi `btRatio < 0.75`, liệt kê: Linh lực −40% · Thuần Độ −50% · Tâm Cảnh −15~25 · mất 3~7 năm tuổi thọ + gợi ý chờ ≥75%. (`char-popup.js`) ✅ ĐÃ FIX
+
+42. **Double-gate: nav-progression.js vs visibility.js — hai nguồn truth gây mâu thuẫn** → `nav-progression.js` có lock icon logic độc lập với `visibility.js`; tab có thể "visible nhưng 🔒" gây UX kỳ lạ. Fix: `visibility.js` → single source of truth. `nav-progression.js` → thin shim re-export từ `visibility.js`. `render-core.js` → import trực tiếp `{ getVisibleTabs, isTabVisible, getUnlockMessages }` từ `visibility.js`; `renderNav` chỉ show/hide, không có lock icon. `main.js` → dùng `isTabVisible` thay `isTabUnlocked_`. Tab conditions mới (tất cả trong `visibility.js`): skills: stage≥3 || kills≥5; passive/combat: realm≥1; alchemy: stage≥2 || hasIngredients; equipment: kills≥3; ranking: stage≥3; dungeon: dungeonQuestDone || realm≥2. ✅ ĐÃ FIX
+
+**Files thay đổi trong S-Phase1:** `render-core.js`, `char-popup.js`, `core/visibility.js`, `ui/nav-progression.js` (shim), `main.js`
+
+### S-H5 — Bug Fix: 3 lỗi UI (2026-05-07)
+
+37. **panel-cultivate bị ẩn khi mở tab popup** → `openTabPopup()` gọi `switchTab(tabId, G)` → `switchTab` ẩn `panel-cultivate` → world map background mất. Fix: thay `switchTab(tabId, G)` bằng minimal nav update (set `G.activeTab`, update nav buttons, dispatch `tab:switch` event, đóng more-panel) — KHÔNG touch panel visibility. Export thêm `isAnyTabPopupOpen()` từ `tab-popup.js`. ✅ ĐÃ FIX
+
+38. **Không có button về trang giao diện chính** → "Tu Luyện" nav button chỉ mở Tu Luyện popup, không có cách đóng tất cả popup và về world map canvas. Fix: `wireNavBtn` cultivate toggle — nếu `isAnyTabPopupOpen()` thì `closeAllTabPopups()` (về home), nếu không thì `openTuLuyenPopup()` như bình thường. Import `isAnyTabPopupOpen` vào `main.js`. ✅ ĐÃ FIX
+
+39. **Bounty board + daily quests hiện ngay từ đầu game** → `quest-tab.js` render 3 bounties (`unlockRealm:0`) và daily quests ngay lần đầu vào — vi phạm Manifesto §6 ("tránh quest checklist arcade"). Fix: thêm guard `hasQuestActivity = npcActive.length > 0 || G.quests.completed.length > 0` — bounties và daily chỉ hiện sau khi player đã nhận ít nhất 1 NPC quest hoặc hoàn thành 1 quest. ✅ ĐÃ FIX
+
 ### S-H4 — Feature: Tách Nav + Popup Tu Luyện mới (2026-05-07)
 
 36. **"Tu Luyện" nav button chỉ là nút "home" (close all popups) — không cung cấp UI cultivation** → Tạo `js/ui/tu-luyen-popup.js` với popup floating via PopupManager (id: `tu-luyen`, width 300px, góc phải màn hình). Popup hiển thị toàn bộ cultivation context: bars qi/hp/stamina, stats grid (tu tốc/thuần độ/atk/def), pháp địa + số công pháp đang tu, hunger/ám thương indicators, 6 action buttons (Nhập Định span toàn hàng + 5 action button 3-cột), Đột Phá button với pulse animation. `wireNavBtn` trong `main.js` special-case `tabId === 'cultivate'` → `openTuLuyenPopup(G, cultivateActions)`. `_switchTabWithPopup('cultivate')` (dùng cho programmatic nav như combat end/flee) **không đổi** — vẫn đóng tab popups về background canvas. `updateTuLuyenPopup(G)` gọi mỗi 2 ticks trong gameTick. CSS thêm vào `systems.css`. ✅ ĐÃ FIX
@@ -546,8 +624,8 @@ G = {
 - canCotBonus từ tay_tuy_quyet đã apply qua `calcEffectiveCanCot` ✅
 - Audit #1,2,6,7,8 đã fix từ S-F, không có regression ✅
 
-**UX concern ghi nhận (chưa fix — thấp priority):**
-- Purity 50-74% threshold cho phép attempt breakthrough (gate chỉ block < 50%) nhưng `F_purity=0.0` → guaranteed fail kèm stat loss (qi -20-40%, purity -30-50%, tamCanh -5-25, tuổi thọ -1-8). Không có warning rõ ràng cho người chơi về range "50-74% = guaranteed fail". → Đề xuất: thêm warning text trong breakthrough UI khi purity < 75% threshold.
+**UX concern đã fix (S-Phase1 #41):**
+- Purity 50-74%: button đã hiện warning + liệt kê stat loss cụ thể (xem #41 ở trên). ✅
 
 ### S-E — Profession Gates (2026-05-06)
 31. Tab Nghề Nghiệp hiển thị nội dung Trận Pháp/Phù Chú/Khôi Lỗi dù chưa unlock → vi phạm triết lý "không phải ai cũng theo được mọi nghề" → tạo profession gate system:
@@ -556,15 +634,27 @@ G = {
   - `css/craft-popup.css`: thêm CSS cho `.nn-locked-card`, `.nn-lc-*`, `.nn-lock-grid`, `.nn-sidebar-hint`; sửa `.nn-prof-locked` cho phép click
   ✅ ĐÃ FIX
 
-**Điều kiện mở nghề (S-E):**
+**Điều kiện mở nghề (S-E + P4):**
 | Nghề | ID | Điều kiện |
 |---|---|---|
-| Luyện Đan | `luyen_dan` | ngoTinh ≥ 40 + linh căn Hỏa (auto-unlock), hoặc cơ duyên |
-| Luyện Khí | `luyen_khi` | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
-| Trận Pháp | `tran_phap` | Học từ NPC/tông môn, hoặc tìm Trận Kinh (flags only) |
-| Phù Chú   | `phu_chu`   | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
-| Khôi Lỗi  | `khoi_loi`  | Học từ NPC/tông môn, hoặc cơ duyên (flags only) |
+| Luyện Đan | `luyen_dan` | ngoTinh ≥ 40 + linh căn Hỏa (auto-unlock), hoặc cơ duyên `cd_dan_kinh_co_nhan` (ngoTinh≥20, không cần Hỏa) |
+| Luyện Khí | `luyen_khi` | **Auto-unlock LK5+** (realmIdx>0 hoặc stage≥5), hoặc cơ duyên `cd_luyen_khi_lo_ren` (LK4+, explore/combat) |
+| Trận Pháp | `tran_phap` | Cơ duyên `cd_tran_kinh_phe_tich` (LK4+, explore/array) |
+| Phù Chú   | `phu_chu`   | Cơ duyên `cd_phu_chu_bi_thu` (LK4+, explore/meditate) |
+| Khôi Lỗi  | `khoi_loi`  | Cơ duyên `cd_khoi_loi_cuon_ky` (LK4+, explore/combat) |
 | Linh Thực | `linh_thuc` | Bếp Linh Thực level ≥ 1 (auto-unlock), hoặc Linh Địa |
+
+### P5 — NPC Dialogs: Các Zone Chính (2026-05-08)
+
+59. **NPC_DIALOGS 5 zone chính đã có 2 lore entry từ session trước, HANDOFF chưa cập nhật + thiếu lore thứ 3** → Các zone Vạn Linh Thị, Hắc Phong Lâm, Địa Phủ Môn, Ẩn Long Động, Linh Dược Cốc đã có `greeting`/`greetingDV`/`lore`/`lore_*` từ session trước nhưng chưa đạt "tối thiểu 2-3 dialog lines" mỗi zone. Fix: thêm lore thứ 3 cho từng NPC — `lore_trap` (Vạn Linh Thị: cảnh báo cạm bẫy chốn thị), `lore_track` (Hắc Phong Lâm: đọc dấu vết yêu thú), `lore_floors` (Địa Phủ Môn: cấu trúc các tầng sâu), `lore_danger` (Ẩn Long Động: nguy hiểm Long Uyên), `lore_caution` (Linh Dược Cốc: sai lầm phổ biến khi luyện đan); thêm option button tương ứng vào mỗi NPC. Giữ tone "tu tiên khắc nghiệt" — cảnh báo thật, không thưởng miễn phí. (`js/ui/location-popup.js`) ✅ ĐÃ FIX
+
+**Files thay đổi trong P5:** `location-popup.js`, `HANDOFF.md`
+
+### S-P4 — Nghề Phụ Gate Hoàn Chỉnh (2026-05-08)
+32. 4 nghề tran_phap/phu_chu/khoi_loi/luyen_khi chỉ có flags-only, không có con đường mở cụ thể → bổ sung:
+  - `js/core/co-duyen.js`: **phục hồi file bị truncate** (14 dòng cuối mất); thêm 4 cơ duyên tier-2 mở nghề (`cd_luyen_khi_lo_ren` baseChance 0.005, `cd_tran_kinh_phe_tich`/`cd_phu_chu_bi_thu`/`cd_khoi_loi_cuon_ky` baseChance 0.004 — tất cả yêu cầu LK4+, `extraCondition` check stage+realmIdx+chưa unlock); thêm `case 'unlock_profession'` trong `applyCoduyen` (push profId vào `G.flags.unlockedProfessions`, fallback +1000 exp nếu đã có)
+  - `js/ui/tabs/nghe-nghiep-tab.js`: thêm `luyen_khi` auto-unlock trong `_tryAutoUnlock` (LK5+ = realmIdx>0 || stage≥5); đổi `unlockHint` của 4 nghề thành "Học từ cao nhân, hoặc chờ cơ duyên (LK tầng X+)" rõ ràng; đổi tên `_renderLuyenDanProgress` → `_renderLockedProfProgress` + mở rộng cho cả 4 nghề (mỗi nghề hiện progress block tương ứng — Luyện Khí có block auto-unlock LK5, ba nghề còn lại chỉ có block cơ duyên LK4+)
+  ✅ ĐÃ FIX
 
 ### S-D — Quest System Redesign LK (2026-05-06)
 30. Tab Nhiệm Vụ hiển thị danh sách quest dài sẵn có ngay từ đầu game, không ai giao → vi phạm Manifesto §6 → tạo hệ thống NPC-gated:
@@ -726,8 +816,7 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 **Lưu ý:** Cần timeout 5 phút để handle trường hợp browser crash mà không logout sạch
 
 ### ⬜ Content
-- **NPC dialog cho zone chính** — Vạn Linh Thị, Hắc Phong Lâm, Địa Phủ Môn,
-  Ẩn Long Động, Linh Dược Cốc, Thiên Kiếp Địa
+- ~~**NPC dialog cho zone chính** — Vạn Linh Thị, Hắc Phong Lâm, Địa Phủ Môn, Ẩn Long Động, Linh Dược Cốc~~ ✅ **DONE (P5)** — 5 zone có đủ 3 lore entry/NPC; thêm 1 lore nữa cho Thiên Kiếp Địa nếu cần
   File: `js/ui/location-popup.js` → thêm vào `NPC_DIALOGS`
 - **Cơ Duyên events TC/KĐ/NA** — hiện 52 events hầu hết cho LK
   File: `js/core/co-duyen.js`
@@ -737,26 +826,25 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 ### ⬜ Thiết kế còn lại (chưa code)
 - **Trận Pháp redesign** — đổi materials thành trận kỳ + trận bàn + trận nhãn + linh thạch
   Trận kỳ chế tạo từ nguyên liệu hoặc mua shop/cơ duyên
-- **Luyện Đan rào cản** — cần thiên phú (ngộ tính + hệ Hỏa) để mở nghề
-  Hiện tại ai cũng luyện được ngay — cần thêm gate
+- ~~**Luyện Đan rào cản**~~ ✅ **DONE (P3)** — gate đã có: auto-unlock (Hỏa + ngoTinh≥40) + cơ duyên path (ngoTinh≥20); UI locked card 2 path boxes
 - **6 nghề phụ cần cơ duyên** — không phải ai cũng theo được, cần rào cản mở nghề
 
 ### ⬜ Polish
-- **Combat log formatting** — hiện text thuần, cần color/icon
+- ~~**Combat log formatting**~~ ✅ Fix P2 #52-54 — 5 type mới (miss/heal/debuff/flee/combo), badge prefix, số highlight theo màu type
 - **Mobile UI** — responsive improvements (panel-center bottom đã fix, còn touch drag/resize)
-- **Notification clickable** — click notif → gọi `openTabPopup(tabId, G, renderFn)` (nền tảng đã có)
-- **Thông báo chớp liên tục** — linh lực đầy + thuần độ cần fix debounce
-- **Popup z-index / focus** — khi click vào popup, nên bring-to-front (hiện chưa có stacking order). Token `--z-tooltip-top` (900) có thể dùng cho focused popup, nhưng cần cơ chế JS set z-index động khi click.
+- ~~**Notification clickable**~~ ✅ Fix S-Phase2 #43 — dispatch `tab:open-popup` event
+- ~~**Thông báo chớp liên tục**~~ ✅ Fix S-Phase1 #40 — stable `key` field
+- ~~**Popup z-index / focus**~~ ✅ Fix S-Phase2 #44 — `_zCounter` stacking trong PopupManager
 
 ### ⬜ Kỹ thuật
 - **Balance playtesting** — TC/KĐ/NA purityThresholds chưa calibrate
 - **Thuần thục công pháp balance** — tốc độ tăng cần test thực tế
 - **Firebase deploy** — Auth + Firestore production
 - ~~**Auth typo cleanup**~~ — ✅ Đã fix toàn bộ `_onAuthReady` → `_onAnonReady`
-- **Cleanup scope** — loại bỏ realm 5+ và toàn bộ `tianJie` path khỏi code Nhân Giới
+- ~~**Cleanup scope**~~ ✅ Fix P1 #49,50 — `canPrestige` gate đúng realm 4; `portrait.js` clamp về 4; `tianJie` references còn lại là lore/map location hợp lệ, không phải combat mechanic cũ
 - ~~**Apply canCotBonus từ tay_tuy_quyet**~~ ✅ Đã fix — `calcEffectiveCanCot(G)` trong `computed.js` + `breakthrough.js` (Audit #5)
 - **Linh Địa monthly fee** — thêm cơ chế trừ phí định kỳ theo game-time
-- **Chuẩn hóa timer Trận Pháp** — thống nhất đơn vị game-time vs real-time trong drain logic/comment
+- ~~**Chuẩn hóa timer Trận Pháp**~~ ✅ Fix P1 #51 — comment cập nhật rõ "giây THỰC"; logic drain giữ nguyên (đã đúng)
 
 ---
 

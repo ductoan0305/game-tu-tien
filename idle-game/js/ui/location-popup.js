@@ -545,62 +545,6 @@ function _wireLocPopupActions(G, loc, mode, actions, modal) {
   });
 }
 
-// ---- Hunt popup — chọn enemy trước khi chiến đấu ----
-function _showHuntPopup(G, loc, actions) {
-  const existing = document.getElementById('modal-hunt');
-  if (existing) existing.remove();
-
-  const enemies = getAvailableEnemies(G.realmIdx);
-  if (!enemies.length) {
-    actions.toast('⚠ Chưa có yêu thú phù hợp — hãy đột phá trước!', 'danger');
-    return;
-  }
-
-  const TIER_COLORS = {1:'#888',2:'#56c46a',3:'#c8a84b',4:'#e05c1a',5:'#a855f7'};
-
-  const modal = document.createElement('div');
-  modal.id = 'modal-hunt';
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal-box hunt-modal">
-      <div class="hunt-modal-header">
-        <span style="font-size:20px">${loc.emoji}</span>
-        <div>
-          <div style="font-weight:700;color:var(--gold)">${loc.name}</div>
-          <div style="font-size:10px;color:var(--text-dim)">Chọn yêu thú để chiến đấu</div>
-        </div>
-        <button onclick="document.getElementById('modal-hunt').remove()" style="margin-left:auto;background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">✕</button>
-      </div>
-      <div class="hunt-enemy-list">
-        ${enemies.map(e => {
-          const color = TIER_COLORS[e.tier] || '#888';
-          return `
-            <div class="hunt-enemy-row" data-enemy-id="${e.id}" style="border-color:${color}33">
-              <span style="font-size:22px">${e.emoji}</span>
-              <div class="her-info">
-                <div style="font-weight:600;color:${color}">${e.name}</div>
-                <div style="font-size:10px;color:var(--text-dim)">Tier ${e.tier} · ❤${e.hpBase} ⚔${e.atkBase} 🛡${e.defBase}</div>
-              </div>
-              <div class="her-reward">
-                <div style="font-size:10px;color:var(--gold)">+${e.expReward||0} EXP</div>
-                <div style="font-size:10px;color:#aaa">+${e.stoneReward?.[0]||0}-${e.stoneReward?.[1]||0}💎</div>
-              </div>
-            </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-
-  modal.querySelectorAll('.hunt-enemy-row').forEach(row => {
-    row.addEventListener('click', () => {
-      modal.remove();
-      actions.startHunt(row.dataset.enemyId);
-      actions.switchTab('combat');
-    });
-  });
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-}
-
 // ---- NPC Dialog popup ----
 const NPC_DIALOGS = {
   // ── Lâm Hải Thôn ──────────────────────────────────────────────────────────
@@ -668,12 +612,14 @@ const NPC_DIALOGS = {
       500: '(Lão Thương Nhân đứng dậy, vẻ mặt kính cẩn) Lừng lẫy thiên hạ... ngươi đích thân đến đây, cả chợ sẽ xôn xao hết. Có gì ngươi cần, ta lo hết!',
     },
     options: [
-      { label: '💬 Hỏi về Vạn Linh Thị', action: 'lore',     hint: 'Nghe lão nhân kể chuyện chợ lớn' },
-      { label: '🏪 Đến Cửa Hàng',         action: 'shop',     hint: 'Mở tab mua bán' },
-      { label: '💡 Mách nước tu tiên',     action: 'lore_tip', hint: 'Nghe bí quyết từ người kinh nghiệm' },
+      { label: '💬 Hỏi về Vạn Linh Thị', action: 'lore',      hint: 'Nghe lão nhân kể chuyện chợ lớn' },
+      { label: '🏪 Đến Cửa Hàng',         action: 'shop',      hint: 'Mở tab mua bán' },
+      { label: '💡 Mách nước tu tiên',     action: 'lore_tip',  hint: 'Nghe bí quyết từ người kinh nghiệm' },
+      { label: '⚠ Cạm bẫy chốn thị',      action: 'lore_trap', hint: 'Nghe thương nhân cảnh báo về nguy hiểm ẩn nơi chợ' },
     ],
     lore: 'Vạn Linh Thị là trung tâm thương mại lớn nhất Phàm Nhân Giới. Đây ta nghe tên từ Đấu Giá Trường đến Hội Thương Nhân. Tán tu muốn sinh tồn thì phải biết buôn bán — đan dược, nguyên liệu, thông tin, tất cả đều là hàng hóa.',
     lore_tip: 'Bí quyết lão phu dùng cả đời: Linh Thạch là máu của tu tiên. Đừng bao giờ tiêu hết. Giữ lại ít nhất một phần ba dự trữ phòng khi cần gấp mua đan phá cảnh.',
+    lore_trap: 'Vạn Linh Thị hào nhoáng nhưng đầy cạm bẫy. Ta đã thấy tu sĩ mất sạch linh thạch vì tin lầm tên buôn giả. Thứ gì quá rẻ đều có vấn đề. Thứ gì không ai bán đều có lý do. Tán tu thông minh là người biết khi nào không nên mua — và không nên tin.',
   },
 
   // ── Hắc Phong Lâm ─────────────────────────────────────────────────────────
@@ -687,12 +633,14 @@ const NPC_DIALOGS = {
       500: 'Cả Hắc Phong Lâm đều biết tên ngươi — kể cả lũ Yêu Vương cũng nghe phong phanh. Ta thợ săn già này... mừng vì ngươi đứng phía bên kia.',
     },
     options: [
-      { label: '💬 Hỏi về Hắc Phong Lâm', action: 'lore',       hint: 'Tìm hiểu bí mật khu rừng' },
-      { label: '⚔ Săn Yêu Thú',            action: 'combat',    hint: 'Vào khu săn bắn' },
-      { label: '⚠ Cảnh báo nguy hiểm',      action: 'lore_warn', hint: 'Nghe thợ săn cảnh báo' },
+      { label: '💬 Hỏi về Hắc Phong Lâm', action: 'lore',        hint: 'Tìm hiểu bí mật khu rừng' },
+      { label: '⚔ Săn Yêu Thú',            action: 'combat',      hint: 'Vào khu săn bắn' },
+      { label: '⚠ Cảnh báo nguy hiểm',      action: 'lore_warn',   hint: 'Nghe thợ săn cảnh báo' },
+      { label: '🐾 Đọc dấu vết yêu thú',    action: 'lore_track',  hint: 'Học cách nhận biết yêu thú từ dấu vết' },
     ],
     lore: 'Hắc Phong Lâm ẩn chứa nhiều bí mật hơn người ta nghĩ. Cây cổ thụ ngàn năm tích tụ linh khí âm — tốt để tu luyện âm thuộc tính, nhưng nguy hiểm với người tu dương. Hang Động Bí Ẩn sâu trong rừng — ta chưa bao giờ dám vào một mình.',
     lore_warn: 'Sào Huyệt Yêu Vương ở phía tây nam. Nếu ngươi chưa đến Nguyên Anh thì đừng có nghĩ đến việc vào đó. Ta đã thấy Kim Đan kỳ tu vào rồi không ra.',
+    lore_track: 'Đọc dấu vết để sống sót: móng vuốt sâu trên vỏ cây là Hắc Mãnh Hổ — cỡ lớp 3. Mùi hôi nồng từ phía tây là Độc Mãng — đừng lại gần nếu chưa có giải độc đan. Cành gãy ngọn sạch là Cự Hùng đang đánh dấu lãnh địa — nguy hiểm nhất rừng này. Hiểu dấu vết mới biết cái gì né, cái gì săn.',
   },
 
   // ── Linh Dược Cốc ─────────────────────────────────────────────────────────
@@ -706,12 +654,14 @@ const NPC_DIALOGS = {
       500: 'Ta đã sống ở cốc này mấy trăm năm, thấy không biết bao người đến rồi đi. Nhưng danh tiếng như ngươi... thật sự rất lâu mới gặp lại. Vào đây, ta có thứ muốn tặng.',
     },
     options: [
-      { label: '💬 Hỏi về linh thảo',     action: 'lore',      hint: 'Học về thảo dược từ chuyên gia' },
-      { label: '🌿 Thu Thập Dược Liệu',    action: 'gather',    hint: 'Vào khu thu thập' },
-      { label: '⚗ Bí quyết luyện đan',    action: 'lore_dan',  hint: 'Nghe bí quyết từ dược sư' },
+      { label: '💬 Hỏi về linh thảo',      action: 'lore',         hint: 'Học về thảo dược từ chuyên gia' },
+      { label: '🌿 Thu Thập Dược Liệu',     action: 'gather',       hint: 'Vào khu thu thập' },
+      { label: '⚗ Bí quyết luyện đan',     action: 'lore_dan',     hint: 'Nghe bí quyết từ dược sư' },
+      { label: '⚠ Sai lầm của người mới',   action: 'lore_caution', hint: 'Nghe dược sư cảnh báo về sai lầm phổ biến' },
     ],
     lore: 'Linh Dược Cốc là thánh địa thảo dược. Huyết Khí ở đây đặc biệt — thảo dược lớn nhanh hơn bên ngoài gấp mấy lần. Vạn Niên Huyết Liên... ta chỉ thấy nó nở một lần trong đời. Cần đủ cơ duyên mới gặp được.',
     lore_dan: 'Luyện đan thất bại chủ yếu vì hai lý do: lửa đan không đều hoặc tỷ lệ nguyên liệu sai. Đan lò tốt hơn quan trọng hơn công thức lạ. Đừng vội thử công thức khó khi lò chưa đủ cấp.',
+    lore_caution: 'Người mới hay mắc một lỗi: thu thập đủ loại thảo dược rồi nhét hết vào một mẻ đan. Dược liệu tương khắc sẽ làm nổ lò — hoặc tệ hơn là đan thành công nhưng bên trong chứa độc. Mỗi công thức chỉ dùng đúng những gì nó cần. Không nhiều hơn, không ít hơn.',
   },
 
   // ── Thiên Kiếp Địa ────────────────────────────────────────────────────────
@@ -745,12 +695,14 @@ const NPC_DIALOGS = {
       500: '(giọng trở nên ít lạnh hơn một chút) Lừng lẫy... ta phục vụ Địa Phủ mấy ngàn năm, nghe nhiều tên lắm. Tên ngươi... ta cũng nghe rồi. Hãy cẩn thận bên trong — không phải vì ngươi yếu, mà vì Địa Phủ không tha ai.',
     },
     options: [
-      { label: '💬 Hỏi về Địa Phủ',      action: 'lore',       hint: 'Tìm hiểu về dungeon nguy hiểm' },
-      { label: '☠ Vào Địa Phủ',           action: 'dungeon',    hint: 'Bước vào Thiên Ma Địa Phủ' },
-      { label: '⚠ Nghe cảnh báo',          action: 'lore_warn',  hint: 'Canh binh cảnh báo gì?' },
+      { label: '💬 Hỏi về Địa Phủ',       action: 'lore',        hint: 'Tìm hiểu về dungeon nguy hiểm' },
+      { label: '☠ Vào Địa Phủ',            action: 'dungeon',     hint: 'Bước vào Thiên Ma Địa Phủ' },
+      { label: '⚠ Nghe cảnh báo',           action: 'lore_warn',   hint: 'Canh binh cảnh báo gì?' },
+      { label: '🏛 Về các tầng sâu hơn',    action: 'lore_floors', hint: 'Hỏi về cấu trúc các tầng bên dưới' },
     ],
     lore: 'Thiên Ma Địa Phủ có 10 tầng. Mỗi tầng là một thế giới riêng — địa hình, yêu ma, quy tắc đều khác nhau. Nhiều tu sĩ vào đây tìm loot rồi không ra. Loot thật sự hiếm — nguy hiểm thật sự nhiều.',
     lore_warn: 'Đừng tham lam. Nhiều kẻ chết vì ở lại quá lâu sau khi đã thắng. Khi HP còn 30% — ra ngay. Không có loot nào đáng hơn mạng sống. Và đừng bao giờ chiến đấu với hơn một kẻ địch cùng lúc nếu có thể tránh.',
+    lore_floors: 'Tầng 1-3 — ma quân thường, LK hậu kỳ đủ sức nếu không liều. Tầng 4-6 — ma quân đặc biệt, cần Trúc Cơ. Tầng 7-9 — ta không biết. Không ai từng bảo ta chuyện gì ở đó. Tầng 10 — truyền thuyết. Không ai từng quay về kể lại.',
   },
 
   // ── Ẩn Long Động ──────────────────────────────────────────────────────────
@@ -764,12 +716,14 @@ const NPC_DIALOGS = {
       500: '(Linh Nhân cúi đầu — điều chưa từng xảy ra) Lừng lẫy thiên hạ trong khi còn ở Phàm Nhân Giới... ngươi có thể trở thành người vĩ đại nhất từng bước qua Ẩn Long Động. Ta tôn trọng ngươi.',
     },
     options: [
-      { label: '💬 Hỏi về Ẩn Long Động',  action: 'lore',          hint: 'Tìm hiểu bí mật động phủ' },
-      { label: '🐉 Hỏi về Long Uyên',      action: 'lore_long',     hint: 'Bí ẩn của vực rồng' },
-      { label: '🧘 Tu luyện tại đây',       action: 'cultivate',     hint: 'Tận dụng linh khí Động Phủ' },
+      { label: '💬 Hỏi về Ẩn Long Động',   action: 'lore',          hint: 'Tìm hiểu bí mật động phủ' },
+      { label: '🐉 Hỏi về Long Uyên',       action: 'lore_long',     hint: 'Bí ẩn của vực rồng' },
+      { label: '🧘 Tu luyện tại đây',        action: 'cultivate',     hint: 'Tận dụng linh khí Động Phủ' },
+      { label: '⚠ Nguy hiểm của Long Uyên', action: 'lore_danger',   hint: 'Nghe cảnh báo về vực rồng' },
     ],
     lore: 'Ẩn Long Động là một trong những nơi linh khí đậm đặc nhất Phàm Nhân Giới — vì Long Uyên bên trong. Rồng là sinh vật thuần linh khí, hàng ngàn năm tích lũy biến cả vùng thành Động Phủ cấp cao nhất. Chỉ người có duyên mới tìm được đường vào.',
     lore_long: 'Long Uyên — vực rồng cổ đại. Không có rồng thật ở đó nữa, chỉ còn lại linh khí mà rồng để lại sau khi hóa trời. Nhưng linh khí đó vẫn còn sức mạnh khủng khiếp. Tu luyện ở đó với Động Phủ buff... hiếm có nơi nào bằng ở Phàm Nhân Giới.',
+    lore_danger: 'Long Uyên thu hút người vì linh khí mạnh — nhưng cũng vì vậy mà căn cơ yếu sẽ bị linh khí xé nát từ bên trong. Tu sĩ LK thấp kỳ vào đó như đổ nước vào bình đã đầy — áp lực vỡ ra theo hướng ngươi không muốn. Phải có nền tảng nhất định mới an toàn ở đây.',
   },
 
   // ── Hàn Băng Thôn ────────────────────────────────────────────────────────

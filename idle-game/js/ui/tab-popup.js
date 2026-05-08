@@ -20,6 +20,14 @@
 import PopupManager from './popup-manager.js';
 import { switchTab } from './render-core.js';
 
+/**
+ * Kiểm tra có bất kỳ tab popup nào đang mở không.
+ * Dùng trong main.js để toggle cultivate button (home vs Tu Luyện).
+ */
+export function isAnyTabPopupOpen() {
+  return _openTabPopupCount() > 0;
+}
+
 // ---- Config per tab: title hiển thị + chiều rộng pixel ----
 // Không có 'cultivate' — tab đó là background canvas, không popup.
 const TAB_POPUP_CFG = {
@@ -111,9 +119,15 @@ export function openTabPopup(tabId, G, renderFn) {
     return;
   }
 
-  // Cập nhật nav active state (render-core.switchTab cũng ẩn/hiện panels cũ,
-  // nhưng ta sẽ tự quản lý panel location vì dùng popup)
-  switchTab(tabId, G);
+  // Cập nhật nav active state — KHÔNG dùng switchTab() vì nó sẽ ẩn panel-cultivate
+  // (world map canvas phải luôn là background, không bị hide khi popup mở).
+  if (G) G.activeTab = tabId;
+  document.querySelectorAll('.nav-btn, .bnav-btn, .bmp-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.getElementById('bnav-more-panel')?.style &&
+    (document.getElementById('bnav-more-panel').style.display = 'none');
+  document.dispatchEvent(new CustomEvent('tab:switch', { detail: { tabId, G } }));
 
   const panelEl   = document.getElementById(`panel-${tabId}`);
   const container = _getContainer();

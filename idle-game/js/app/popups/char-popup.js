@@ -192,9 +192,15 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
           const btPurityPct = Math.floor(btRatio * 100);
           if (btRatio < 0.5) return `<div class="cp-bt-hint" style="color:#888">
             ⚡ Qi đầy — đang tích Thuần Độ (${btPurityPct}% / cần 50%+)</div>`;
-          if (btRatio < 0.75) return `<button class="cp-bt-btn" id="cp-btn-breakthrough"
-            style="background:rgba(180,30,30,0.2);border-color:#c0392b;color:#e74c3c;animation:pulse-danger 1.5s infinite">
-            ⚠ CẢNH BÁO: Thuần Độ ${btPurityPct}% — Xác Suất 0%! (Guaranteed Fail)</button>`;
+          if (btRatio < 0.75) return `
+            <button class="cp-bt-btn" id="cp-btn-breakthrough"
+              style="background:rgba(180,30,30,0.2);border-color:#c0392b;color:#e74c3c;animation:pulse-danger 1.5s infinite">
+              ⚠ CẢNH BÁO: Thuần Độ ${btPurityPct}% — Xác Suất 0%! (Guaranteed Fail)
+            </button>
+            <div style="font-size:10px;color:#e05c4a;text-align:center;margin-top:4px;padding:4px 8px;background:rgba(180,30,30,0.1);border-radius:4px;border:1px solid rgba(180,30,30,0.3);line-height:1.6">
+              ☠ Đại thất bại đảm bảo: Linh lực −40% · Thuần Độ −50% · Tâm Cảnh −15~25 · mất 3~7 năm tuổi thọ.<br>
+              <span style="color:#f0a0a0">Tiếp tục bế quan đến Thuần Độ ≥75% để có cơ hội thành công.</span>
+            </div>`;
           if (btRatio < 1.0) return `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough"
             style="background:rgba(180,120,0,0.2);border-color:#d4a017;color:#d4a017">
             ⚡ ĐỦ LINH LỰC — ĐỘT PHÁ (Thuần Độ ${btPurityPct}%)</button>`;

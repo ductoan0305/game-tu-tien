@@ -16,7 +16,7 @@ import PopupManager          from './popup-manager.js';
 import { REALMS }             from '../core/data.js';
 import {
   calcQiRate, calcMaxQi, calcAtk, calcDef, calcMaxHp,
-  calcPurityThreshold,
+  calcPurityThreshold, calcThuanDoCeiling,
 } from '../core/state.js';
 import { calcBreakthroughChance }                      from '../core/actions.js';
 import { getAmThuongStatus }                           from '../core/duoc-dien-engine.js';
@@ -144,6 +144,20 @@ function _buildBody() {
 
     <!-- Pháp Địa + Công Pháp -->
     <div class="tl-method-row" id="tlp-phapdia">🏚 Phàm Địa · 0 Công Pháp</div>
+
+    <!-- Thuần Độ Bar (T9) -->
+    <div class="tlp-purity-bar-section" id="tlp-purity-bar-section">
+      <div class="tlp-purity-bar-label">
+        <span>✨ Thuần Độ</span>
+        <span id="tlp-purity-bar-text">--</span>
+      </div>
+      <div class="tlp-purity-bar-wrap" id="tlp-purity-bar-wrap">
+        <div class="tlp-purity-bar-inner">
+          <div class="tlp-purity-fill tlp-purity-zone-1" id="tlp-purity-fill" style="width:0%"></div>
+        </div>
+        <!-- markers injected by JS -->
+      </div>
+    </div>
 
     <!-- Tu Tốc Chi Tiết -->
     <div class="tl-breakdown">
@@ -334,6 +348,91 @@ function _updateMedBtn(G) {
   if (medBtn.classList.contains('active') !== med) medBtn.classList.toggle('active', med);
 }
 
+// ---- Purity Bar (T9) — 5-zone visual ----
+
+function _updatePurityBar(G) {
+  const fill = _el('tlp-purity-fill');
+  const wrap = _el('tlp-purity-bar-wrap');
+  const text = _el('tlp-purity-bar-text');
+  if (!fill || !wrap) return;
+
+  const purity    = G.purity ?? 0;
+  const threshold = calcPurityThreshold(G);
+  const ceiling   = calcThuanDoCeiling(G);
+  const ratio     = threshold > 0 ? purity / threshold : 0;
+
+  // Scale thanh tới visualMax = max(ceiling, threshold * 2.5)
+  const visualMax = Math.max(ceiling, threshold > 0 ? threshold * 2.5 : 1);
+  const fillPct   = threshold > 0 ? Math.min(100, (purity / visualMax) * 100) : 0;
+
+  // Xác định zone
+  let zone;
+  if      (ratio < 0.5)  zone = 1;
+  else if (ratio < 0.75) zone = 2;
+  else if (ratio < 1.0)  zone = 3;
+  else if (ratio < 2.0)  zone = 4;
+  else                   zone = 5;
+
+  // F_purity tương ứng (tham khảo display)
+  const fPurityMap = [0, 0.5, 0.85, 1.2, 1.4];
+  // zone 3 nội suy 0.85→1.0 theo ratio
+  let fPurity;
+  if (zone === 3) {
+    fPurity = (0.85 + (ratio - 0.75) / 0.25 * 0.15).toFixed(2);
+  } else {
+    fPurity = fPurityMap[zone - 1].toFixed(1);
+  }
+
+  // Update fill
+  const fillEl = fill;
+  if (fillEl.style.width !== fillPct.toFixed(1) + '%') {
+    fillEl.style.width = fillPct.toFixed(1) + '%';
+  }
+  // Swap class zone
+  const zoneClass = `tlp-purity-zone-${zone}`;
+  if (!fillEl.classList.contains(zoneClass)) {
+    fillEl.className = `tlp-purity-fill ${zoneClass}`;
+  }
+
+  // Tooltip
+  const ratioDisplay = Math.round(ratio * 100);
+  wrap.title = `Thuần Độ ${Math.floor(purity)}/${threshold} (${ratioDisplay}%) — F_purity ×${fPurity}`;
+
+  // Text label (được hiển thị ở trên label row)
+  if (text) _setText(text, `${Math.floor(purity)}/${threshold} (${ratioDisplay}%)`);
+
+  // ---- Markers — chỉ re-render khi threshold thay đổi ----
+  const prevThreshold = wrap._markerThreshold;
+  const prevVisualMax = wrap._markerVisualMax;
+  if (prevThreshold === threshold && prevVisualMax === visualMax) return;
+  wrap._markerThreshold = threshold;
+  wrap._markerVisualMax = visualMax;
+
+  // Xóa marker cũ
+  wrap.querySelectorAll('.tlp-purity-marker').forEach(m => m.remove());
+
+  // Vẽ marker tại 50% / 75% / 100% / 200% của threshold
+  const markerRatios = [
+    { ratio: 0.5,  label: '50',  cls: '' },
+    { ratio: 0.75, label: '75',  cls: '' },
+    { ratio: 1.0,  label: '100', cls: 'threshold' },
+    { ratio: 2.0,  label: '200', cls: '' },
+  ];
+  for (const mk of markerRatios) {
+    const markerPurityVal = threshold * mk.ratio;
+    if (markerPurityVal > visualMax) continue;  // nằm ngoài bar — skip
+    const markerPct = (markerPurityVal / visualMax) * 100;
+    const markerEl  = document.createElement('div');
+    markerEl.className = 'tlp-purity-marker' + (mk.cls ? ` ${mk.cls}` : '');
+    markerEl.style.left = markerPct.toFixed(1) + '%';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'tlp-purity-marker-label';
+    labelEl.textContent = mk.label;
+    markerEl.appendChild(labelEl);
+    wrap.appendChild(markerEl);
+  }
+}
+
 // ============================================================
 // PUBLIC API
 // ============================================================
@@ -388,6 +487,8 @@ export function updateTuLuyenPopup(G) {
   const purity    = G.purity ?? 0;
   const purPct    = threshold > 0 ? Math.min(100, (purity / threshold * 100)).toFixed(0) : '0';
   _set('tlp-purity', `${Math.floor(purity)} (${purPct}%)`);
+
+  _updatePurityBar(G);
 
   _updateMedBtn(G);
   _updateBreakthroughBtn(G);

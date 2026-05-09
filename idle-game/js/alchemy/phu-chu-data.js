@@ -86,7 +86,8 @@ export const TALISMAN_RECIPES = [
   {
     id:'draw_iron_talisman',    name:'Vẽ Thiết Giáp Phù',       emoji:'📜', tier:2,
     resultItem:'iron_talisman', qty:2,
-    materials:[{id:'serpent_scale',qty:3},{id:'earth_stone',qty:5}],
+    // L5 fix: bỏ serpent_scale (ice_mountain realm 1) → dùng nguyên liệu realm 0
+    materials:[{id:'earth_stone',qty:6},{id:'wolf_fang',qty:3},{id:'spirit_herb',qty:2}],
     stoneCost:100, successChance:0.75, requireRealm:0, requireRank:1,
     desc:'Tạo 2 Thiết Giáp Phù. Dùng → +30% DEF + -20% sát thương 30 phút.',
   },
@@ -100,7 +101,8 @@ export const TALISMAN_RECIPES = [
   {
     id:'draw_heal_talisman',    name:'Vẽ Đại Hồi Thương Phù',  emoji:'📜', tier:2,
     resultItem:'heal_talisman', qty:2,
-    materials:[{id:'blood_ginseng',qty:2},{id:'jade_lotus',qty:4},{id:'moon_dew',qty:2}],
+    // L5 fix: bỏ blood_ginseng (zone ice_mountain, realm 1 — tán tu LK không gather được)
+    materials:[{id:'jade_lotus',qty:4},{id:'moon_dew',qty:3},{id:'rabbit_fur',qty:2}],
     stoneCost:110, successChance:0.76, requireRealm:0, requireRank:1,
     desc:'Tạo 2 Đại Hồi Thương Phù. Dùng → Hồi 800 HP + 20 HP/s 30 phút.',
   },

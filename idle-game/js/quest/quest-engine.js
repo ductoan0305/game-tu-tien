@@ -11,6 +11,7 @@ import { QUESTS, NPC_QUESTS, NPC_QUEST_MAP,
 import { bus } from '../utils/helpers.js';
 import { unlockRecipe } from '../alchemy/alchemy-engine.js';
 import { gainKienCo } from '../core/systems/helpers-internal.js';
+import { gainNpcRep } from '../core/npc-reputation-engine.js';
 
 // ---- Helpers ----
 
@@ -219,6 +220,11 @@ function completeNpcQuest(G, questId) {
   const dvGain = 5;
   G.danhVong = (G.danhVong ?? 0) + dvGain;
   bus.emit('danhvong:gained', { amount: dvGain, source: quest.name });
+
+  // L6 — H3: Tăng thiện cảm NPC +10 khi hoàn thành quest họ giao
+  if (quest.givenBy) {
+    gainNpcRep(G, quest.givenBy, 10);
+  }
 
   bus.emit('quest:update', { type: 'npc_quest_complete', questId });
 }

@@ -88,6 +88,25 @@ export const PILLS = [
     effect: { type: 'timed_atk', value: 15, duration: 300 },
     unlockDefault: false,
   },
+  // L5: thêm Tier 1 đan hệ Thủy và Hỏa — fix asymmetry element LK
+  {
+    id: 'thuy_tinh_dan',
+    name: 'Thủy Tinh Đan', nameCN: '水晶丹', emoji: '💧',
+    tier: 1, rarity: 'common',
+    element: 'thuy',
+    desc: 'Hệ Thủy — tốc độ tu luyện +1.0/s vĩnh viễn. Thủy linh căn dùng hiệu quả hơn.',
+    effect: { type: 'permanent_rate', value: 1.0 },
+    unlockDefault: false,
+  },
+  {
+    id: 'hoa_ky_dan',
+    name: 'Hỏa Khí Đan', nameCN: '火氣丹', emoji: '🔥',
+    tier: 1, rarity: 'common',
+    element: 'hoa',
+    desc: 'Hệ Hỏa — hiệu quả luyện đan +10. Hỏa linh căn luyện đan tốt hơn.',
+    effect: { type: 'danBonus', value: 10 },
+    unlockDefault: false,
+  },
 
   // ============================================================
   // TIER 2 — Địa Phẩm (realm 1, trung cấp)
@@ -512,7 +531,7 @@ export const RECIPES = [
     name: 'Công Thức Bảo Bì Đan', tier: 1,
     ingredients: [{ id: 'earth_stone', qty: 2 }, { id: 'spirit_herb', qty: 1 }],
     stoneCost: 22, successChance: 0.70, failEffect: 'nothing',
-    unlockRealm: 0, craftTime: 4,
+    unlockRealm: 0, element: 'tho', craftTime: 4, // L5: tag Thổ cho cân bằng hệ
     desc: 'Dùng thổ tinh tăng cường da thịt.',
   },
   {
@@ -522,6 +541,23 @@ export const RECIPES = [
     stoneCost: 50, successChance: 0.60, failEffect: 'lose_half',
     unlockRealm: 0, craftTime: 6,
     desc: 'Phiên bản nhỏ của Trúc Cơ Đan, dễ luyện hơn.',
+  },
+  // L5: recipe Tier 1 hệ Thủy và Hỏa — chỉ dùng nguyên liệu realm 0
+  {
+    id: 'thuy_tinh_dan', pillId: 'thuy_tinh_dan',
+    name: 'Công Thức Thủy Tinh Đan', tier: 1,
+    ingredients: [{ id: 'moon_dew', qty: 2 }, { id: 'spirit_herb', qty: 2 }],
+    stoneCost: 18, successChance: 0.78, failEffect: 'nothing',
+    unlockRealm: 0, element: 'thuy', craftTime: 4,
+    desc: 'Đan hệ Thủy cơ bản, nguyệt lộ thảo dẫn dắt liệnh khí.',
+  },
+  {
+    id: 'hoa_ky_dan', pillId: 'hoa_ky_dan',
+    name: 'Công Thức Hỏa Khí Đan', tier: 1,
+    ingredients: [{ id: 'fire_essence', qty: 2 }, { id: 'spirit_herb', qty: 2 }],
+    stoneCost: 20, successChance: 0.75, failEffect: 'nothing',
+    unlockRealm: 0, element: 'hoa', craftTime: 4,
+    desc: 'Đan hệ Hỏa cơ bản, hỏa tinh hoa ngưng tụ trong lò đan.',
   },
 
   // ============================================================

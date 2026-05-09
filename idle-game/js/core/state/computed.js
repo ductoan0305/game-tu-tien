@@ -7,6 +7,35 @@ import { calcCongPhapMasteryBonus, calcCongPhapBaseMult, CONG_PHAP_LIST } from '
 import { calcSpiritRateMulti } from '../spirit-root.js';
 import { getLinhThuBuff } from '../linh-thu-engine.js';
 import { getPurityBoostMult } from '../thuong-hoi-engine.js';
+import { NPC_REWARDS } from '../npc-data.js';
+
+// ============================================================
+// L7 — H3: Khẩu Khẩu Bonus Pipeline
+// ============================================================
+
+/**
+ * Đọc G._npcKhauKhau và trả về buff stats của NPC đã được bái sư.
+ * Pipeline thuần: không mutate G, không side effects.
+ * @param {object} G
+ * @returns {{ danBonus: number, atkPct: number, eventRatePct: number }}
+ */
+export function calcKhauKhauBonus(G) {
+  const result = { danBonus: 0, atkPct: 0, eventRatePct: 0 };
+  if (!G._npcKhauKhau) return result;
+
+  for (const [npcId, active] of Object.entries(G._npcKhauKhau)) {
+    if (!active) continue;
+    const reward = NPC_REWARDS[npcId];
+    if (!reward?.tier4_buff) continue;
+    const { statKey, value } = reward.tier4_buff;
+    switch (statKey) {
+      case 'danBonus':      result.danBonus     += value; break;
+      case 'atkPct':        result.atkPct       += value; break;
+      case 'eventRatePct':  result.eventRatePct += value; break;
+    }
+  }
+  return result;
+}
 
 export function calcQiRate(G) {
   const r = REALMS[G.realmIdx];
@@ -38,6 +67,10 @@ export function calcQiRate(G) {
 
   if (G.eventRateBonus > 0)          base *= (1 + G.eventRateBonus / 100);
   if (G.prestige?.bonuses?.ratePct)  base *= (1 + G.prestige.bonuses.ratePct / 100);
+
+  // L7 — H3: Khẩu Khẩu permanent eventRatePct (Lão Ngư Ông +3%)
+  const kkBonus = calcKhauKhauBonus(G);
+  if (kkBonus.eventRatePct > 0) base *= (1 + kkBonus.eventRatePct / 100);
 
   // Linh Thực buff
   if (Array.isArray(G.linhThuc?.activeBuffs)) {
@@ -151,9 +184,11 @@ export function calcAtk(G) {
   const bcAtkPct  = _sumBuff(G.phuChu?.activeBuffs, 'atk_pct');
   const beastAtk  = getLinhThuBuff(G, 'atk_pct');
   const cpAtkPct  = calcCongPhapMasteryBonus(G).atkPct;
+  // L7 — H3: Khẩu Khẩu bonus (Đao Khách Già +5% ATK)
+  const kkAtkPct  = calcKhauKhauBonus(G).atkPct;
 
   const base = (G.atk + eqAtk + ltAtkFlat)
-    * (1 + (G.atkPct + presBonus + eqAtkPct + ltAtkPct + tpAtkPct + bcAtkPct + cpAtkPct) / 100);
+    * (1 + (G.atkPct + presBonus + eqAtkPct + ltAtkPct + tpAtkPct + bcAtkPct + cpAtkPct + kkAtkPct) / 100);
   const buff = G.atkBuff > 0 ? (1 + G.atkBuff / 100) : 1;
 
   return Math.floor(base * buff * (1 + beastAtk / 100));

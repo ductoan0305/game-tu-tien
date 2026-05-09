@@ -225,6 +225,22 @@ export function useItem(G, slotIdx) {
       result = { ok:true, msg:`${item.emoji} ${item.name} — +${fmtNum(gain)} Thuần Độ`, type:'spirit', float:`+${fmtNum(gain)}✨` };
       break;
     }
+    // L7 — H3: Linh Mạch Đồ — xem linh mạch zone hiện tại
+    case 'linh_mach_view': {
+      const phapDiaId = G.phapDia?.currentId || 'pham_dia';
+      const PHAP_DIA_NAMES = {
+        pham_dia: 'Phàm Địa (×0.8)',
+        linh_dia: 'Linh Địa (×1.2)',
+        phuc_dia: 'Phúc Địa (×1.8)',
+        dong_phu: 'Động Phủ (×3.0)',
+        bao_dia:  'Bảo Địa (×5.0)',
+      };
+      const currentNode  = G.worldMap?.currentNodeId || 'thanh_van_son';
+      const phapDiaName  = PHAP_DIA_NAMES[phapDiaId] || phapDiaId;
+      const msg = `🗺 Linh Mạch Đồ: Zone [${currentNode}] — Linh địa: ${phapDiaName}. Ngư ông tiên sinh đã vẽ chính xác từng đường linh mạch ẩn.`;
+      result = { ok:true, msg, type:'legendary', float:'🗺' };
+      break;
+    }
     default:
       result = { ok:true, msg:`Dùng ${item.name}`, type:'jade', float:'' };
   }

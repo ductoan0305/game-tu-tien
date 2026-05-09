@@ -337,6 +337,14 @@ export function createFreshState() {
       unlockedProfessions:   [],    // array profession ids đã mở (S-E)
     },
 
+    // ---- NPC Reputation (L6 — H3) ----
+    // npcReputation: { [npcId]: 0-100 }
+    // _npcRepLastVisit: { [npcId]: gameYear } — năm game lần cuối nhận visit bonus
+    // _npcRepYearlyGain: { [npcId]: { year, amount } } — rate-limit +20/năm game
+    npcReputation:     {},
+    _npcRepLastVisit:  {},
+    _npcRepYearlyGain: {},
+
     // ---- UI / meta ----
     lastSave: Date.now(),
     activeTab: 'cultivate',

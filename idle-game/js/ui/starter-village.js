@@ -5,6 +5,8 @@
 import { STARTER_VILLAGES, _setupDrag, _handleLocAction } from './location-popup.js';
 import { svgZoneLocLabel } from './map-data.js';
 import { getNpcPendingQuest } from '../quest/quest-engine.js';
+// L7 — H3: Secret zone unlock indicator
+import { NPC_REWARDS } from '../core/npc-data.js';
 
 export function rollStarterVillage() {
   return STARTER_VILLAGES[Math.floor(Math.random() * STARTER_VILLAGES.length)];
@@ -130,6 +132,13 @@ function _buildLocNodes(village, G) {
       ? getNpcPendingQuest(G, loc.npcId) !== null
       : false;
 
+    // L7 — H3: Indicator "🗝" khi NPC đã mở khóa secret zone (tier 2 reward)
+    const npcReward = loc.type === 'npc' && loc.npcId ? NPC_REWARDS[loc.npcId] : null;
+    const secretZoneId = npcReward?.tier2_secret?.zoneId;
+    const hasSecretZoneUnlocked = secretZoneId
+      ? (G.flags?.unlockedSecretZones?.[secretZoneId] === true)
+      : false;
+
     return `
       <g class="znode${exitLocked ? ' znode-locked' : ''}" data-lid="${loc.id}"
          data-locked="${exitLocked ? '1' : '0'}">
@@ -144,6 +153,10 @@ function _buildLocNodes(village, G) {
         ${hasQuestIndicator ? `
           <circle cx="${loc.x + 18}" cy="${loc.y - 18}" r="9" fill="#f0d47a" stroke="#1a1506" stroke-width="1.5"/>
           <text x="${loc.x + 18}" y="${loc.y - 14}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a1506">!</text>
+        ` : ''}
+        ${hasSecretZoneUnlocked ? `
+          <circle cx="${loc.x - 18}" cy="${loc.y - 18}" r="8" fill="#2a1a00" stroke="#d4a843" stroke-width="1.2" opacity="0.9"/>
+          <text x="${loc.x - 18}" y="${loc.y - 13}" text-anchor="middle" font-size="9">🗝</text>
         ` : ''}
       </g>`;
   }).join('');

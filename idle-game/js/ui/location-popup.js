@@ -8,11 +8,19 @@ import { moveToPhapDia } from '../core/phap-dia.js';
 import { calcMaxQi, calcQiRate } from '../core/state.js';
 import { getAvailableEnemies } from '../combat/combat-engine.js';
 import { ZONE_DATA } from './map-data.js';
+import { getNpcRepInfo, getNpcRepTier } from '../core/npc-reputation-engine.js';
+// L7 — H3: NPC Reputation Rewards
+import { NPC_REWARDS, checkKhauKhauGate, applyKhauKhauBuff, checkSecretZoneCooldown, markSecretZoneGathered } from '../core/npc-data.js';
+import { ITEMS } from '../core/data.js';
+import { addToInventory } from '../core/systems/inventory.js';
 
-function _isLocLocked(G, loc) {
+// Export để world-map.js dùng (fix missing import bug)
+export function _isLocLocked(G, loc) {
   if (loc.requireSect && G.sectId !== loc.requireSect) return true;
   if (loc.requireRealm && G.realmIdx < loc.requireRealm) return true;
   if (loc.requireFreelance && G.sectId) return true;
+  // L7 — H3: Secret zone — chỉ hiện khi đã unlock từ NPC reputation tier 2
+  if (loc.requireSecret && !G.flags?.unlockedSecretZones?.[loc.requireSecret]) return true;
   return false;
 }
 
@@ -67,6 +75,10 @@ function _getLocActionBtns(G, loc) {
       break;
     case 'gather_zone':
       btns.push(['gather','🌿 Thu Thảo Hiếm'],['explore','🗺 Thám Hiểm']);
+      break;
+    // L7 — H3: Secret gather zone từ NPC reputation
+    case 'secret_gather':
+      btns.push(['secret_gather','🌺 Thu Thập Nguyên Liệu Hiếm']);
       break;
     case 'freelance_quest':
       btns.push(['freelance','📜 Nhận Nhiệm Vụ Du Hiệp']);
@@ -142,6 +154,20 @@ export function _handleLocAction(G, loc, act, actions) {
   // Explore / mystery → Location Popup explore
   if (act === 'explore') {
     _showLocationPopup(G, loc, 'explore', actions);
+    return;
+  }
+  // L7 — H3: Secret gather zone — cooldown check + gather
+  if (act === 'secret_gather') {
+    const zoneId = loc.id;
+    const cd = checkSecretZoneCooldown(G, zoneId);
+    if (!cd.canGather) {
+      if (actions?.toast) actions.toast(`🌺 Bí Cảnh đang hồi phục — còn ${cd.nextRefresh}`, 'warning');
+      return;
+    }
+    // Gather thành công: thông báo và ghi cooldown
+    markSecretZoneGathered(G, zoneId);
+    if (actions?.toast) actions.toast(`🌺 Thu thập bí cảnh thành công! Cooldown 30 ngày thực.`, 'legendary');
+    _showLocationPopup(G, loc, 'gather', actions);
     return;
   }
   // Các action còn lại → switch tab (fallback)
@@ -771,6 +797,31 @@ function _showNpcDialog(G, loc, actions) {
        </div>`
     : '';
 
+  // L6 — H3: Rep tier badge + progress bar
+  const repInfo = getNpcRepInfo(G, npcId);
+  const repBarHtml = (() => {
+    const { rep, tierName, nextThreshold, tierMin } = repInfo;
+    const tierColors = ['#a0a0b0', '#7fc87a', '#4ab8d8', '#d4a843', '#e86c3a'];
+    const tierColor  = tierColors[repInfo.tierIdx] ?? '#a0a0b0';
+    if (nextThreshold === null) {
+      return `<div class="npc-rep-bar-wrap" style="margin-top:4px;font-size:10px">
+        <span style="color:${tierColor};font-weight:700">${tierName}</span>
+        <span style="color:var(--text-dim);margin-left:4px">❆ Đã đạt tột đỉnh</span>
+      </div>`;
+    }
+    const rangeSize = nextThreshold - tierMin;
+    const progress  = rangeSize > 0 ? Math.min(100, ((rep - tierMin) / rangeSize) * 100) : 100;
+    return `<div class="npc-rep-bar-wrap" style="margin-top:4px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px">
+        <span style="color:${tierColor};font-weight:700">${tierName}</span>
+        <span style="color:var(--text-dim)">${rep}/${nextThreshold}</span>
+      </div>
+      <div style="height:3px;background:#1a1a2e;border-radius:2px;margin-top:2px;overflow:hidden">
+        <div style="height:100%;width:${progress.toFixed(1)}%;background:${tierColor};border-radius:2px;transition:width 0.3s"></div>
+      </div>
+    </div>`;
+  })();
+
   // Nếu NPC có quest → greeting ưu tiên đề cập đến việc muốn nhờ
   const questGreeting = pendingQuest
     ? greeting + '<br><br><em style="color:#f0d47a">「Ta có việc muốn nhờ ngươi...」</em>'
@@ -783,6 +834,66 @@ function _showNpcDialog(G, loc, actions) {
        </button>`
     : '';
 
+  // L7 — H3: Tier-based reputation reward buttons
+  const repTierBtns = (() => {
+    const rewards = NPC_REWARDS[npcId];
+    if (!rewards) return '';
+    const repTier  = repInfo.tierIdx;  // 0-4
+    const btns = [];
+
+    // Tier 2 (rep ≥ 50, Tin Cậy): Mở vùng đất bí mật
+    if (repTier >= 2 && rewards.tier2_secret) {
+      const { zoneId, label, hint } = rewards.tier2_secret;
+      const alreadyUnlocked = G.flags?.unlockedSecretZones?.[zoneId];
+      if (alreadyUnlocked) {
+        btns.push(`<button class="npc-opt-btn" data-action="rep_secret_info" data-zoneid="${zoneId}" style="opacity:0.65" title="${hint}">
+          ✅ ${label} — Đã mở khóa
+        </button>`);
+      } else {
+        btns.push(`<button class="npc-opt-btn npc-opt-secret" data-action="unlock_secret_zone" data-zoneid="${zoneId}" title="${hint}">
+          🗝 Hỏi về vùng đất bí mật: ${label}
+        </button>`);
+      }
+    }
+
+    // Tier 3 (rep ≥ 80, Tâm Giao): Nhận quà — 1 lần
+    if (repTier >= 3 && rewards.tier3_gift) {
+      const { label, emoji: giftEmoji, once } = rewards.tier3_gift;
+      const alreadyClaimed = G._npcGiftClaimed?.[npcId];
+      if (!alreadyClaimed) {
+        btns.push(`<button class="npc-opt-btn npc-opt-gift" data-action="claim_npc_gift" title="Quà hiếm từ ${name} — chỉ tặng 1 lần">
+          ${giftEmoji} Nhận quà từ ${name}: ${label}
+        </button>`);
+      } else {
+        btns.push(`<button class="npc-opt-btn" style="opacity:0.55" disabled title="Đã nhận">
+          ✅ ${giftEmoji} ${label} — Đã nhận
+        </button>`);
+      }
+    }
+
+    // Tier 4 (rep = 100, Khẩu Khẩu): Bái sư
+    if (repTier >= 4 && rewards.tier4_buff) {
+      const { label: buffLabel, desc: buffDesc } = rewards.tier4_buff;
+      const alreadyBai    = G._npcKhauKhau?.[npcId];
+      const kkGate        = checkKhauKhauGate(G, npcId);
+      if (alreadyBai) {
+        btns.push(`<button class="npc-opt-btn" style="opacity:0.65" disabled title="${buffDesc}">
+          ✨ ${buffLabel} — Đã bái sư
+        </button>`);
+      } else if (!kkGate.ok) {
+        btns.push(`<button class="npc-opt-btn" style="opacity:0.45" disabled title="${kkGate.msg}">
+          🚫 Bái Sư Khẩu Khẩu — ${kkGate.msg}
+        </button>`);
+      } else {
+        btns.push(`<button class="npc-opt-btn npc-opt-khaukhau" data-action="bai_su_khau_khau" title="${buffDesc}">
+          🙏 Bái Sư Khẩu Khẩu — ${buffLabel}
+        </button>`);
+      }
+    }
+
+    return btns.join('');
+  })();
+
   const existing = document.getElementById('modal-npc-dialog');
   if (existing) existing.remove();
 
@@ -793,10 +904,11 @@ function _showNpcDialog(G, loc, actions) {
     <div class="modal-box npc-dialog-box">
       <div class="npc-dialog-header">
         <span class="npc-dialog-emoji">${emoji}</span>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="npc-dialog-name">${name}</div>
           <div class="npc-dialog-role" style="font-size:10px;color:var(--text-dim)">${loc.desc||''}</div>
           ${dvBadge}
+          ${repBarHtml}
         </div>
       </div>
       <div class="npc-dialog-text" id="npc-dialog-text">
@@ -808,6 +920,7 @@ function _showNpcDialog(G, loc, actions) {
           <button class="npc-opt-btn" data-action="${opt.action}" title="${opt.hint||''}">
             ${opt.label}
           </button>`).join('')}
+        ${repTierBtns}
         <button class="npc-opt-btn npc-opt-close" data-action="close">🚪 Tạm Biệt</button>
       </div>
     </div>`;
@@ -857,36 +970,98 @@ function _showNpcDialog(G, loc, actions) {
         return;
       }
 
-      if (act === 'learn_recipe') {
-        if (!G.alchemy) G.alchemy = { knownRecipes:[], ingredients:{}, furnaceLevel:0, totalCrafted:0, craftsCount:0, successStreak:0 };
-        if (!G.alchemy.knownRecipes.includes('basic_qi_pill')) {
-          G.alchemy.knownRecipes.push('basic_qi_pill');
-          if (actions.toast) actions.toast('📜 Học được Công Thức Tụ Linh Đan!', 'jade');
-        } else {
-          if (actions.toast) actions.toast('Ngươi đã biết công thức này rồi.', '');
-        }
-        modal.remove();
+      // L7 — H3: Secret zone info (already unlocked)
+      if (act === 'rep_secret_info') {
+        const rewards = NPC_REWARDS[npcId];
+        const { label, hint } = rewards?.tier2_secret || {};
+        document.getElementById('npc-dialog-text').innerHTML =
+          `"${label} đã được mở khóa. ${hint || ''} Đến đó trên bản đồ thế giới để thu thập nguyên liệu."`;
+        modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
         return;
       }
 
-      if (act === 'gather') {
-        modal.remove();
-        _showLocationPopup(G, loc, 'gather', actions);
+      // L7 — H3: Mở khóa secret zone (Tier 2, rep ≥ 50)
+      if (act === 'unlock_secret_zone') {
+        const rewards = NPC_REWARDS[npcId];
+        const { zoneId, label, hint } = rewards?.tier2_secret || {};
+        if (!zoneId) return;
+        if (!G.flags) G.flags = {};
+        if (!G.flags.unlockedSecretZones) G.flags.unlockedSecretZones = {};
+        G.flags.unlockedSecretZones[zoneId] = true;
+        document.getElementById('npc-dialog-text').innerHTML =
+          `"Tốt lắm tiểu hữu, ta đã tin tưởng ngươi. ${hint} — đường vào đã được mở."<br><br>` +
+          `<span style="color:#d4a843;font-size:11px">🗝 Đã mở khóa: <strong>${label}</strong> — xuất hiện trên bản đồ thế giới.</span>`;
+        modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
+        if (actions?.toast) actions.toast(`🗝 Mở khóa bí cảnh: ${label}`, 'legendary');
         return;
       }
-      if (act === 'combat') {
-        modal.remove();
-        _showLocationPopup(G, loc, 'combat', actions);
+
+      // L7 — H3: Nhận quà từ NPC (Tier 3, rep ≥ 80, 1 lần)
+      if (act === 'claim_npc_gift') {
+        const rewards = NPC_REWARDS[npcId];
+        const gift = rewards?.tier3_gift;
+        if (!gift) return;
+        if (!G._npcGiftClaimed) G._npcGiftClaimed = {};
+        if (G._npcGiftClaimed[npcId]) {
+          document.getElementById('npc-dialog-text').textContent = '"Ta đã trao tất cả những gì có thể trao rồi."';
+          return;
+        }
+        // Trao vật phẩm
+        let giftMsg = '';
+        if (gift.type === 'inventory') {
+          const item = ITEMS.find(i => i.id === gift.itemId);
+          if (item) { addToInventory(G, item, gift.qty ?? 1); giftMsg = `${gift.emoji} ${gift.label} ×${gift.qty}`; }
+        } else if (gift.type === 'special') {
+          // Linh Mạch Đồ — synthetic item
+          const item = ITEMS.find(i => i.id === gift.itemId)
+            || { id: gift.itemId, name: gift.label, emoji: gift.emoji };
+          addToInventory(G, item, gift.qty ?? 1);
+          giftMsg = `${gift.emoji} ${gift.label} ×${gift.qty}`;
+        } else if (gift.type === 'ingredient') {
+          if (!G.alchemy) G.alchemy = { furnaceLevel:0, knownRecipes:[], ingredients:{}, craftsCount:0, successStreak:0 };
+          if (!G.alchemy.ingredients) G.alchemy.ingredients = {};
+          G.alchemy.ingredients[gift.itemId] = (G.alchemy.ingredients[gift.itemId] || 0) + (gift.qty ?? 1);
+          giftMsg = `${gift.emoji} ${gift.label} ×${gift.qty} (vào kho vật liệu trận)`;
+        }
+        G._npcGiftClaimed[npcId] = true;
+        document.getElementById('npc-dialog-text').innerHTML =
+          `"Ngươi xứng đáng được nhận thứ này. Hãy dùng tốt."<br><br>` +
+          `<span style="color:#d4a843;font-size:11px">🎁 Nhận được: <strong>${giftMsg}</strong></span>`;
+        modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
+        if (actions?.toast) actions.toast(`🎁 Nhận quà: ${giftMsg}`, 'legendary');
         return;
       }
-      if (act === 'dungeon') {
-        modal.remove();
-        actions.switchTab('dungeon');
-        return;
-      }
-      if (act === 'cultivate') {
-        modal.remove();
-        _showLocationPopup(G, loc, 'cultivate', actions);
+
+      // L7 — H3: Bái sư khẩu khẩu (Tier 4, rep = 100)
+      if (act === 'bai_su_khau_khau') {
+        const rewards = NPC_REWARDS[npcId];
+        const buff = rewards?.tier4_buff;
+        if (!buff) return;
+        const gate = checkKhauKhauGate(G, npcId);
+        if (!gate.ok) {
+          if (actions?.toast) actions.toast(gate.msg, 'danger');
+          return;
+        }
+        // Hiện confirm dialog
+        document.getElementById('npc-dialog-text').innerHTML =
+          `"Ngươi thực sự muốn bái ta làm sư phụ khẩu khẩu? Đây là lựa chọn vĩnh viễn — ngươi sẽ không thể bái sư NPC khác trong lần tu tiên này."<br><br>` +
+          `<span style="color:#e86c3a;font-size:11px">⚠ Buff vĩnh viễn: ${buff.desc}</span>`;
+        modal.querySelectorAll('.npc-opt-btn:not(.npc-opt-close)').forEach(b => b.remove());
+        // Thêm nút confirm
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'npc-opt-btn npc-opt-khaukhau';
+        confirmBtn.dataset.action = 'confirm_khau_khau';
+        confirmBtn.textContent = '🙏 Xác Nhận Bái Sư — Không Thể Đổi';
+        document.getElementById('npc-dialog-opts').appendChild(confirmBtn);
+        // Listener cho nút confirm
+        confirmBtn.addEventListener('click', () => {
+          applyKhauKhauBuff(G, npcId);
+          document.getElementById('npc-dialog-text').innerHTML =
+            `"Tốt. Từ nay ngươi là đệ tử khẩu khẩu của ta."<br><br>` +
+            `<span style="color:#e86c3a;font-size:11px">❆ Buff đã kích hoạt: ${buff.label}</span>`;
+          confirmBtn.remove();
+          if (actions?.toast) actions.toast(`🙏 Bái sư thành công! ${buff.label}`, 'legendary');
+        });
         return;
       }
 

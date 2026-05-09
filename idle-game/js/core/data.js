@@ -455,6 +455,15 @@ export const ITEMS = [
   { id:'bep_lt_3', name:'Bếp Ngân Linh',   nameCN:'銀靈廚', emoji:'🍳', cost:1400, costTier:'💎 Hạ',    rarity:'cực hiếm',    unlockRealm:1, type:'kitchen', val:3, desc:'Bếp ngân linh điều tiết lửa hoàn hảo, nấu linh thực cao cấp.',effect:'+10% tỷ lệ, 30 lần (cần Bếp Cấp 2)' },
   { id:'bep_lt_4', name:'Bếp Ngọc Thiên',  nameCN:'玉天廚', emoji:'🍳', cost:3200, costTier:'💠 Trung', rarity:'huyền thoại', unlockRealm:2, type:'kitchen', val:4, desc:'Bếp ngọc từ thiên địa, lửa linh thiêng không tắt.',          effect:'+18% tỷ lệ, 45 lần (cần Bếp Cấp 3)' },
   { id:'bep_lt_5', name:'Bếp Tiên Hỏa',   nameCN:'仙火廚', emoji:'🍳', cost:8500, costTier:'💠 Trung', rarity:'huyền thoại', unlockRealm:3, type:'kitchen', val:5, desc:'Bếp Tiên Hỏa truyền thuyết — nấu tiên thực không có đối thủ.', effect:'+28% tỷ lệ, 70 lần (cần Bếp Cấp 4)' },
+
+  // ---- L7 — H3: NPC Reputation Rewards — Vật Phẩm Độc Quyền ----
+  // Không bán trong shop — chỉ nhận từ NPC tier3 (Tâm Giao, rep ≥ 80), 1 lần/run.
+  { id: 'linh_mach_do', name: 'Linh Mạch Đồ', nameCN: '靈脈圖', emoji: '🗺',
+    cost: 0, costTier: '', rarity: 'huyền thoại', unlockRealm: 0,
+    type: 'consume', action: 'linh_mach_view',
+    desc: 'Bản đồ linh mạch do Lão Ngư Ông tự tay vẽ qua nhiều năm khám phá. Xem được thông tin linh mạch zone hiện tại một lần duy nhất.',
+    effect: 'Xem linh mạch zone hiện tại (1 lần, tiêu hao sau khi dùng)',
+    shopCategory: '' },
 ];
 
 export const WORLD_EVENTS = [

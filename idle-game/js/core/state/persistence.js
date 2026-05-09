@@ -60,6 +60,7 @@ export function loadGame() {
     _migrateTutorial(merged);
     _migrateFlags(merged);
     _migrateBreakthroughCooldown(merged);
+    _migrateNpcReputation(merged);
 
     console.log('[loadGame] Loaded successfully, setupDone:', merged.setupDone);
     return merged;
@@ -399,4 +400,15 @@ function _migrateTutorial(m) {
   if (p.attemptedBreakthrough === undefined) p.attemptedBreakthrough = false;
   if (p.openedPhapdiaTab === undefined) p.openedPhapdiaTab = false;
   if (p.openedQuestTab === undefined) p.openedQuestTab = false;
+}
+
+// ============================================================
+// L6 — H3: NPC Reputation migration cho save cũ
+// ============================================================
+function _migrateNpcReputation(m) {
+  if (!m.npcReputation     || typeof m.npcReputation     !== 'object') m.npcReputation     = {};
+  if (!m._npcRepLastVisit  || typeof m._npcRepLastVisit  !== 'object') m._npcRepLastVisit  = {};
+  if (!m._npcRepYearlyGain || typeof m._npcRepYearlyGain !== 'object') m._npcRepYearlyGain = {};
+}
+ct') m._npcRepYearlyGain = {};
 }

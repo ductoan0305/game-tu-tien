@@ -54,6 +54,11 @@ export const ZONE_DATA = {
       { id:'linh_phong_dinh', name:'Linh Phong Đỉnh', emoji:'🗻',
         x:260, y:60, type:'cultivate_spot', requireRealm:1, entryCost:200,
         desc:'Đỉnh núi có linh khí đậm đặc. Phúc Địa ×1.8.', phapDia:'phuc_dia' },
+      // L7 — H3: Secret Zone — Lão Dược Sư tier 2 reward
+      { id:'duoc_thao_bi_canh_thanh_phong', name:'Dược Thảo Bí Cảnh', emoji:'🌺',
+        x:390, y:310, type:'secret_gather',
+        requireSecret:'duoc_thao_bi_canh_thanh_phong',
+        desc:'Vùng dược thảo hiếm ẩn sau Thanh Vân Sơn. Nguyên liệu cao cấp, có cooldown 30 ngày thực.' },
     ]
   },
   van_linh_thi: {
@@ -112,6 +117,11 @@ export const ZONE_DATA = {
       { id:'duoc_su_ldc', name:'Già Dược Sư', emoji:'🌸', npcId:'duoc_su_ldc',
         x:330, y:300, type:'npc',
         desc:'Nữ dược sư ẩn cư trong cốc. Thông thạo linh thảo hiếm.' },
+      // L7 — H3: Secret Zone — Lão Ngư Ông tier 2 reward
+      { id:'linh_ngu_dam_lam_hai', name:'Linh Ngư Đầm', emoji:'🐟',
+        x:90, y:155, type:'secret_gather',
+        requireSecret:'linh_ngu_dam_lam_hai',
+        desc:'Đầm linh ngư ẩn sâu gần Linh Dược Cốc. Nguyên liệu thủy hệ hiếm, có cooldown 30 ngày thực.' },
     ]
   },
   thien_kiep_dia: {
@@ -133,6 +143,11 @@ export const ZONE_DATA = {
       { id:'tien_nhan_tkd', name:'Di Dân Tiền Nhân', emoji:'👁', npcId:'di_dan_tien_nhan',
         x:120, y:200, type:'npc', requireRealm:2,
         desc:'Bóng hình mờ ảo giữa lôi trận. Không rõ còn sống hay đã chết.' },
+      // L7 — H3: Secret Zone — Đao Khách Già tier 2 reward
+      { id:'co_lo_phe_tich_hoa_diem', name:'Cổ Lò Phế Tích', emoji:'🔨',
+        x:420, y:270, type:'secret_gather',
+        requireSecret:'co_lo_phe_tich_hoa_diem',
+        desc:'Phế tích lò rèn cổ đại chứa nguyên liệu rèn quý. Cooldown 30 ngày thực.' },
     ]
   },
   dia_phu_mon: {

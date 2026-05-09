@@ -12,6 +12,7 @@ import {
   RECIPE_AUTO_UNLOCK, RECIPE_LEARN_SOURCES,
 } from './alchemy-data.js';
 import { calcMaxHp, calcMaxQi } from '../core/state.js';
+import { calcKhauKhauBonus } from '../core/state/computed.js';
 import { randInt, bus } from '../utils/helpers.js';
 
 // ============================================================
@@ -38,7 +39,9 @@ function calcSuccessChance(G, recipe) {
   let chance = recipe.successChance;
   chance += (rank.bonus || 0) / 100;
   chance += Math.max(0, (G.alchemy?.furnaceLevel || 0) - 1) * 0.05;
-  chance += (G.danBonus || 0) / 100 * 0.3;
+  // danBonus: từ passive tree + L7 H3 khẩu khẩu (Lão Dược Sư +5)
+  const kkDanBonus = calcKhauKhauBonus(G).danBonus;
+  chance += ((G.danBonus || 0) + kkDanBonus) / 100 * 0.3;
   chance += Math.min((G.alchemy?.successStreak || 0) * 0.02, 0.10);
   if (recipe.element && G.spiritData?.mainElement === recipe.element) chance += 0.08;
 

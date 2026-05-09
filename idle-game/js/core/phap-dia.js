@@ -297,6 +297,45 @@ export const CONG_PHAP_LIST = [
   },
 
   // ══════════════════════════════════════════
+  // HẠ PHẨM TÁN TU — Kim & Hỏa (mua tại cửa hàng)
+  // L5 fix S-LK1: tán tu Kim/Hỏa LK trước đây không có công pháp Hạ phẩm match hệ
+  // ══════════════════════════════════════════
+  {
+    id: 'kim_quang_jue',
+    name: 'Kim Quang Quyết',
+    emoji: '⚔',
+    grade: 1, gradeName: 'Hạ Phẩm',
+    element: 'kim',
+    stages: 9, realmRange: [0, 0],
+    acquireType: 'buy',
+    cost: 1100,
+    sectId: null,
+    desc: 'Hệ Kim. Kiếm khí sơ khai, rèn luyện ý chí cứng rắn. Tán tu Kim linh căn phù hợp.',
+    lore: 'Bí quyết lưu truyền trong giới thương nhân buôn pháp bảo — tàm tạm nhưng đủ dùng hết LK.',
+    buffs: (mastery, match) => ({
+      atkPct:  Math.floor(mastery * (match ? 0.55 : 0.40)), // max 55%/40% ATK
+      ratePct: Math.floor(mastery * 0.15),                  // max 15% tốc tu
+    }),
+  },
+  {
+    id: 'hoa_diem_quyet',
+    name: 'Hỏa Diệm Quyết',
+    emoji: '🔥',
+    grade: 1, gradeName: 'Hạ Phẩm',
+    element: 'huo',
+    stages: 9, realmRange: [0, 0],
+    acquireType: 'buy',
+    cost: 1050,
+    sectId: null,
+    desc: 'Hệ Hỏa. Nội công đốt linh khí như lửa — luyện đan tốt hơn, công kích mạnh hơn. Tán tu phù hợp.',
+    lore: 'Học lỏm từ một đan sư phế đồ — không hoàn chỉnh nhưng đủ để tán tu Hỏa linh dùng hết LK.',
+    buffs: (mastery, match) => ({
+      ratePct:  Math.floor(mastery * 0.30),                   // max 30% tốc tu
+      danBonus: Math.floor(mastery * (match ? 0.45 : 0.25)), // max 45%/25% luyện đan
+    }),
+  },
+
+  // ══════════════════════════════════════════
   // TÔNG MÔN — nhận khi gia nhập
   // ══════════════════════════════════════════
   {

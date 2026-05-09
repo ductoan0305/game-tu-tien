@@ -892,6 +892,110 @@
   0%,100% { box-shadow: 0 0 0 0 rgba(86,196,106,0.25); }
   50%      { box-shadow: 0 0 10px 2px rgba(86,196,106,0.15); }
 }
+
+/* ============================================================
+   THUẦN ĐỘ BAR — 5 vùng màu (T9)
+   Wrapper: .tlp-purity-bar-wrap
+   Fill:    .tlp-purity-fill  +  .tlp-purity-zone-1…5
+   Marker:  .tlp-purity-marker
+   ============================================================ */
+
+.tlp-purity-bar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 2px 0;
+}
+.tlp-purity-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--text-dim);
+  letter-spacing: 0.2px;
+}
+.tlp-purity-bar-wrap {
+  position: relative;
+  height: 9px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 5px;
+  overflow: visible;  /* markers có thể nhô ra trên */
+}
+.tlp-purity-bar-inner {
+  position: relative;
+  height: 100%;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.tlp-purity-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 5px;
+  transition: width 0.4s ease, background 0.6s ease, box-shadow 0.6s ease;
+}
+
+/* Zone 1 — 0-50%: xám đậm (chưa đủ điều kiện) */
+.tlp-purity-zone-1 {
+  background: #4a4a55;
+}
+/* Zone 2 — 50-75%: vàng nhạt (cơ hội thấp) */
+.tlp-purity-zone-2 {
+  background: linear-gradient(90deg, #8a7a40, #c9a84c);
+}
+/* Zone 3 — 75-100%: xanh dương (chuẩn) */
+.tlp-purity-zone-3 {
+  background: linear-gradient(90deg, #3a6abf, #5b9ef5);
+}
+/* Zone 4 — 100-200%: xanh ngọc + glow (vượt ngưỡng) */
+.tlp-purity-zone-4 {
+  background: linear-gradient(90deg, #1a8a7a, #2ec4a8);
+  box-shadow: 0 0 6px rgba(46,196,168,0.5), inset 0 0 4px rgba(255,255,255,0.15);
+  animation: tlp-zone4-glow 2s ease-in-out infinite;
+}
+@keyframes tlp-zone4-glow {
+  0%,100% { box-shadow: 0 0 5px rgba(46,196,168,0.4); }
+  50%      { box-shadow: 0 0 12px rgba(46,196,168,0.7), 0 0 4px rgba(46,196,168,0.9); }
+}
+/* Zone 5 — >200%: vàng kim + glow mạnh (đỉnh cao) */
+.tlp-purity-zone-5 {
+  background: linear-gradient(90deg, #b8860b, #f5c842, #ffe066);
+  box-shadow: 0 0 8px rgba(245,200,66,0.6), inset 0 0 5px rgba(255,255,255,0.2);
+  animation: tlp-zone5-glow 1.5s ease-in-out infinite;
+}
+@keyframes tlp-zone5-glow {
+  0%,100% { box-shadow: 0 0 7px rgba(245,200,66,0.5); }
+  50%      { box-shadow: 0 0 16px rgba(245,200,66,0.85), 0 0 6px rgba(255,230,80,1); }
+}
+
+/* Markers — vạch dọc absolute tại các mốc % */
+.tlp-purity-marker {
+  position: absolute;
+  top: -5px;
+  width: 1px;
+  height: calc(100% + 5px);
+  background: rgba(255,255,255,0.45);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.tlp-purity-marker-label {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+/* Marker tại threshold (100%) — nổi bật hơn */
+.tlp-purity-marker.threshold {
+  background: rgba(255,255,255,0.75);
+  width: 2px;
+}
+.tlp-purity-marker.threshold .tlp-purity-marker-label {
+  color: rgba(255,255,255,0.85);
+  font-weight: 700;
+}
 /* ============================================================
    TU LUYỆN POPUP (S-H4)
    Class pm-tu-luyen — floating popup, dùng PopupManager

@@ -1,5 +1,5 @@
 # TU TIÊN IDLE GAME — HANDOFF DOCUMENT
-**Cập nhật lần cuối:** Session P5 — NPC Dialogs: Các Zone Chính (2026-05-08)
+**Cập nhật lần cuối:** Session L3 — Visual marker Thuần Độ bar T9 (2026-05-09)
 **Version:** v12 | SAVE_KEY: `tutien_v10` | SAVE_VERSION: `11`
 
 ---
@@ -396,6 +396,15 @@ G = {
   totalTime, totalQuestsCompleted, lastSave,
   activeTab, _tickCount, _sessionStartTime,
   _breakthroughDanduoc:1.0, _breakthroughCoDuyenBonus:0,
+  // L6 — H3: NPC Reputation
+  npcReputation: { [npcId]: 0-100 },    // thiện cảm per-NPC
+  _npcRepLastVisit: { [npcId]: year },  // năm game lần cuối nhận visit +1
+  _npcRepYearlyGain: { [npcId]: { year, amount } }, // rate-limit +20/năm
+  // L7 — H3: NPC Reputation Rewards
+  flags: { unlockedSecretZones: { [zoneId]: true } }, // bí cảnh đã mở (Tier 2)
+  _npcGiftClaimed: { [npcId]: true },   // quà Tier 3 đã nhận (1 lần / run)
+  _npcKhauKhau: { [npcId]: true },      // bái sư khẩu khẩu (1 NPC / run)
+  _secretZoneCooldown: { [zoneId]: { lastRefresh: ms } }, // cooldown 30 ngày thực
 }
 ```
 
@@ -863,8 +872,9 @@ Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và co
 
 // ---- Circular imports đã giải quyết:
 // map-data.js ← không import gì
-// world-map.js ← map-data.js + location-popup.js
+// world-map.js ← map-data.js + location-popup.js (_isLocLocked export)
 // location-popup.js ← map-data.js (KHÔNG phải world-map.js)
+// npc-data.js ← không import gì (pure data + helpers)
 // danh-vong.js — độc lập hoàn toàn
 // thuong-hoi-engine.js — chỉ import bus
 
@@ -893,6 +903,33 @@ Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và co
 
 // window._thuongHoiData — exposed từ main.js wireEvents()
 // window._titleData — exposed từ main.js wireEvents()
+
+// NPC Reputation Engine (L6 — H3):
+// js/core/npc-reputation-engine.js — độc lập, chỉ import bus
+// getNpcRep(G, npcId) → 0-100
+// gainNpcRep(G, npcId, amount) → cap 100, rate-limit +20/năm game
+// getNpcRepTier(G, npcId) → 0-4 | getRepTierName(tier) → string
+// getNpcRepInfo(G, npcId) → { rep, tierIdx, tierName, nextThreshold, tierMin }
+// tickNpcRepVisit(G) — gọi từ gameTick, +1/5 năm game nếu ở zone NPC
+// Tiers: 0=Lạ Mặt(0-24) | 1=Quen Mặt(25-49) | 2=Tin Cậy(50-79) | 3=Tâm Giao(80-99) | 4=Khẩu Khẩu(100)
+// Gain sources: quest complete +10; visit periodic +1/5yr; cap +20/năm game/NPC
+
+// NPC Reputation Rewards (L7 — H3): ✅ DONE
+// js/core/npc-data.js — NPC_REWARDS data + helper functions
+// NPC_REWARDS[npcId]: { tier2_secret, tier3_gift, tier4_buff }
+//   tier2_secret: { zoneId, label, hint } — mở bí cảnh trên world map
+//   tier3_gift:   { type, itemId, qty, label, emoji, once } — quà 1 lần
+//   tier4_buff:   { statKey, value, label, desc } — buff vĩnh viễn
+// checkSecretZoneCooldown(G, zoneId) → { canGather, msLeft, nextRefresh }
+// markSecretZoneGathered(G, zoneId) — set _secretZoneCooldown[zoneId]
+// checkKhauKhauGate(G, npcId) → { ok, msg } — chặn nếu đã bái sư NPC khác
+// applyKhauKhauBuff(G, npcId) — set _npcKhauKhau[npcId] = true
+// SECRET_ZONE_REFRESH_MS = 30 ngày thực
+// NPCs có đủ reward: lao_duoc_su, lao_ngu_ong, dao_khach_gia
+// calcKhauKhauBonus(G) — trong computed.js: { danBonus, atkPct, eventRatePct }
+// Secret zones: duoc_thao_bi_canh_thanh_phong (thanh_van_son)
+//               linh_ngu_dam_lam_hai (linh_duoc_coc)
+//               co_lo_phe_tich_hoa_diem (thien_kiep_dia)
 ```
 
 ---
@@ -924,6 +961,7 @@ ma_dao:opened, ma_dao:exposed, ma_dao:purified, ma_dao:tau_hoa_permanent
 phapdia:changed, phapdia:expired
 lifespan:warning, lifespan:breakthrough
 game:over, map:moved, tick:meditate
+npc:rep_gained, npc:rep_tier_up
 ```
 
 ---
@@ -942,6 +980,8 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 ### ⬜ Content
 - ~~**NPC dialog cho zone chính** — Vạn Linh Thị, Hắc Phong Lâm, Địa Phủ Môn, Ẩn Long Động, Linh Dược Cốc~~ ✅ **DONE (P5)** — 5 zone có đủ 3 lore entry/NPC; thêm 1 lore nữa cho Thiên Kiếp Địa nếu cần
   File: `js/ui/location-popup.js` → thêm vào `NPC_DIALOGS`
+- ~~**NPC Reputation Rewards (L7 — H3)**~~ ✅ **DONE** — 3-tier rewards cho lao_duoc_su / lao_ngu_ong / dao_khach_gia: Tier2 mở bí cảnh, Tier3 quà 1 lần, Tier4 buff khẩu khẩu vĩnh viễn (1 NPC/run)
+  Files: `js/core/npc-data.js` (NEW), `js/ui/location-popup.js`, `js/ui/map-data.js`, `js/ui/world-map.js`, `js/ui/starter-village.js`, `js/core/state/computed.js`, `js/alchemy/alchemy-engine.js`, `js/core/data.js`, `js/core/systems/inventory.js`
 - **Cơ Duyên events TC/KĐ/NA** — hiện 52 events hầu hết cho LK
   File: `js/core/co-duyen.js`
 - **Công pháp bổ sung** — cần thêm nhiều loại phong phú hơn cho tán tu
@@ -959,6 +999,7 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
 - ~~**Notification clickable**~~ ✅ Fix S-Phase2 #43 — dispatch `tab:open-popup` event
 - ~~**Thông báo chớp liên tục**~~ ✅ Fix S-Phase1 #40 — stable `key` field
 - ~~**Popup z-index / focus**~~ ✅ Fix S-Phase2 #44 — `_zCounter` stacking trong PopupManager
+- ~~**Visual marker Thuần Độ bar**~~ ✅ **DONE (L3/T9)** — 5 vùng màu (xám/vàng nhạt/xanh dương/xanh ngọc+glow/vàng kim+glow) + marker vạch dọc tại 50/75/100/200% + tooltip F_purity; file: `js/ui/tu-luyen-popup.js`, `css/systems.css`
 
 ### ⬜ Kỹ thuật
 - **Balance playtesting** — TC/KĐ/NA purityThresholds chưa calibrate

@@ -9,7 +9,7 @@ import { moveToPhapDia } from '../core/phap-dia.js';
 import { calcMaxQi, calcQiRate, calcPurityThreshold, calcKienCoCeiling } from '../core/state.js';
 import { getAvailableEnemies } from '../combat/combat-engine.js';
 import { checkAmbush, getAvailableTargets, robTarget, getNghiepLucPenalty } from '../core/kiep-tu-engine.js';
-import { _showLocationPopup, _setupDrag } from './location-popup.js';
+import { _showLocationPopup, _setupDrag, _isLocLocked } from './location-popup.js';
 import PopupManager from './popup-manager.js';
 import { renderStarterVillage, rollStarterVillage } from './starter-village.js';
 // Re-export để backward compat (các file khác import từ world-map.js)
@@ -619,6 +619,7 @@ function renderTier2(G, actions, zoneId) {
         ${svgZoneLocLabel(loc.name, loc.x, loc.y+40, { fill: locked?'#555':'#ccc', fontSize: 8.5 })}
         ${locked&&loc.requireSect?`<text x="${loc.x}" y="${loc.y+54}" text-anchor="middle" font-size="7.5" fill="#555">🔒 Nội môn</text>`:''}
         ${locked&&loc.requireRealm?`<text x="${loc.x}" y="${loc.y+54}" text-anchor="middle" font-size="7.5" fill="#555">🔒 ${REALM_NAMES[loc.requireRealm]}</text>`:''}
+        ${locked&&loc.requireSecret?`<text x="${loc.x}" y="${loc.y+54}" text-anchor="middle" font-size="7.5" fill="#6a5000">🔒 Bí Cảnh</text>`:''}
       </g>`;
   }).join('');
 

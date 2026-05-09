@@ -108,6 +108,16 @@ export const ARRAY_RECIPES = [
     desc:'Hồi phục sinh cơ. +15 HP/giây. Tiêu 7💎/phút.',
     lore:'Trận pháp của y tu sĩ chuyên hồi phục.',
   },
+  // L5: ATK active Tier 1 — tán tu Kim/Hỏa LK thiếu trận buff sát thương sơ cấp
+  {
+    id:'array_sword_qi',     name:'Kiếm Khí Linh Trận',    emoji:'⚔', category:'active',  tier:1,
+    requireRealm:0, requireRank:0,
+    materials:[{id:'tran_ky',qty:2}],
+    stoneCostOnce:65, duration:600,
+    effect:{ type:'atk_pct', value:18 },
+    desc:'Kiếm khí ngưng tụ. +18% ATK trong 10 phút. Tốn 65💎.',
+    lore:'Trận pháp đơn giản nhất để tăng sát thương — phù hợp Kim/Hỏa linh căn LK.',
+  },
 
   // ══════════════════════════════════════════
   // TIER 2 — Trung Cấp Trận (realm 0, rank 1)

@@ -46,7 +46,8 @@ export const PUPPET_RECIPES = [
   {
     id:'craft_iron_puppet',       name:'Chế Thiết Nhân Chiến',  emoji:'⚙', tier:1,
     resultItem:'iron_puppet',     qty:1,
-    materials:[{id:'earth_stone',qty:8},{id:'serpent_scale',qty:3},{id:'wolf_fang',qty:2}],
+    // L5 fix: bỏ serpent_scale (ice_mountain realm 1) → earth_stone+wolf_fang+demon_core_1 (realm 0)
+    materials:[{id:'earth_stone',qty:8},{id:'wolf_fang',qty:5},{id:'demon_core_1',qty:1}],
     stoneCost:120, successChance:0.85, requireRealm:0, requireRank:0,
     desc:'Tạo 1 Thiết Nhân Chiến. ATK cao hơn Đồng Nhân.',
   },
@@ -78,35 +79,40 @@ export const PUPPET_RECIPES = [
   {
     id:'craft_silver_blade',      name:'Chế Bạc Kiếm Khối',    emoji:'🔧', tier:2,
     resultItem:'silver_blade_puppet', qty:1,
-    materials:[{id:'serpent_scale',qty:5},{id:'lightning_core',qty:2},{id:'wolf_fang',qty:5}],
+    // L5 fix: bỏ serpent_scale+lightning_core (realm 1+2) → wolf_fang+demon_core_1+fire_essence (realm 0)
+    materials:[{id:'wolf_fang',qty:8},{id:'demon_core_1',qty:2},{id:'fire_essence',qty:4}],
     stoneCost:350, successChance:0.75, requireRealm:0, requireRank:1,
     desc:'Tạo 1 Bạc Kiếm Khối. ATK rất cao, tích hợp lưỡi kiếm linh.',
   },
   {
     id:'craft_silver_tower',      name:'Chế Bạc Tháp Thủ',     emoji:'🔧', tier:2,
     resultItem:'silver_tower_puppet', qty:1,
-    materials:[{id:'earth_stone',qty:15},{id:'serpent_scale',qty:4},{id:'blood_ginseng',qty:2}],
+    // L5 fix: bỏ serpent_scale+blood_ginseng (realm 1) → earth_stone+wolf_fang+jade_lotus (realm 0)
+    materials:[{id:'earth_stone',qty:20},{id:'wolf_fang',qty:4},{id:'jade_lotus',qty:3}],
     stoneCost:380, successChance:0.73, requireRealm:0, requireRank:1,
     desc:'Tạo 1 Bạc Tháp Thủ. DEF và HP rất cao.',
   },
   {
     id:'craft_dual_puppet',       name:'Chế Song Nguyệt Khối',  emoji:'🔧', tier:2,
     resultItem:'dual_puppet',     qty:1,
-    materials:[{id:'moon_dew',qty:5},{id:'hawk_feather',qty:4},{id:'lightning_core',qty:2}],
+    // L5 fix: bỏ lightning_core (thunder_peak realm 2) → fire_essence+demon_core_1 (realm 0)
+    materials:[{id:'moon_dew',qty:5},{id:'hawk_feather',qty:4},{id:'fire_essence',qty:3},{id:'demon_core_1',qty:2}],
     stoneCost:420, successChance:0.70, requireRealm:0, requireRank:1,
     desc:'Tạo 1 Song Nguyệt Khối. Đánh 2 lần mỗi lượt.',
   },
   {
     id:'craft_regen_puppet',      name:'Chế Linh Tâm Khối',     emoji:'🔧', tier:2,
     resultItem:'regen_puppet',    qty:1,
-    materials:[{id:'jade_lotus',qty:5},{id:'blood_ginseng',qty:2},{id:'moon_dew',qty:3}],
+    // L5 fix: bỏ blood_ginseng (ice_mountain realm 1) → jade_lotus+moon_dew+spirit_herb (realm 0)
+    materials:[{id:'jade_lotus',qty:6},{id:'moon_dew',qty:4},{id:'spirit_herb',qty:3}],
     stoneCost:400, successChance:0.72, requireRealm:0, requireRank:1,
     desc:'Tạo 1 Linh Tâm Khối. Hồi HP mỗi lượt chiến đấu.',
   },
   {
     id:'craft_fire_puppet',       name:'Chế Hỏa Linh Khối',     emoji:'🔧', tier:2,
     resultItem:'fire_puppet',     qty:1,
-    materials:[{id:'fire_essence',qty:6},{id:'wolf_fang',qty:4},{id:'lightning_core',qty:2}],
+    // L5 fix: bỏ lightning_core (thunder_peak realm 2) → wolf_fang+demon_core_1 (realm 0); tăng fire_essence
+    materials:[{id:'fire_essence',qty:8},{id:'wolf_fang',qty:5},{id:'demon_core_1',qty:2}],
     stoneCost:450, successChance:0.68, requireRealm:0, requireRank:1,
     desc:'Tạo 1 Hỏa Linh Khối. Gây thêm sát thương lửa.',
   },

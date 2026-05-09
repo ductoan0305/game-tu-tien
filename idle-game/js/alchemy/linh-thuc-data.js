@@ -143,7 +143,8 @@ export const FOOD_RECIPES = [
   },
   {
     id:'cook_tuyet_nham_canh',name:'Tuyết Nhung Linh Canh', emoji:'🍲', category:'canh',  tier:2,
-    materials:[{id:'tuyet_linh_nhung',qty:3},{id:'linh_thu_xuong',qty:3},{id:'ngũ_hanh_yen',qty:1}],
+    // L5 fix: bỏ tuyet_linh_nhung (ice_mountain realm 1) → linh_thao+nguyet_lo_thao (realm 0)
+    materials:[{id:'linh_thao',qty:4},{id:'nguyet_lo_thao',qty:2},{id:'linh_thu_xuong',qty:3},{id:'ngũ_hanh_yen',qty:1}],
     stoneCost:90, successChance:0.78, requireRealm:0, requireRank:1,
     buffs:[{type:'def_pct', value:12, duration:1200},{type:'hp_instant', value:350}],
     desc:'Canh tuyết nhung nóng hổi. +12% DEF 20 phút + 350 HP.',
@@ -167,7 +168,8 @@ export const FOOD_RECIPES = [
   },
   {
     id:'cook_xa_linh_lau',    name:'Xà Linh Lẩu',           emoji:'🍜', category:'tiec',  tier:2,
-    materials:[{id:'xa_ngạnh_linh',qty:2},{id:'linh_thu_nhuc',qty:4},{id:'linh_tuong',qty:1}],
+    // L5 fix: bỏ xa_ngạnh_linh (alias serpent_scale, ice_mountain realm 1) → ung_vu_linh (zone drop, realm 0)
+    materials:[{id:'ung_vu_linh',qty:2},{id:'linh_thu_nhuc',qty:4},{id:'linh_tuong',qty:1}],
     stoneCost:100, successChance:0.75, requireRealm:0, requireRank:1,
     buffs:[{type:'def_pct', value:8, duration:1800},{type:'hp_regen', value:10, duration:1800}],
     desc:'Lẩu xà linh tinh. +8% DEF + hồi 10 HP/giây trong 30 phút.',

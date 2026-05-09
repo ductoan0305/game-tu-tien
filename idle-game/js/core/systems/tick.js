@@ -14,6 +14,7 @@ import { tickHunger, tickDuocDien, tickAmThuong, getHungerQiModifier } from '../
 import { tickNghiepLuc, getNghiepLucPenalty } from '../kiep-tu-engine.js';
 import { tickLinhThu }                   from '../linh-thu-engine.js';
 import { tickThuongHoiBuffs }            from '../thuong-hoi-engine.js';
+import { tickNpcRepVisit }               from '../npc-reputation-engine.js';
 
 export function gameTick(G, dt = 0.1) {
   const YEARS_PER_TICK = 3 / 525600;
@@ -105,6 +106,7 @@ export function gameTick(G, dt = 0.1) {
   tickNghiepLuc(G, dtYears);
   tickLinhThu(G, dtYears);
   tickThuongHoiBuffs(G);
+  tickNpcRepVisit(G);
 
   const timeResult = tickTime(G, dt);
   if (timeResult?.gameOver) bus.emit('game:over', { chronicle: G.chronicle });

@@ -78,7 +78,7 @@ import { LINH_THU_DATA, tryTame, pickupEgg,
 import PopupManager             from './ui/popup-manager.js';
 
 // ---- Popups (tách từ main.js cũ) ----
-import { showCharPopup }        from './app/popups/char-popup.js';
+import { showCharPopup, updateCharPopup } from './app/popups/char-popup.js';
 import { showGameOverScreen }   from './app/popups/gameover-popup.js';
 import { showBreakthroughModal, showCoDuyenModal, showSectJoinModal,
          showResetConfirm, showWelcomeModal, showFullGuide,
@@ -272,7 +272,7 @@ function tick() {
     renderCombatStatus(G);
     if (G.activeTab === 'cultivate') updateMapStats(G);
     // S-H4: Cập nhật Tu Luyện popup (nếu đang mở) mỗi 2 ticks (≈0.2s) — đủ mượt, không spam
-    if (G._tickCount % 2 === 0) updateTuLuyenPopup(G);
+    if (G._tickCount % 2 === 0) { updateTuLuyenPopup(G); updateCharPopup(G); }
     // HUD bars update mỗi 20 ticks (≈2s) để tránh DOM churn
     if (G._tickCount % 20 === 0) updateHUD();
     if (G._tickCount % 30 === 0) {

@@ -27,20 +27,18 @@ export function gameTick(G, dt = 0.1) {
   const nghiepMod  = 1 - (getNghiepLucPenalty(G).qiPenalty ?? 0);
 
   if (G.meditating) {
-    // R1 — Resource Gate: tiêu hao linh thạch khi bế quan
-    // Phàm Địa (costType='none') được miễn — không stone drain, không penalty
-    // Chỉ áp dụng khi đang ở Linh Địa trở lên (đã tốn công/tiền mới có)
+    // T1 — Stone drain consolidation:
+    // Linh Địa: KHÔNG drain stone ở đây — phí thuê quản lý qua checkLinhDiaFee (150💎/năm game).
+    // Chỉ giữ stoneMod ladder: thiếu linh thạch thì tu Linh Địa kém hiệu quả.
+    // Phàm Địa (costType='none') được miễn — không stone drain, không penalty.
     const phapDiaId = G.phapDia?.currentId ?? 'pham_dia';
     let stoneMod = 1.0;
     if (phapDiaId !== 'pham_dia') {
-      const stoneCostPerYear = 2;
-      const stoneCostPerTick = stoneCostPerYear * YEARS_PER_TICK * dt * 10;
-      G.stone = Math.max(0, (G.stone ?? 0) - stoneCostPerTick);
-      G.stoneStarved = (G.stone <= 0);
       const stone = G.stone ?? 0;
       stoneMod = stone > 50 ? 1.0
                : stone > 10 ? 0.3
                : 0.05;
+      G.stoneStarved = (stone <= 0);
     } else {
       G.stoneStarved = false;
     }
@@ -113,6 +111,14 @@ export function gameTick(G, dt = 0.1) {
 
   checkPhapDiaExpiry(G);
   checkLinhDiaFee(G);
+
+  // L2: Auto-reset breakthrough fail streak nếu qua >= 1 năm game không có fail mới
+  // (cho phép thử lại trong sạch nếu người chơi đã tịnh tâm đủ lâu)
+  if ((G._btFailStreak || 0) > 0
+      && (G.gameTime?.currentYear ?? 0) - (G._btLastFailYear || 0) >= 1) {
+    G._btFailStreak = 0;
+    G._btFailCooldownUntil = 0;
+  }
 }
 
 export function checkAchievements(G) {

@@ -139,8 +139,13 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
         <div class="char-popup-name">${G.name} <span style="font-size:12px;color:#888">${GENDER_EMOJI[G.gender||'male']}</span></div>
         <div class="char-popup-realm" style="color:var(--gold)">${REALM_NAMES[G.realmIdx]||'?'} · Tầng ${G.stage}</div>
         <div style="font-size:11px;margin-top:2px">
-          <span style="color:${ageColor}">⏳ ${currentAge} tuổi</span>
-          <span style="font-size:10px;color:${ageColor};opacity:0.85"> · ${ageWindowText}</span>
+          <span id="cp-live-age" style="color:${ageColor}">⏳ ${currentAge} tuổi</span>
+          <span id="cp-live-window" style="font-size:10px;color:${ageColor};opacity:0.85"> · ${ageWindowText}</span>
+        </div>
+        <div style="font-size:10px;color:#5a7a9a;margin-top:3px;display:flex;gap:8px">
+          <span title="Tổng thời gian tu luyện trong game">🎮 <span id="cp-live-gametime">--</span></span>
+          <span>·</span>
+          <span title="Thời gian thực bạn đã chơi">🕐 <span id="cp-live-realtime">--</span></span>
         </div>
         <div class="char-popup-sect">${SECT_NAMES[G.sectId]||'🌿 Tán Tu'}</div>
         <div class="char-popup-direction" style="color:#7b9ef0">${HUONG_TU[G.huongTu]||'— Chưa xác định hướng tu'}</div>
@@ -170,18 +175,10 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
           <span>📍 ${pdName}</span>
           <span>${G.meditating ? '🧘 Đang nhập định' : '⚠ Chưa vận công'}</span>
         </div>
-        <div class="cp-rate-breakdown" style="font-size:11px;color:var(--text-dim,#888);background:var(--color-background-secondary,#0a0a1a);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.8">
-          <div>Base: <strong>${bd.base}</strong>
-            × Linh Căn: <strong>${bd.spiritMult.toFixed(2)}</strong>
-            × Pháp Địa: <strong>${bd.phapDiaMult.toFixed(1)}</strong>
-            × Công Pháp: <strong>${bd.congPhapMult.toFixed(2)}</strong>
-            ${bd.masteryBonusPct > 0 ? `+ Thuần Thục: <strong>+${bd.masteryBonusPct.toFixed(0)}%</strong>` : ''}
-            ${bd.otherPct > 0 ? `+ Khác: <strong>+${bd.otherPct}%</strong>` : ''}
-          </div>
+        <div style="font-size:10px;color:#5a7a9a;margin-top:4px;padding:4px 6px;background:rgba(0,0,0,0.15);border-radius:4px">
+          Chi tiết tu tốc → xem popup <strong style="color:#7fb2ff">Tu Luyện</strong>
           ${(G.qi >= calcMaxQi(G))
-            ? `<div style="margin-top:4px;color:var(--jade,#56c46a)">
-                 ✨ Qi đầy — đang tích Thuần Độ: <strong>${bd.purityPerSec.toFixed(3)}/s</strong>
-               </div>`
+            ? `<span style="color:#56c46a;margin-left:6px">✨ Qi đầy — tích Thuần Độ: ${bd.purityPerSec.toFixed(3)}/s</span>`
             : ''}
         </div>
         ${(() => {
@@ -207,13 +204,8 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
           return `<button class="cp-bt-btn cp-bt-ready" id="cp-btn-breakthrough">
             ⚡ ĐỦ ĐIỀU KIỆN — ĐỘT PHÁ (Thuần Độ ${btPurityPct}%)</button>`;
         })()}
-        <button class="cp-meditate-btn ${G.meditating?'cp-med-active':''}" id="cp-btn-meditate">
-          ${G.meditating ? '⏹ Xuất Định' : '🧘 Nhập Định'}
-        </button>
-        <div style="font-size:10px;color:var(--text-dim);text-align:center;margin-top:4px;line-height:1.5">
-          ${G.meditating
-            ? '🧘 Đang nhập định — linh lực tích lũy, thuần thục công pháp tăng dần, tiêu thể năng. Vẫn có thể luyện đan, chế phù. Không thể chiến đấu hay di chuyển.'
-            : 'Nhập định: vận công tập trung tu luyện. Linh lực mới tích lũy, thuần thục công pháp tăng. Không thể chiến đấu hay di chuyển.'}
+        <div id="cp-live-med-status" style="font-size:11px;text-align:center;margin-top:4px;padding:3px 6px;border-radius:4px;background:rgba(0,0,0,0.15);color:${G.meditating?'#56c46a':'#888'}">
+          ${G.meditating ? '🧘 Đang nhập định' : '⚠ Chưa nhập định'}
         </div>
       </div>
       ${spiritHtml}
@@ -305,14 +297,70 @@ export function showCharPopup(G, { cultivateActions, saveGame, renderCurrentTab 
     PopupManager.close(POPUP_ID);
     cultivateActions.breakthrough();
   });
-  document.getElementById('cp-btn-meditate')?.addEventListener('click', () => {
-    cultivateActions.meditate();
-    PopupManager.close(POPUP_ID);
-  });
 
   // Load portrait
   import('../../ui/portrait.js').then(({ buildPortraitSVG }) => {
     const el = document.getElementById('cp-portrait-mini');
     if (el) el.innerHTML = buildPortraitSVG(G);
   });
+}
+
+// ---- Live-update cho các chỉ số thay đổi theo thời gian ----
+// Gọi mỗi 2 ticks từ main.js (an toàn nếu popup đang đóng)
+export function updateCharPopup(G) {
+  if (!PopupManager.isOpen(POPUP_ID)) return;
+
+  const currentAge = Math.floor(G.gameTime?.currentYear ?? 16);
+  let ageColor = '#56c46a', ageWindowText = 'Cửa sổ < 70';
+  if (currentAge >= 75)      { ageColor = '#e05c4a'; ageWindowText = '☠ Cơ hội gần như 0'; }
+  else if (currentAge >= 70) { ageColor = '#f0d47a'; ageWindowText = '⚠ Đang suy giảm'; }
+
+  const _upd = (id, text, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.textContent !== text) el.textContent = text;
+    if (color && el.style.color !== color) el.style.color = color;
+  };
+
+  _upd('cp-live-age',    `⏳ ${currentAge} tuổi`, ageColor);
+  _upd('cp-live-window', ` · ${ageWindowText}`,   ageColor);
+
+  // Thời gian game (totalYears) và thực tế (totalTime giây)
+  const totalYears = G.gameTime?.totalYears ?? 0;
+  const realSec    = Math.floor(G.totalTime ?? 0);
+
+  // Game time — tích qua nhiều cảnh giới, có thể hàng trăm năm
+  let gameStr;
+  if (totalYears <= 0)     gameStr = '< 1 tháng game';
+  else if (totalYears < 1) gameStr = `${Math.floor(totalYears * 12)} tháng game`;
+  else if (totalYears < 10) gameStr = `${totalYears.toFixed(1)} năm game`;
+  else                     gameStr = `${Math.floor(totalYears)} năm game`;
+
+  // Real time — tích qua nhiều phiên chơi, có thể hàng trăm giờ
+  let realStr;
+  if (realSec < 60)        realStr = `${realSec}s`;
+  else if (realSec < 3600) realStr = `${Math.floor(realSec / 60)} phút`;
+  else {
+    const h = Math.floor(realSec / 3600);
+    const m = Math.floor((realSec % 3600) / 60);
+    if (h < 24) realStr = m > 0 ? `${h}g ${m}p` : `${h}g`;
+    else {
+      const d  = Math.floor(h / 24);
+      const rh = h % 24;
+      realStr = rh > 0 ? `${d} ngày ${rh}g` : `${d} ngày`;
+    }
+  }
+
+  _upd('cp-live-gametime', gameStr);
+  _upd('cp-live-realtime', realStr);
+
+  // Trạng thái nhập định
+  const medEl = document.getElementById('cp-live-med-status');
+  if (medEl) {
+    const isMed   = !!G.meditating;
+    const medText = isMed ? '🧘 Đang nhập định' : '⚠ Chưa nhập định';
+    const medCol  = isMed ? '#56c46a' : '#888';
+    if (medEl.textContent !== medText) medEl.textContent = medText;
+    if (medEl.style.color !== medCol)  medEl.style.color = medCol;
+  }
 }

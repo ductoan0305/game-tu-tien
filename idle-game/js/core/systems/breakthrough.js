@@ -130,6 +130,13 @@ export function doBreakthrough(G) {
   const realm     = REALMS[G.realmIdx];
   const threshold = calcPurityThreshold(G);
 
+  // L2: Gate cooldown — chống spam đột phá fail liên tiếp.
+  // Mỗi fail tăng cooldown (30/60/90/... cap 300s); success hoặc qua 1 năm game reset streak.
+  if (Date.now() < (G._btFailCooldownUntil || 0)) {
+    const wait = Math.ceil((G._btFailCooldownUntil - Date.now()) / 1000);
+    return { ok:false, msg:`Tâm còn xáo trộn, cần ${wait}s tịnh tâm trước khi thử lại.`, type:'warning' };
+  }
+
   if ((G.qi ?? 0) < maxQ)
     return { ok:false, msg:'Linh lực chưa đủ 100%!', type:'danger' };
 
@@ -182,6 +189,12 @@ export function doBreakthrough(G) {
       : `Tầng ${G.stage+1}`;
     addChronicle(G, `Tuổi ${Math.floor(G.gameTime?.currentYear??0)}: Thất bại đột phá ${realm.name} ${stageName}. Tâm Cảnh -${tamCanhLoss}.`);
 
+    // L2: Tăng streak + đặt cooldown
+    G._btFailStreak = (G._btFailStreak || 0) + 1;
+    G._btLastFailYear = G.gameTime?.currentYear ?? 0;
+    const cdSec = Math.min(30 * G._btFailStreak, 300); // 30s → 60 → 90 → ... cap 5 phút
+    G._btFailCooldownUntil = Date.now() + cdSec * 1000;
+
     return {
       ok:false, type:isSevere?'fail_severe':'fail', chance:chance.toFixed(1), breakdown,
       msg: isSevere
@@ -197,6 +210,9 @@ export function doBreakthrough(G) {
   G.purity  = 0;
   G._breakthroughDanduoc      = 1.0;
   G._breakthroughCoDuyenBonus = 0;
+  // L2: Reset streak + cooldown khi đột phá thành công
+  G._btFailStreak = 0;
+  G._btFailCooldownUntil = 0;
   G.breakthroughs = (G.breakthroughs ?? 0) + 1;
   // R2: Kiên Cố reset — linh lực tầng mới chưa vững, phải rèn lại từ đầu
   G.kienCo = 0;

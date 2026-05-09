@@ -39,6 +39,13 @@ export function createFreshState() {
     kienCo: 0,
     kienCoMax: 100,
 
+    // ---- L2: Cooldown đột phá fail liên tiếp ----
+    // Chống spam thử đột phá ngay sau fail. Streak tăng mỗi fail,
+    // reset khi success hoặc qua >= 1 năm game không fail.
+    _btFailStreak: 0,           // số lần fail liên tiếp
+    _btFailCooldownUntil: 0,    // timestamp ms; nếu Date.now() < giá trị này → khoá nút
+    _btLastFailYear: 0,         // năm game lần fail cuối — reset streak nếu currentYear vượt +1
+
     // ---- v12: Danh Vọng ----
     danhVong: 0,
 

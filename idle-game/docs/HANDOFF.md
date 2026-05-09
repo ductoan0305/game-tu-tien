@@ -628,6 +628,52 @@ G = {
 - `combat/combat-engine.js` — Import + call `rollRivalEncounter` sau combat win (skip dungeon + rival)
 - `docs/HANDOFF.md` — Bus events list + session entry
 
+### T1 — Gộp stone drain Linh Địa thành 1 cơ chế phí thuê duy nhất (2026-05-09)
+
+61. **Trùng lặp 2 cơ chế trừ stone ở Linh Địa** → `tick.js` (block `if (G.meditating)`) trừ liên tục 2💎/năm game (~365💎/năm thực) đồng thời `phap-dia.js > checkLinhDiaFee` trừ 150💎/năm game. Tổng ~152💎/năm game khiến kinh tế Linh Địa mơ hồ và double-charge người chơi.
+
+**Quyết định thiết kế:** Giữ duy nhất phí thuê định kỳ 150💎/năm game (`LINH_DIA_ANNUAL_FEE`) — đây là model đúng lore "thuê linh địa", có thông báo qua bus event (`phapdia:fee_paid`/`fee_overdue`). Bỏ drain liên tục 2💎/năm game trong `gameTick`.
+
+**Spec block `if (G.meditating)` sau khi sửa:** Vẫn giữ `stoneMod` ladder để thiếu linh thạch thì tu Linh Địa kém hiệu quả (`>50` → 1.0, `>10` → 0.3, `≤10` → 0.05) và `G.stoneStarved` flag. Chỉ KHÔNG mutate `G.stone` ở đây nữa. Phàm Địa vẫn được miễn (stoneMod = 1.0, stoneStarved = false).
+
+**Files thay đổi trong T1:**
+- `core/systems/tick.js` — Xóa `stoneCostPerYear/PerTick` và `G.stone -= ...` trong block meditation; giữ stoneMod ladder dựa trên `G.stone` snapshot.
+- `docs/HANDOFF.md` — Session entry này.
+
+**Validation thủ công:**
+1. Vào Linh Địa với 1000💎, bế quan 5 phút thực → stone không giảm vì drain liên tục.
+2. Sau 1 năm game (≈4.87h thực) → `checkLinhDiaFee` trừ 150💎ăn lần qua bus event.
+3. stone < 50 → qi rate giảm còn 30% (stoneMod). stone ≤ 10 → 5%. stone = 0 → `stoneStarved` flag bật.
+
+**Manifesto §7:** PASS — không buff, không skip, chỉ gộp logic trùng lặp; kinh tế tu luyện Linh Địa minh bạch hơn.
+
+### L2 — Cooldown đột phá fail liên tiếp (2026-05-09)
+
+62. **Spam đột phá ngay sau fail làm mất "trọng đại" cảnh giới** → Sau mỗi đột phá thất bại, người chơi có thể bấm lại Đột Phá ngay lập tức (UI chỉ cảnh báo ở 50–74% Thuần Độ nhưng không khoá nút). Hệ quả: tâm lý "spam thử" làm tan loãng cảm xúc của một sự kiện đáng lẽ phải hiếm và hệ trọng — vi phạm tinh thần Manifesto §1 ("đa số thất bại là bình thường, đột phá là trọng đại").
+
+**Cơ chế (3 field state mới + gate):**
+- `_btFailStreak` (số fail liên tiếp), `_btFailCooldownUntil` (timestamp ms), `_btLastFailYear` (năm game lần fail cuối) — khai báo trong `fresh-state.js`, migration `_migrateBreakthroughCooldown` trong `persistence.js`.
+- Gate đầu `doBreakthrough(G)` (`breakthrough.js`): nếu `Date.now() < _btFailCooldownUntil` → return `{ ok:false, type:'warning', msg:'Tâm còn xáo trộn, cần Xs tịnh tâm…' }`, không tiêu qi/purity, không tốn lượt.
+- Khi fail (sau khi tính loss): `_btFailStreak++`, ghi `_btLastFailYear = currentYear`, `_btFailCooldownUntil = now + min(30 × streak, 300) × 1000` → 30s → 60s → 90s → … cap 300s (5 phút thực).
+- Khi success (sau khi qi/purity reset): `_btFailStreak = 0`, `_btFailCooldownUntil = 0`.
+- Auto-reset trong `gameTick`: nếu streak > 0 và `currentYear − _btLastFailYear ≥ 1` → reset (cho phép thử lại trong sạch nếu đã tịnh tâm đủ lâu trong game).
+- UI `tu-luyen-popup.js > _updateBreakthroughBtn`: cooldown active → button text `🧘 Tịnh Tâm (Xs)`, class `tl-btn-breakthrough` (không `ready`/`purity-ready` → tắt pulse), `disabled = true`. Đè lên mọi state khác (qi chưa đủ, purity chưa đủ…).
+
+**Files thay đổi trong L2:**
+- `js/core/state/fresh-state.js` — Thêm 3 field `_btFailStreak`, `_btFailCooldownUntil`, `_btLastFailYear` (default 0).
+- `js/core/state/persistence.js` — Thêm `_migrateBreakthroughCooldown(m)` + gọi trong `loadGame`.
+- `js/core/systems/breakthrough.js` — Gate đầu `doBreakthrough`; ghi state khi fail (sau `addChronicle`); reset state khi success (sau qi/purity reset).
+- `js/core/systems/tick.js` — Block auto-reset cuối `gameTick` (sau `checkLinhDiaFee`).
+- `js/ui/tu-luyen-popup.js` — Cooldown branch đầu `_updateBreakthroughBtn`, hiển thị countdown giây.
+
+**Validation thủ công:**
+1. Fail liên tiếp 3 lần → cooldown lần 3 = 90s. Đếm ngược trên button mỗi tick.
+2. Success 1 lần → button mở khoá ngay (streak/cooldown về 0).
+3. Fail 1 lần, đợi 1 năm game (~4.87h thực hoặc fast-forward) → streak reset, button mở.
+4. Save/reload không mất state — migration set default 0/0/currentYear.
+
+**Manifesto §7:** PASS — không thay xác suất, không skip, không buff; chỉ thêm rào cản tâm lý chống spam, gia cố cảm xúc "đột phá là trọng đại".
+
 ### S-Phase2 — UX Polish (2026-05-07)
 
 43. **Notification bar click ẩn world map** → click notification gọi `switchTab(tabId, G)` trong `render-core.js` — hàm này hide tất cả panels trừ target, làm mất world map background. Fix: thay bằng `document.dispatchEvent(new CustomEvent('tab:open-popup', { detail: { tabId } }))`. Main.js lắng nghe event này và gọi `_switchTabWithPopup(tabId)`. Tránh circular import `render-core → tab-popup → render-core`. ✅ ĐÃ FIX
@@ -833,6 +879,14 @@ Các mục dưới đây là sai lệch đã xác minh giữa tài liệu và co
 // KHÔNG: đánh quái, di chuyển map
 
 // furnaceLevel mặc định = 0, KHÔNG dùng || 1 fallback
+
+// L2 — Cooldown đột phá fail liên tiếp:
+// G._btFailStreak           — số fail liên tiếp (reset khi success / qua 1 năm game)
+// G._btFailCooldownUntil    — timestamp ms; gate trong doBreakthrough + UI button
+// G._btLastFailYear         — năm game lần fail cuối; auto-reset streak trong gameTick
+// Cooldown formula: min(30 × streak, 300) giây thực (cap 5 phút)
+// Gate ở đầu doBreakthrough → không tiêu qi/purity nếu chặn
+// UI: tu-luyen-popup.js _updateBreakthroughBtn check cooldown TRƯỚC qi/purity check
 
 // Puppet combat flags (reset mỗi lượt địch):
 // G.combat._puppetTaunt, _puppetReflect, _puppetImmuneThisTurn, _puppetRevived

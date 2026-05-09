@@ -59,6 +59,7 @@ export function loadGame() {
     _migrateCongPhap(merged);
     _migrateTutorial(merged);
     _migrateFlags(merged);
+    _migrateBreakthroughCooldown(merged);
 
     console.log('[loadGame] Loaded successfully, setupDone:', merged.setupDone);
     return merged;
@@ -356,6 +357,15 @@ function _migrateFlags(m) {
       }
     }
   }
+}
+
+// ============================================================
+// L2: Cooldown đột phá fail liên tiếp — migration cho save cũ
+// ============================================================
+function _migrateBreakthroughCooldown(m) {
+  if (m._btFailStreak == null)        m._btFailStreak        = 0;
+  if (m._btFailCooldownUntil == null) m._btFailCooldownUntil = 0;
+  if (m._btLastFailYear == null)      m._btLastFailYear      = m.gameTime?.currentYear ?? 0;
 }
 
 function _migrateTutorial(m) {

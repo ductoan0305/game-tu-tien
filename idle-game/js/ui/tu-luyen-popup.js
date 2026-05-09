@@ -20,6 +20,7 @@ import {
 } from '../core/state.js';
 import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus }      from '../core/duoc-dien-engine.js';
+import { showChroniclePanel }     from '../app/popups/misc-popups.js';
 
 const POPUP_ID = 'tu-luyen';
 
@@ -139,6 +140,13 @@ function _buildBody() {
         ⚡ Đột Phá
       </button>
     </div>
+
+    <!-- Ngộ Đạo Ký -->
+    <div style="padding:4px 0 2px">
+      <button class="tl-btn-action" id="tlp-btn-chronicle" style="width:100%;font-size:11px;padding:5px 8px;opacity:0.75">
+        📜 Ngộ Đạo Ký
+      </button>
+    </div>
   `;
   return div;
 }
@@ -151,6 +159,7 @@ function _wireButtons(G, actions) {
   on('tlp-btn-meditate',    () => { actions.meditate();    updateTuLuyenPopup(G); });
   on('tlp-btn-rest',        () => { actions.rest();        updateTuLuyenPopup(G); });
   on('tlp-btn-breakthrough',() => { actions.breakthrough(); updateTuLuyenPopup(G); });
+  on('tlp-btn-chronicle',   () => { showChroniclePanel(G); });
 }
 
 // ---- Breakthrough button state ----

@@ -298,6 +298,22 @@
   border-radius: 3px;
   transition: width 1s ease, background-color 1s ease;
 }
+/* Giai Đoạn Suy Tàn — pulse khi tuổi ≥ 70 (currentYear ≥ 60) */
+@keyframes age-decay-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+.age-decay-pulse {
+  animation: age-decay-pulse 2s ease-in-out infinite;
+}
+/* Nút Đột Phá mờ ở tuổi 75+ (soft — không disable, chỉ visual cảnh báo) */
+.age-decay-dim {
+  opacity: 0.55;
+  filter: saturate(0.5) brightness(0.8);
+  border-color: #e03030 !important;
+  box-shadow: 0 0 6px rgba(224,48,48,0.25);
+}
 .lifespan-text {
   font-size: 10px;
   color: var(--text-dim);

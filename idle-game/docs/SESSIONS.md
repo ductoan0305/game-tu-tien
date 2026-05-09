@@ -47,7 +47,7 @@ Mô tả cho AI:
 Đọc HANDOFF.md phần CÔNG PHÁP. Nhiệm vụ: Thêm 4-6 công pháp mới vào CONG_PHAP_LIST trong js/core/phap-dia.js hướng tới tán tu (acquireType: 'co_duyen' hoặc 'buy'). Cần đa dạng hệ (Thủy, Thổ, không hệ), đa dạng cảnh giới. Mỗi công pháp có buffs(mastery, elementMatch) function trả về buff cân bằng với các công pháp hiện có — không vượt buff của công pháp tông môn cùng cấp. Thêm entry vào bảng công pháp trong HANDOFF.md cuối session.
 
 
-SESSION P9 — Trận Pháp Redesign
+SESSION P9 — Trận Pháp Redesign -- DONE
 Mô tả cho AI:
 
 Đọc HANDOFF.md. Nhiệm vụ: Redesign hệ Trận Pháp. Đổi vật liệu từ nguyên liệu hiện tại sang: trận kỳ + trận bàn + trận nhãn + linh thạch. Trận kỳ là item mới chế tạo từ nguyên liệu thô hoặc mua shop/cơ duyên. Cập nhật tran-phap-data.js (materials mới), tran-phap-tab.js (UI hiển thị vật liệu mới), crafting-data.js (recipe trận kỳ). Đảm bảo triết lý: Trận Pháp cần đầu tư và cơ duyên, không phải ai cũng deploy được. Không thay đổi combat bonus của active arrays.

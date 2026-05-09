@@ -174,12 +174,12 @@ function _simulateQiWithBuffs(G, offSec) {
       // Nếu qi đầy trong đoạn này → phần còn lại chuyển sang purity
       if (actualQi < qiThisSeg) {
         const overflowSec   = segSec * (1 - qiRoom / qiThisSeg);
-        const purityRate    = calcPurityRate(Gtmp);
+        const purityRate    = calcPurityRate(Gtmp) * (Gtmp.agePurityPenalty ?? 1.0);
         totalPurity        += purityRate * overflowSec * 10; // ×10 như tick.js
       }
     } else {
       // qi đã đầy từ đầu đoạn → toàn đoạn tích purity
-      const purityRate  = calcPurityRate(Gtmp);
+      const purityRate  = calcPurityRate(Gtmp) * (Gtmp.agePurityPenalty ?? 1.0);
       totalPurity      += purityRate * segSec * 10;
     }
 

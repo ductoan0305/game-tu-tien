@@ -480,6 +480,15 @@ G = {
 
 **Trận Pháp passive drain**: filter `a.category === 'passive'` (KHÔNG `a.type`)
 
+**Trận Pháp vật liệu (P9)**:
+- `tran_ky` 🚩, `tran_ban` 🎴, `tran_nhan` 🔵 — lưu trong `G.alchemy.ingredients`
+- Tier 1: `tran_ky×2` | Tier 2: `tran_ky×4 + tran_ban×1` | Tier 3: `tran_ban×2 + tran_nhan×1`
+- Tier 4: `tran_ban×3 + tran_nhan×2` | Tier 5: `tran_ban×2 + tran_nhan×3`
+- Chế tạo: `TRAN_MAT_RECIPES` trong `crafting-data.js` → action `craftTranMat(recipeId)` trong `main.js`
+- Mua shop: `shop_tran_ky` (200💎), `shop_tran_ban` (700💎), `shop_tran_nhan` (3000💎 — realm 1)
+- Shop handler: `type:'ingredient'` trong `buyItem` (`inventory.js`) → cộng vào `G.alchemy.ingredients`
+- UI: stock bar + section chế tạo vật liệu ở đầu tab Trận Pháp (`tran-phap-tab.js`)
+
 ---
 
 ## BUGS ĐÃ FIX
@@ -558,6 +567,66 @@ G = {
 58. **Locked card Luyện Đan chỉ hiển thị 1 điều kiện mơ hồ** → UI cũ chỉ show "Cần Hỏa căn + ngoTinh 40" — không giải thích path thay thế (cơ duyên), không có progress bar, không có context. Fix: viết lại `_renderLuyenDanProgress` thành 2 path box riêng biệt: **Path 1** (border cam) — auto-unlock qua Hỏa căn: show linh căn hiện tại + progress bar ngoTinh → 40 + contextual message (không Hỏa / Hỏa nhưng chưa đủ / Hỏa + đủ điều kiện). **Path 2** (border tím) — cơ duyên: giải thích hệ thống cơ duyên + progress bar ngoTinh → 20 (hoặc "✦ Đủ điều kiện" nếu đã ≥ 20). (`js/ui/tabs/nghe-nghiep-tab.js`) ✅ ĐÃ FIX
 
 **Files thay đổi trong P3:** `co-duyen.js`, `nghe-nghiep-tab.js`, `HANDOFF.md`
+
+### P9 — Trận Pháp Redesign: Hệ Vật Liệu Mới (2026-05-08)
+
+59. **Vật liệu Trận Pháp cũ là nguyên liệu dược liệu thô — sai triết lý** → Trận Pháp dùng `spirit_herb`, `earth_stone`, `wolf_fang`... giống y chang Luyện Đan. Không có rào cản cơ duyên, không tốn đầu tư đặc thù, ai cũng dễ dàng deploy. Redesign: đổi sang hệ 3 vật liệu trận chuyên dụng (`tran_ky` 🚩 / `tran_ban` 🎴 / `tran_nhan` 🔵) tạo ra gate tự nhiên theo tier và nguồn lực.
+
+**Hệ vật liệu mới:**
+- `tran_ky` (Trận Kỳ): Tier 1–2, craft dễ (80% thành công, hoàn nguyên liệu nếu thất bại), mua shop 200💎
+- `tran_ban` (Trận Bàn): Tier 2–4, craft vừa (60%, mất ½ nếu thất bại), mua shop 700💎  
+- `tran_nhan` (Trận Nhãn): Tier 3–5, craft khó (40%, mất tất cả nếu thất bại), mua shop 3000💎 (realm 1+), chủ yếu từ cơ duyên
+
+**Schema materials theo tier:**
+- Tier 1: `tran_ky×2` | Tier 2: `tran_ky×4 + tran_ban×1` | Tier 3: `tran_ban×2 + tran_nhan×1` | Tier 4: `tran_ban×3 + tran_nhan×2` | Tier 5: `tran_ban×2 + tran_nhan×3`
+
+**Files thay đổi trong P9:**
+- `alchemy/alchemy-data.js` — Thêm `tran_ky`, `tran_ban`, `tran_nhan` vào `INGREDIENTS` (zone: 'craft')
+- `alchemy/crafting-data.js` — Thêm export `TRAN_MAT_RECIPES` (3 công thức chế tạo, không cần Bễ Rèn)
+- `alchemy/tran-phap-data.js` — Cập nhật `materials` toàn bộ 35 ARRAY_RECIPES sang hệ mới; combat bonuses giữ nguyên
+- `ui/tabs/professions/tran-phap-tab.js` — Redesign: thêm stock bar kho vật liệu, section chế tạo vật liệu, material display đặc biệt với màu riêng, hint chỉ về section chế tạo khi thiếu nguyên liệu
+- `ui/tabs/nghe-nghiep-tab.js` — Wire event `tp-craft-mat-btn` → `actions.craftTranMat`
+- `main.js` — Thêm `craftTranMat(recipeId)` action (import `TRAN_MAT_RECIPES` + `getArrayMasterRank`, check rank trận pháp sư, roll thành/thất bại, apply failEffect)
+- `core/data.js` — Thêm 3 shop items (`shop_tran_ky`, `shop_tran_ban`, `shop_tran_nhan`) với `type:'ingredient'`
+- `core/systems/inventory.js` — Thêm `case type === 'ingredient'` trong `buyItem` → cộng vào `G.alchemy.ingredients`
+
+### P11 — NPC Rivals System (2026-05-09)
+
+60. **NPC_RIVALS (9 đối thủ) được định nghĩa trong data.js nhưng không có encounter logic** → Đối thủ chỉ là data tĩnh, không xuất hiện trong game. Fix: tạo đầy đủ encounter system gồm trigger + popup dialog + combat + Danh Vọng reward.
+
+**Kiến trúc hệ thống:**
+- `rollRivalEncounter(G, actionType)` — trigger check trong `co-duyen.js`; xác suất 0.4%/action; cooldown 4h real time; filter đối thủ theo `realmIdx ±1` so với player; ưu tiên đối thủ chưa gặp; emit `rival:encounter` bus event
+- `showRivalEncounterPopup(G, rival, callbacks)` — modal 3 nút trong `misc-popups.js`: **Thi Đấu** (emit `rival:start_combat`), **Trao Đổi** (inline panel ingredients), **Bỏ Qua**
+- `rival:start_combat` handler trong `event-bus-handlers.js` — build combat state từ `RIVAL_ATK/DEF/HP` base theo realmIdx × stage modifier (`1 + stage×0.07`), gắn `isNpcRival:true` + `_rivalData` vào enemy object
+- `combat:end` handler — detect `enemy.isNpcRival` → tăng `G.danhVong` theo `RIVAL_DV_REWARD[realmIdx]`, ghi vào `G._rivalBeaten[name]`
+
+**Trao Đổi — per-rival trade items (vào `G.alchemy.ingredients`):**
+- Vân Tiêu: earth_stone×5 (80💎), wolf_fang×3 (120💎)
+- Đan Mai: jade_lotus×3 (150💎), cloud_mushroom×5 (60💎)
+- Thiết Minh: earth_stone×8 (60💎), demon_core_1×2 (180💎)
+- Hỏa Linh Nhi: blood_ginseng×2 (280💎), spirit_herb×10 (80💎)
+- Huyền Kỳ: tran_ky×2 (150💎), moon_dew×3 (200💎)
+- Lăng Phong: lightning_core×1 (400💎), wolf_fang×5 (100💎)
+- Bắc Minh: demon_core_1×3 (180💎), blood_ginseng×1 (350💎)
+- Bạch Diệu: blood_ginseng×2 (250💎), jade_lotus×5 (200💎)
+- Vân Tiêu Thần: dragon_scale×1 (2000💎), lightning_core×3 (500💎)
+
+**Danh Vọng reward khi thắng:**
+`RIVAL_DV_REWARD = [10, 22, 50, 90, 150]` — index theo realmIdx (0=LK, 1=TC, 2=KĐ, 3=NA, 4=HT)
+
+**State mới trong G:**
+- `G._rivalEncounterCd` — timestamp cooldown next encounter (ms)
+- `G._rivalBeaten[name]` — số lần đã thắng mỗi đối thủ
+
+**Trigger points:** `explore` action (cultivation.js) và `combat` win (combat-engine.js, skip nếu đang dungeon hoặc vừa thắng rival)
+
+**Files thay đổi trong P11:**
+- `core/co-duyen.js` — Import `NPC_RIVALS`; export `RIVAL_DV_REWARD`, `rollRivalEncounter`
+- `app/popups/misc-popups.js` — Export `showRivalEncounterPopup` với RIVAL_TRADES map + normName helper
+- `app/event-bus-handlers.js` — Import `RIVAL_DV_REWARD`, `showRivalEncounterPopup`; wire `rival:encounter`, `rival:start_combat`; update `combat:end` cho isNpcRival
+- `core/systems/cultivation.js` — Import + call `rollRivalEncounter` trước `rollCoDuyen` trong explore
+- `combat/combat-engine.js` — Import + call `rollRivalEncounter` sau combat win (skip dungeon + rival)
+- `docs/HANDOFF.md` — Bus events list + session entry
 
 ### S-Phase2 — UX Polish (2026-05-07)
 
@@ -793,6 +862,7 @@ sect:dv_bonus
 thuonghoi:quest_done
 kieptu:start_combat, kieptu:ambush
 linhthu:encounter, linhthu:tamed, linhthu:hatched, linhthu:egg_waiting, linhthu:released
+rival:encounter, rival:start_combat
 hunger:warning, hunger:fed, hunger:starved
 duoc_dien:ready, duoc_dien:harvested, duoc_dien:expanded
 am_thuong:gained, am_thuong:cancot_lost
@@ -824,8 +894,8 @@ Chặn đăng nhập 2 thiết bị cùng lúc để tránh ghi đè save.
   File: `js/core/phap-dia.js` → `CONG_PHAP_LIST`
 
 ### ⬜ Thiết kế còn lại (chưa code)
-- **Trận Pháp redesign** — đổi materials thành trận kỳ + trận bàn + trận nhãn + linh thạch
-  Trận kỳ chế tạo từ nguyên liệu hoặc mua shop/cơ duyên
+- ~~**Trận Pháp redesign**~~ ✅ **DONE (P9)** — materials mới (tran_ky/tran_ban/tran_nhan), 3 TRAN_MAT_RECIPES, shop items, craftTranMat action
+- ~~**NPC Rivals encounter system**~~ ✅ **DONE (P11)** — rollRivalEncounter trigger, dialog popup 3 lựa chọn, combat integration, Danh Vọng reward
 - ~~**Luyện Đan rào cản**~~ ✅ **DONE (P3)** — gate đã có: auto-unlock (Hỏa + ngoTinh≥40) + cơ duyên path (ngoTinh≥20); UI locked card 2 path boxes
 - **6 nghề phụ cần cơ duyên** — không phải ai cũng theo được, cần rào cản mở nghề
 

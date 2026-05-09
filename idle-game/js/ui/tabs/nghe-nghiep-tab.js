@@ -523,6 +523,11 @@ function _wireEvents(G, actions) {
     btn.addEventListener('click', () => actions.cancelArray?.(btn.dataset.arrayId));
   });
 
+  // Trận Pháp — chế tạo vật liệu trận (Trận Kỳ / Trận Bàn / Trận Nhãn)
+  panel.querySelectorAll('.tp-craft-mat-btn:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', () => actions.craftTranMat?.(btn.dataset.matRecipeId));
+  });
+
   // Trận Pháp tier filter
   panel.querySelectorAll('[data-array-tier]').forEach(btn => {
     btn.addEventListener('click', () => { _arrayTier = parseInt(btn.dataset.arrayTier)||0; renderNgheNghiepTab(G, actions); });

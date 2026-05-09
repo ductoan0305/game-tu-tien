@@ -14,6 +14,7 @@ import { calcBreakthroughChance } from '../core/actions.js';
 import { getAmThuongStatus } from '../core/duoc-dien-engine.js';
 import { getDanhVongTier } from '../core/danh-vong.js';
 import PopupManager from './popup-manager.js';
+import { showChroniclePanel } from '../app/popups/misc-popups.js';
 
 // ---- Tab management ----
 
@@ -264,6 +265,16 @@ function setStyleIfChanged(node, prop, value) {
   if (node.style[prop] !== value) node.style[prop] = value;
 }
 
+// ---- Giai Đoạn Suy Tàn: màu bar tuổi thọ theo currentYear ----
+// Ưu tiên so với getLifespanColor(pct) khi đang trong giai đoạn suy tàn
+// currentYear ≥ 70 → đỏ pulse, ≥ 65 → cam, ≥ 55 → vàng; else fallback theo pct
+function _getAgeDecayBarColor(currentYear, pct) {
+  if (currentYear >= 70) return '#e03030'; // đỏ — suy tàn nghiêm trọng (pulse xử lý riêng)
+  if (currentYear >= 65) return '#e05c1a'; // cam — suy tàn nặng
+  if (currentYear >= 55) return '#f0d47a'; // vàng — bắt đầu suy tàn
+  return getLifespanColor(pct);            // fallback logic thông thường theo %
+}
+
 export function renderHeader(G) {
   const realm = REALMS[G.realmIdx];
   const maxQi = calcMaxQi(G);
@@ -412,11 +423,25 @@ export function renderHeader(G) {
   if (G.gameTime) {
     const pct       = getLifespanPercent(G);
     const remaining = getRemainingLifespan(G);
-    const color     = getLifespanColor(pct);
     const pctStr    = pct.toFixed(1) + '%';
 
+    // ---- Giai Đoạn Suy Tàn: màu bar theo currentYear (tuổi thực = currentYear + 10) ----
+    // Ưu tiên age-bracket color so với % lifespan color thông thường
+    const cy    = G.gameTime.currentYear;
+    const color = _getAgeDecayBarColor(cy, pct);
+
     const lifespanEl = document.getElementById('lifespan-bar-fill');
-    if (lifespanEl) { setStyleIfChanged(lifespanEl, 'width', pctStr); setStyleIfChanged(lifespanEl, 'background', color); }
+    if (lifespanEl) {
+      setStyleIfChanged(lifespanEl, 'width', pctStr);
+      setStyleIfChanged(lifespanEl, 'background', color);
+      // Pulse animation khi ≥ tuổi 70 (currentYear ≥ 60)
+      const shouldPulse = cy >= 60;
+      if (shouldPulse && !lifespanEl.classList.contains('age-decay-pulse')) {
+        lifespanEl.classList.add('age-decay-pulse');
+      } else if (!shouldPulse && lifespanEl.classList.contains('age-decay-pulse')) {
+        lifespanEl.classList.remove('age-decay-pulse');
+      }
+    }
 
     const lifespanTextEl = document.getElementById('lifespan-text');
     if (lifespanTextEl) {
@@ -464,6 +489,13 @@ export function renderHeader(G) {
           <span class="chr-py">Năm ${e.year} [${e.realmName}]</span><br>
           ${e.event}
         </div>`).join('');
+    }
+    // Wire click một lần duy nhất → mở Ngộ Đạo Ký panel
+    if (!chrPrev.dataset.wired) {
+      chrPrev.dataset.wired = '1';
+      chrPrev.style.cursor = 'pointer';
+      chrPrev.title = 'Xem toàn bộ Ngộ Đạo Ký';
+      chrPrev.addEventListener('click', () => showChroniclePanel(G));
     }
   }
 
@@ -632,6 +664,14 @@ export function renderCultivateStats(G) {
 
       // Tooltip breakdown
       const bd = breakdown;
+      // Giai Đoạn Suy Tàn age75: nút Đột Phá mờ (soft — vẫn dùng được, nhưng báo hiệu nguy)
+      const realAge75 = (G.gameTime?.currentYear ?? 0) >= 65; // currentYear 65 = tuổi thực 75
+      if (realAge75 && canAttempt) {
+        btBtn.classList.add('age-decay-dim');
+      } else {
+        btBtn.classList.remove('age-decay-dim');
+      }
+
       btBtn.title = [
         `🎯 Cơ hội thành công: ${chance.toFixed(1)}%`,
         `📊 Nền ${(bd.P_base * 100).toFixed(0)}%`,
@@ -642,6 +682,7 @@ export function renderCultivateStats(G) {
         `  × Tâm Cảnh ×${bd.F_tamcanh.toFixed(2)}`,
         bd.danDoc > 40 ? `⚠ Đan Độc ${bd.danDoc.toFixed(0)} — giảm xác suất` : '',
         bd.canCotBonus > 0 ? `✓ Căn Cốt +${(bd.canCotBonus * 100).toFixed(1)}%` : '',
+        realAge75 ? `🕯 Giai Đoạn Suy Tàn — đột phá cần cơ duyên trời cho` : '',
       ].filter(Boolean).join('\n');
     }
   }

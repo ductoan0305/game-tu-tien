@@ -202,10 +202,16 @@ export function doBreakthrough(G) {
   G.kienCo = 0;
   G.exp     = 0;
   G.maxExp  = Math.floor(G.maxExp * 1.5);
-  G.tamCanh = Math.min(100, (G.tamCanh ?? 50) + 3);
+  // Capture tamCanh trước khi tăng (dùng cho statDelta)
+  const tamCanhBefore = G.tamCanh ?? 50;
+  G.tamCanh = Math.min(100, tamCanhBefore + 3);
   bus.emit('quest:update', { type:'breakthrough', qty:1 });
 
   if (G.stage < realm.stages) {
+    // Capture stat trước khi nhân hệ số — dùng cho popup Tiến Cảnh Chi Biến
+    const atkBefore = G.atk;
+    const defBefore = G.def;
+    const hpBefore  = G.maxHp;
     G.stage++;
     G.atk   = Math.floor(G.atk * 1.18);
     G.def   = Math.floor(G.def * 1.12);
@@ -214,7 +220,24 @@ export function doBreakthrough(G) {
     const stageName = realm.stageNames?.[G.stage-1] ?? `Tầng ${G.stage}`;
     const flavor    = realm.breakthroughText?.[G.stage-1] ?? realm.breakthroughText?.[Math.floor(Math.random()*realm.breakthroughText?.length)] ?? '';
     addChronicle(G, `Tuổi ${Math.floor(G.gameTime?.currentYear??0)}: Đột phá ${realm.name} ${stageName} thành công. Tỷ lệ: ${chance.toFixed(1)}%.`);
-    return { ok:true, type:'stage', title:'✨ Tiến Cảnh Thành Công', sub:`${realm.name} · ${stageName}`, flavor, chance:chance.toFixed(1), newMaxQi:calcMaxQi(G) };
+    return {
+      ok:true, type:'stage',
+      title:'✨ Tiến Cảnh Thành Công',
+      sub:`${realm.name} · ${stageName}`,
+      flavor, chance:chance.toFixed(1),
+      newMaxQi:calcMaxQi(G),
+      statDelta: {
+        atkBefore,    atkAfter:    G.atk,
+        defBefore,    defAfter:    G.def,
+        hpBefore,     hpAfter:     G.maxHp,
+        tamCanhBefore, tamCanhAfter: G.tamCanh,
+        newMaxQi:     calcMaxQi(G),
+        kienCoReset:  true,
+        stage:        G.stage,
+        stageName,
+        chance:       chance.toFixed(1),
+      },
+    };
 
   } else if (G.realmIdx + 1 < REALMS.length) {
     const nextIdx = G.realmIdx + 1;

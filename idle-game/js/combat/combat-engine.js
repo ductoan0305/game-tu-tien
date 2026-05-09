@@ -9,7 +9,7 @@ import { calcAtk, calcDef, calcMaxHp, calcSpeed } from '../core/state.js';
 import { calcElementMult, getPlayerElement } from './combat-data.js';
 import { randInt, randFloat } from '../utils/helpers.js';
 import { bus } from '../utils/helpers.js';
-import { rollCoDuyen } from '../core/co-duyen.js';
+import { rollCoDuyen, rollRivalEncounter } from '../core/co-duyen.js';
 import { rollEquipmentDrop } from '../equipment/equipment-engine.js';
 import { accumulateAmThuong } from '../core/duoc-dien-engine.js';
 import { gainKienCo } from '../core/systems/helpers-internal.js';
@@ -686,6 +686,10 @@ function endCombat(G, result, victory) {
     bus.emit('combat:enemy_killed', { enemyId: enemy.id, enemyTier: enemy.tier });
     bus.emit('combat:end', { victory: true, enemy, rewards: result.rewards });
     rollCoDuyen(G, 'combat');
+    // Sau chiến thắng có thể gặp đối thủ (trừ khi vừa đánh thắng rival hoặc đang trong dungeon)
+    if (!enemy.isNpcRival && !G.dungeon?.active) {
+      rollRivalEncounter(G, 'combat');
+    }
   } else {
     // Thua — HP về 1, không mất gì khác
     G.hp = Math.max(1, Math.floor(calcMaxHp(G) * 0.1));

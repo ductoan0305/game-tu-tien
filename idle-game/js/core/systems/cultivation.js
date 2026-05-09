@@ -5,7 +5,7 @@
 import { ITEMS, SECTS, SPIRIT_ROOTS, REALMS } from '../data.js';
 import { calcMaxQi, calcMaxHp }       from '../state/computed.js';
 import { fmtNum, bus }                from '../../utils/helpers.js';
-import { rollCoDuyen }                from '../co-duyen.js';
+import { rollCoDuyen, rollRivalEncounter } from '../co-duyen.js';
 import { rollLinhThuEncounter }       from '../linh-thu-engine.js';
 import { clamp, spendStamina, gainExp, gainStone, gainKienCo } from './helpers-internal.js';
 import { addToInventory }             from './inventory.js';
@@ -151,6 +151,13 @@ export function doExplore(G) {
       bus.emit('linhthu:encounter', { type:'wild', data:encounter.data });
       return { ok:true, msg:`✨ Gặp ${encounter.data.emoji} ${encounter.data.name} hoang dã! Có thể thuần hóa.`, type:'legendary', linhThuEncounter:{ type:'wild', beastId:encounter.data.id } };
     }
+  }
+
+  // Đối thủ NPC — ưu tiên hơn cơ duyên thường (sự kiện kịch tính hơn)
+  const rivalCheck = rollRivalEncounter(G, 'explore');
+  if (rivalCheck) {
+    // bus event đã được emit trong rollRivalEncounter — popup tự hiện
+    return { ok:true, msg:`⚔ ${rivalCheck.rival.name} xuất hiện chặn đường!`, type:'epic' };
   }
 
   // Cơ Duyên

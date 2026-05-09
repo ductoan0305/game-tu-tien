@@ -97,6 +97,17 @@ export function buyItem(G, itemId, costOverride) {
     return { ok:true, msg:`💊 Mua ${item.name}!`, type:'jade' };
   }
 
+  // Vật liệu trận pháp — lưu vào G.alchemy.ingredients
+  if (item.type === 'ingredient') {
+    if (!G.alchemy) G.alchemy = { furnaceLevel:0, knownRecipes:[], ingredients:{}, craftsCount:0 };
+    if (!G.alchemy.ingredients) G.alchemy.ingredients = {};
+    G.stone -= finalCost;
+    const ingId  = item.ingredientId;
+    const ingQty = item.ingredientQty || 1;
+    G.alchemy.ingredients[ingId] = (G.alchemy.ingredients[ingId] || 0) + ingQty;
+    return { ok:true, msg:`${item.emoji} Mua ${ingQty}× ${item.name}! Kho: ${G.alchemy.ingredients[ingId]}`, type:'gold' };
+  }
+
   G.stone -= finalCost;
   return { ok:true, msg:`🏮 Mua ${item.name}`, type:'gold' };
 }

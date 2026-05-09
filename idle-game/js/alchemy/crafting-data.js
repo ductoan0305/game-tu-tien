@@ -242,3 +242,207 @@ export function getNextCraftsmanRank(craftsCount) {
   }
   return null;
 }
+
+// ============================================================
+// TRAN_MAT_RECIPES — Cong Thuc Vat Lieu Tran Phap
+// Che tao Tran Ky / Tran Ban / Tran Nhan
+// KHONG can Be Ren — dung action craftTranMat trong tab Tran Phap Su
+// requireRank: cap bac Tran Phap Su (0=Tran Phap, 1=Hoc Do, 2=Su)
+// failEffect: 'nothing' | 'lose_half' | 'lose_all'
+// resultIngredient: key trong G.alchemy.ingredients
+// ============================================================
+export const TRAN_MAT_RECIPES = [
+  {
+    id: 'craft_tran_ky',
+    name: 'Chế Trận Kỳ',
+    resultIngredient: 'tran_ky',
+    resultQty: 2,
+    emoji: '\u{1F6A9}',
+    materials: [
+      { id: 'earth_stone', qty: 4 },
+      { id: 'spirit_herb',  qty: 3 },
+      { id: 'wolf_fang',    qty: 1 },
+    ],
+    stoneCost: 80,
+    successChance: 0.80,
+    requireRealm: 0,
+    requireRank: 0,
+    failEffect: 'nothing',
+    desc: 'Chế 2 Trận Kỳ từ nguy\xEAn liệu th\xF4. Thất bại ho\xE0n to\xE0n bộ nguy\xEAn liệu.',
+    lore: 'Cờ lệnh trận ph\xE1p — nền tảng mọi trận thức sơ cấp.',
+  },
+  {
+    id: 'craft_tran_ban',
+    name: 'Chế Trận B\xE0n',
+    resultIngredient: 'tran_ban',
+    resultQty: 1,
+    emoji: '\u{1F3B4}',
+    materials: [
+      { id: 'jade_lotus',  qty: 3 },
+      { id: 'moon_dew',    qty: 2 },
+      { id: 'tran_ky',     qty: 2 },
+    ],
+    stoneCost: 250,
+    successChance: 0.60,
+    requireRealm: 0,
+    requireRank: 1,
+    failEffect: 'lose_half',
+    desc: 'Chế 1 Trận B\xE0n. Thất bại mất nửa nguy\xEAn liệu. Cần cấp Học Đồ.',
+    lore: 'B\xE0n điều phối trận thức — cần thi\xEAn ph\xFA bố trận mới h\xF2a hợp được.',
+  },
+  {
+    id: 'craft_tran_nhan',
+    name: 'Chế Trận Nhãn',
+    resultIngredient: 'tran_nhan',
+    resultQty: 1,
+    emoji: '\u{1F535}',
+    materials: [
+      { id: 'blood_ginseng',  qty: 2 },
+      { id: 'lightning_core', qty: 1 },
+      { id: 'tran_ban',       qty: 1 },
+    ],
+    stoneCost: 600,
+    successChance: 0.40,
+    requireRealm: 0,
+    requireRank: 2,
+    failEffect: 'lose_all',
+    desc: 'Chế 1 Trận Nhãn. Tỷ lệ th\xE0nh c\xF4ng 40%. Thất bại mất tất cả. Cần cấp Sư.',
+    lore: 'Mắt trận — linh hồn đại trận, cực kỳ kh\xF3 chế tạo, chủ yếu từ cơ duy\xEAn.',
+  },
+];
+
+// ============================================================
+// TRAN_MAT_RECIPES — Công Thức Vật Liệu Trận Pháp
+// Chế tạo Trận Kỳ / Trận Bàn / Trận Nhãn
+// KHÔNG cần Bễ Rèn — dùng action craftTranMat trong tab Trận Pháp Sư
+// requireRank: cấp bậc Trận Pháp Sư (0=Trận Pháp, 1=Học Đồ, 2=Sư)
+// failEffect: 'nothing' | 'lose_half' | 'lose_all'
+// resultIngredient: key trong G.alchemy.ingredients
+// ============================================================
+export const TRAN_MAT_RECIPES = [
+  {
+    id: 'craft_tran_ky',
+    name: 'Chế Trận Kỳ',
+    resultIngredient: 'tran_ky',
+    resultQty: 2,
+    emoji: '🚩',
+    materials: [
+      { id: 'earth_stone', qty: 4 },
+      { id: 'spirit_herb',  qty: 3 },
+      { id: 'wolf_fang',    qty: 1 },
+    ],
+    stoneCost: 80,
+    successChance: 0.80,
+    requireRealm: 0,
+    requireRank: 0,
+    failEffect: 'nothing',
+    desc: 'Chế 2 Trận Kỳ từ nguyên liệu thô. Thất bại hoàn toàn bộ nguyên liệu.',
+    lore: 'Cờ lệnh trận pháp — nền tảng mọi trận thức sơ cấp.',
+  },
+  {
+    id: 'craft_tran_ban',
+    name: 'Chế Trận Bàn',
+    resultIngredient: 'tran_ban',
+    resultQty: 1,
+    emoji: '🎴',
+    materials: [
+      { id: 'jade_lotus',  qty: 3 },
+      { id: 'moon_dew',    qty: 2 },
+      { id: 'tran_ky',     qty: 2 },
+    ],
+    stoneCost: 250,
+    successChance: 0.60,
+    requireRealm: 0,
+    requireRank: 1,
+    failEffect: 'lose_half',
+    desc: 'Chế 1 Trận Bàn. Thất bại mất nửa nguyên liệu. Cần cấp Học Đồ.',
+    lore: 'Bàn điều phối trận thức — cần thiên phú bố trận mới hòa hợp được.',
+  },
+  {
+    id: 'craft_tran_nhan',
+    name: 'Chế Trận Nhãn',
+    resultIngredient: 'tran_nhan',
+    resultQty: 1,
+    emoji: '🔵',
+    materials: [
+      { id: 'blood_ginseng',  qty: 2 },
+      { id: 'lightning_core', qty: 1 },
+      { id: 'tran_ban',       qty: 1 },
+    ],
+    stoneCost: 600,
+    successChance: 0.40,
+    requireRealm: 0,
+    requireRank: 2,
+    failEffect: 'lose_all',
+    desc: 'Chế 1 Trận Nhãn. Tỉ lệ thành công 40%. Thất bại mất tất cả. Cần cấp Sư.',
+    lore: 'Mắt trận — linh hồn đại trận, cực kỳ khó chế tạo, chủ yếu từ cơ duyên.',
+  },
+];
+}
+// ============================================================
+// TRAN_MAT_RECIPES — Công Thức Vật Liệu Trận Pháp
+// Chế tạo Trận Kỳ / Trận Bàn / Trận Nhãn
+// KHÔNG cần Bễ Rèn — dùng action craftTranMat trong tab Trận Pháp Sư
+// requireRank: cấp bậc Trận Pháp Sư (0=Trận Pháp, 1=Học Đồ, 2=Sư)
+// failEffect: 'nothing' | 'lose_half' | 'lose_all'
+// resultIngredient: key trong G.alchemy.ingredients
+// ============================================================
+export const TRAN_MAT_RECIPES = [
+  {
+    id: 'craft_tran_ky',
+    name: 'Chế Trận Kỳ',
+    resultIngredient: 'tran_ky',
+    resultQty: 2,
+    emoji: '🚩',
+    materials: [
+      { id: 'earth_stone', qty: 4 },
+      { id: 'spirit_herb',  qty: 3 },
+      { id: 'wolf_fang',    qty: 1 },
+    ],
+    stoneCost: 80,
+    successChance: 0.80,
+    requireRealm: 0,
+    requireRank: 0,
+    failEffect: 'nothing',
+    desc: 'Chế 2 Trận Kỳ từ nguyên liệu thô. Thất bại hoàn toàn bộ nguyên liệu.',
+    lore: 'Cờ lệnh trận pháp — nền tảng mọi trận thức sơ cấp.',
+  },
+  {
+    id: 'craft_tran_ban',
+    name: 'Chế Trận Bàn',
+    resultIngredient: 'tran_ban',
+    resultQty: 1,
+    emoji: '🎴',
+    materials: [
+      { id: 'jade_lotus',  qty: 3 },
+      { id: 'moon_dew',    qty: 2 },
+      { id: 'tran_ky',     qty: 2 },
+    ],
+    stoneCost: 250,
+    successChance: 0.60,
+    requireRealm: 0,
+    requireRank: 1,
+    failEffect: 'lose_half',
+    desc: 'Chế 1 Trận Bàn. Thất bại mất nửa nguyên liệu. Cần cấp Học Đồ.',
+    lore: 'Bàn điều phối trận thức — cần thiên phú bố trận mới hòa hợp được.',
+  },
+  {
+    id: 'craft_tran_nhan',
+    name: 'Chế Trận Nhãn',
+    resultIngredient: 'tran_nhan',
+    resultQty: 1,
+    emoji: '🔵',
+    materials: [
+      { id: 'blood_ginseng',  qty: 2 },
+      { id: 'lightning_core', qty: 1 },
+      { id: 'tran_ban',       qty: 1 },
+    ],
+    stoneCost: 600,
+    successChance: 0.40,
+    requireRealm: 0,
+    requireRank: 2,
+    failEffect: 'lose_all',
+    desc: 'Chế 1 Trận Nhãn. Tỷ lệ thành công 40%. Thất bại mất tất cả. Cần cấp Sư.',
+    lore: 'Mắt trận — linh hồn đại trận, cực kỳ khó chế tạo, chủ yếu từ cơ duyên.',
+  },
+];

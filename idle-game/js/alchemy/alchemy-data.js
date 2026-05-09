@@ -425,6 +425,10 @@ export const INGREDIENTS = {
   void_essence:       { name: 'Hư Không Tinh Tủy',  emoji: '🌌', zone: 'dungeon' },
   hell_flame_essence: { name: 'Địa Ngục Hỏa Tinh',  emoji: '🔥', zone: 'dungeon' },
   demon_soul_crystal: { name: 'Thiên Ma Hồn Tinh',  emoji: '🌑', zone: 'dungeon' },
+  // Trận Pháp vật liệu — chế tạo trong tab Trận Pháp Sư hoặc mua shop/cơ duyên
+  tran_ky:    { name: 'Trận Kỳ',   emoji: '🚩', zone: 'craft' },
+  tran_ban:   { name: 'Trận Bàn',  emoji: '🎴', zone: 'craft' },
+  tran_nhan:  { name: 'Trận Nhãn', emoji: '🔵', zone: 'craft' },
 };
 
 // ---- Recipe definitions ----

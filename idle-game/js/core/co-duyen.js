@@ -2,9 +2,11 @@
 // core/co-duyen.js — Hệ thống Cơ Duyên (Lữ)
 // Những thứ không thể mua, không thể farm
 // v2 — 52 events, phân theo zone + cảnh giới + ngũ hành
+// P11 — NPC Rivals encounter system
 // ============================================================
 import { addChronicle, addLifespanBonus } from './time-engine.js';
 import { bus } from '../utils/helpers.js';
+import { NPC_RIVALS } from './data.js';
 
 // ============================================================
 // BẢNG CƠ DUYÊN — 52 events
@@ -1042,4 +1044,59 @@ function _isOnCooldown(G, eventId) {
 function _setCooldown(G, eventId, seconds) {
   if (!G._coDuyenCooldowns) G._coDuyenCooldowns = {};
   G._coDuyenCooldowns[eventId] = Date.now() + seconds * 1000;
+}
+
+// ============================================================
+// NPC RIVALS — Encounter System (P11)
+// Đối thủ xuất hiện theo cảnh giới tương đương player
+// ============================================================
+
+// Danh Vọng nhận được khi đánh thắng đối thủ theo realmIdx
+export const RIVAL_DV_REWARD = [10, 22, 50, 90, 150];
+
+// Cooldown giữa các lần gặp đối thủ: 4 giờ real time
+const RIVAL_COOLDOWN_MS = 4 * 3600 * 1000;
+
+// Xác suất cơ bản mỗi action
+const RIVAL_BASE_CHANCE = 0.004;
+
+/**
+ * rollRivalEncounter(G, actionType)
+ * Gọi từ cultivation.js (explore) và combat-engine.js (sau win)
+ * Trả về { rival } nếu gặp đối thủ, null nếu không
+ * Tự emit 'rival:encounter' bus event khi trigger
+ */
+export function rollRivalEncounter(G, actionType) {
+  // Không trigger khi đang chiến đấu hoặc game over
+  if (G.combat?.active) return null;
+  if (G.gameTime?.isGameOver) return null;
+  // Chỉ trigger từ explore và combat
+  if (actionType !== 'explore' && actionType !== 'combat') return null;
+
+  // Cooldown check
+  const now = Date.now();
+  if (now < (G._rivalEncounterCd || 0)) return null;
+
+  // Roll xác suất
+  if (Math.random() > RIVAL_BASE_CHANCE) return null;
+
+  // Lọc đối thủ theo realmIdx tương đương (±1 từ player)
+  const playerRealm = G.realmIdx || 0;
+  const eligible = NPC_RIVALS.filter(r => Math.abs(r.realmIdx - playerRealm) <= 1);
+  if (eligible.length === 0) return null;
+
+  // Random chọn 1 đối thủ (chưa đánh thắng gần đây)
+  const beaten = G._rivalBeaten || {};
+  // Ưu tiên đối thủ chưa gặp; nếu tất cả đã gặp thì chọn ngẫu nhiên
+  const notBeaten = eligible.filter(r => !beaten[r.name]);
+  const pool = notBeaten.length > 0 ? notBeaten : eligible;
+  const rival = pool[Math.floor(Math.random() * pool.length)];
+
+  // Set cooldown
+  G._rivalEncounterCd = now + RIVAL_COOLDOWN_MS;
+
+  // Emit bus event — event-bus-handlers.js sẽ hiện popup
+  bus.emit('rival:encounter', { rival });
+
+  return { rival };
 }

@@ -444,6 +444,11 @@ export const ITEMS = [
   { id:'bei_ren_4', name:'Bễ Rèn Ngân',     nameCN:'銀鍛爐', emoji:'⚒', cost:3500, costTier:'💠 Trung', rarity:'huyền thoại', unlockRealm:2, type:'forge_furnace', val:4, desc:'Bễ ngân thuần khiết, trận pháp thượng cổ khắc lên, rèn thượng phẩm.',effect:'+18% tỷ lệ rèn, 40 lần (cần Bễ Rèn Cấp 3)' },
   { id:'bei_ren_5', name:'Bễ Rèn Tiên Kim', nameCN:'仙金鍛爐',emoji:'⚒', cost:9000, costTier:'💠 Trung', rarity:'huyền thoại', unlockRealm:3, type:'forge_furnace', val:5, desc:'Bễ Tiên Kim đệ nhất — truyền thuyết của giới rèn bảo.',            effect:'+28% tỷ lệ rèn, 60 lần (cần Bễ Rèn Cấp 4)' },
 
+  // ---- Vật Liệu Trận Pháp (type: ingredient) — mua về G.alchemy.ingredients ----
+  { id:'shop_tran_ky',   name:'Trận Kỳ',   nameCN:'陣旗', emoji:'🚩', cost:200,  costTier:'💎 Hạ',    rarity:'hiếm',        unlockRealm:0, type:'ingredient', ingredientId:'tran_ky',   ingredientQty:1, desc:'Cờ lệnh trận pháp sơ cấp. Dùng để bố trận Tier 1–2.', effect:'+1 Trận Kỳ vào kho vật liệu trận', shopCategory:'tran_mat' },
+  { id:'shop_tran_ban',  name:'Trận Bàn',  nameCN:'陣盤', emoji:'🎴', cost:700,  costTier:'💎 Hạ',    rarity:'cực hiếm',    unlockRealm:0, type:'ingredient', ingredientId:'tran_ban',  ingredientQty:1, desc:'Bàn điều phối trận thức. Dùng để bố trận Tier 2–4.', effect:'+1 Trận Bàn vào kho vật liệu trận', shopCategory:'tran_mat' },
+  { id:'shop_tran_nhan', name:'Trận Nhãn', nameCN:'陣眼', emoji:'🔵', cost:3000, costTier:'💠 Trung', rarity:'huyền thoại', unlockRealm:1, type:'ingredient', ingredientId:'tran_nhan', ingredientQty:1, desc:'Mắt trận — linh hồn đại trận, cực kỳ hiếm. Dùng cho Tier 3–5.', effect:'+1 Trận Nhãn vào kho vật liệu trận', shopCategory:'tran_mat' },
+
   // ---- Bếp Linh Thực (type: kitchen) ----
   { id:'bep_lt_1', name:'Bếp Đất Linh',    nameCN:'土靈廚', emoji:'🍳', cost:200,  costTier:'💎 Hạ',    rarity:'thường',      unlockRealm:0, type:'kitchen', val:1, desc:'Bếp đất linh cơ bản, bắt đầu hành trình linh thực.',         effect:'Mở khóa Linh Thực Sư (10 lần nấu)' },
   { id:'bep_lt_2', name:'Bếp Đồng Linh',   nameCN:'銅靈廚', emoji:'🍳', cost:550,  costTier:'💎 Hạ',    rarity:'hiếm',        unlockRealm:0, type:'kitchen', val:2, desc:'Bếp đồng khắc trận giữ nhiệt, tỷ lệ nấu cao hơn.',          effect:'+5% tỷ lệ, 18 lần (cần Bếp Cấp 1)' },

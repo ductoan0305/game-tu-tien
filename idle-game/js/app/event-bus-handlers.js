@@ -12,9 +12,12 @@ import { resolveAmbushWin,
          resolveAmbushLoss }      from '../core/kiep-tu-engine.js';
 import { LINH_THU_DATA }          from '../core/linh-thu-engine.js';
 import { getDanhVongTier }        from '../core/danh-vong.js';
+import { RIVAL_DV_REWARD }       from '../core/co-duyen.js';
 import { showGameOverScreen }     from './popups/gameover-popup.js';
 import { showCoDuyenModal,
-         showLinhThuEncounterPopup } from './popups/misc-popups.js';
+         showLinhThuEncounterPopup,
+         showRivalEncounterPopup,
+         showAgeDecayPopup }         from './popups/misc-popups.js';
 import { flashScreen }            from '../ui/tabs/combat-tab.js';
 
 export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, cultivateActions, switchTabFn }) {
@@ -37,6 +40,17 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
         const r = resolveAmbushWin(G, enemy._kiepTuData || enemy);
         showToast(r.msg, 'gold');
         appendLog(`⚔ Đánh bại Kiếp Tu ${enemy.name}! +${r.stoneGain}💎`, 'gold');
+      }
+      // Rival win — thưởng Danh Vọng + ghi lại lịch sử
+      if (enemy?.isNpcRival && enemy._rivalData) {
+        const rival  = enemy._rivalData;
+        const dvGain = RIVAL_DV_REWARD[rival.realmIdx] || 10;
+        G.danhVong = (G.danhVong ?? 0) + dvGain;
+        if (!G._rivalBeaten) G._rivalBeaten = {};
+        G._rivalBeaten[rival.name] = (G._rivalBeaten[rival.name] || 0) + 1;
+        showToast(`🏆 Đánh bại ${rival.name}! Danh Vọng +${dvGain}!`, 'epic');
+        appendLog(`🏆 Chiến thắng đối thủ ${rival.name} — Danh Vọng +${dvGain}`, 'gold');
+        bus.emit('danhvong:gained', { amount: dvGain, source: `Đánh bại ${rival.name}` });
       }
       if (G.dungeon?.active) {
         const dr = onDungeonFloorClear(G);
@@ -93,6 +107,23 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
   bus.on('phapdia:fee_overdue', ({ owed, paid, shortfall }) => {
     showToast(`⚠ Thiếu phí Linh Địa! Cần thêm ${shortfall}💎 — tu luyện bị ảnh hưởng.`, 'warning');
     appendLog(`⚠ Phí Linh Địa ${owed}💎 — chỉ trả được ${paid}💎, thiếu ${shortfall}💎.`, 'danger');
+  });
+
+  // ---- Giai Đoạn Suy Tàn ----
+  bus.on('age:decay', ({ bracket, realAge, penalty }) => {
+    showAgeDecayPopup(bracket, realAge);
+
+    // Notification toast theo mức độ
+    if (bracket === 'age65') {
+      showToast('⏳ Khí mạch dần suy — Thuần Độ tích chậm hơn 15%', 'gold');
+      appendLog(`⏳ Tuổi ${realAge}: Khí mạch suy — Thuần Độ −15%`, 'gold');
+    } else if (bracket === 'age70') {
+      showToast('🔴 Suy Tàn Khí Huyết — Thuần Độ tích chậm hơn 30%!', 'danger');
+      appendLog(`🔴 Tuổi ${realAge}: Suy tàn nặng — Thuần Độ −30%`, 'danger');
+    } else if (bracket === 'age75') {
+      showToast('💀 Ngọn đèn trước gió — Thuần Độ −50%! Nắm lấy cơ duyên!', 'danger');
+      appendLog(`💀 Tuổi ${realAge}: Gần cuối — Thuần Độ −50%`, 'danger');
+    }
   });
 
   bus.on('lifespan:warning', ({ remaining, level }) => {
@@ -214,5 +245,68 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
   bus.on('linhthu:released',  ({ beastId }) => {
     const d = LINH_THU_DATA[beastId];
     appendLog(`${d?.emoji||'🐾'} ${d?.name||beastId} được thả về tự nhiên.`, 'jade');
+  });
+
+  // ---- NPC Rivals (P11) ----
+  bus.on('rival:encounter', ({ rival }) => {
+    appendLog(`⚔ ${rival.name} (${rival.title}) chặn đường — đối thủ!`, 'gold');
+    showRivalEncounterPopup(G, rival, { renderCurrentTab });
+  });
+
+  bus.on('rival:start_combat', ({ rival }) => {
+    if (G.combat?.active) return;
+    if (G.meditating) G.meditating = false;
+
+    // Stat scaling theo realmIdx + stage (tương tự kieptu)
+    const RIVAL_ATK = [12,  48, 170, 520, 1500];
+    const RIVAL_DEF = [ 5,  20,  70, 210,  630];
+    const RIVAL_HP  = [100, 400,1400,5000,18000];
+    const r   = Math.min(rival.realmIdx || 0, 4);
+    const stg = rival.stage || 1;
+    const stgMult = 1 + stg * 0.07; // stage 1→×1.07 … stage 9→×1.63
+
+    const atk   = Math.floor(RIVAL_ATK[r] * stgMult);
+    const def   = Math.floor(RIVAL_DEF[r] * stgMult);
+    const hp    = Math.floor(RIVAL_HP[r]  * stgMult);
+    const stone = Math.floor(atk * 1.5 + Math.random() * atk);
+
+    const enemy = {
+      id:        `rival_${rival.name}`,
+      name:      rival.name,
+      emoji:     '🧙',
+      desc:      rival.title,
+      realmIdx:  r,
+      atk, def,
+      currentHp: hp, maxHp: hp,
+      hp,
+      exp:       Math.floor(atk * 2),
+      stone,
+      tier:      r,
+      isNpcRival: true,
+      _rivalData: rival,
+      buffs: [], debuffs: {}, skillCooldowns: {},
+    };
+
+    const playerMaxHp = G.maxHp || 100;
+
+    G.combat = {
+      active: true,
+      enemy,
+      playerHp:       Math.min(G.hp, playerMaxHp),
+      playerMaxHp,
+      playerHpBefore: Math.min(G.hp, playerMaxHp),
+      playerMp:       G.combat?.playerMp || 100,
+      playerMaxMp:    100,
+      turn: 1, phase: 'player',
+      log: [{ text:`⚔ ${rival.name} thách đấu! "${rival.desc}"`, type:'system' }],
+      selectedSkill: null, comboCount: 0, lastSkillUsed: null,
+      dodgeNextHit: false, playerDebuffs: [],
+      isNpcRival: true, _rivalData: rival,
+    };
+
+    switchTabFn('combat');
+    renderCurrentTab();
+    showToast(`⚔ ${rival.name} thách đấu ngươi!`, 'epic');
+    appendLog(`⚔ Đối thủ ${rival.name} bước ra thách đấu!`, 'gold');
   });
 }

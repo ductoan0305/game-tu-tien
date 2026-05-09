@@ -673,6 +673,52 @@ const alchemyActions = {
     });
   },
   cancelArray: (arrayId) => { if (!G.tranPhap?.activeArrays) return; G.tranPhap.activeArrays=G.tranPhap.activeArrays.filter(a=>a.id!==arrayId); showToast('🔯 Đã huỷ trận pháp.','jade'); saveGame(G); renderCurrentTab(); },
+  craftTranMat: (recipeId) => {
+    import('./alchemy/crafting-data.js').then(({ TRAN_MAT_RECIPES }) => {
+      import('./alchemy/tran-phap-data.js').then(({ getArrayMasterRank, ARRAY_MASTER_RANKS }) => {
+        const recipe = TRAN_MAT_RECIPES.find(r => r.id === recipeId); if (!recipe) return;
+        if (!G.alchemy) G.alchemy = { furnaceLevel:0, knownRecipes:[], ingredients:{}, craftsCount:0 };
+        if (!G.alchemy.ingredients) G.alchemy.ingredients = {};
+        // Kiểm tra realm
+        if ((G.realmIdx||0) < (recipe.requireRealm||0)) { showToast(`🔒 Cần ${REALM_NAMES[recipe.requireRealm]}!`,'danger'); return; }
+        // Kiểm tra rank Trận Pháp Sư
+        if (!G.tranPhap) G.tranPhap = { arrayCount:0, activeArrays:[], stoneDrainTimer:0 };
+        const rank = getArrayMasterRank(G.tranPhap.arrayCount || 0);
+        if (rank.rank < (recipe.requireRank||0)) {
+          showToast(`🔒 Cần ${ARRAY_MASTER_RANKS[recipe.requireRank]?.name||'cấp cao hơn'}!`,'danger'); return;
+        }
+        // Kiểm tra nguyên liệu
+        const can = recipe.materials.every(({id,qty}) => (G.alchemy.ingredients[id]||0) >= qty);
+        if (!can) { showToast('❌ Thiếu nguyên liệu!','danger'); return; }
+        if ((G.stone||0) < (recipe.stoneCost||0)) { showToast(`💎 Cần ${recipe.stoneCost} linh thạch!`,'danger'); return; }
+        // Trừ nguyên liệu và linh thạch
+        recipe.materials.forEach(({id,qty}) => { G.alchemy.ingredients[id] = (G.alchemy.ingredients[id]||0) - qty; });
+        G.stone -= (recipe.stoneCost||0);
+        // Roll thành công
+        const chance = Math.min(0.97, recipe.successChance || 0.8);
+        if (Math.random() < chance) {
+          const result = recipe.resultIngredient;
+          const qty    = recipe.resultQty || 1;
+          G.alchemy.ingredients[result] = (G.alchemy.ingredients[result]||0) + qty;
+          showToast(`🔧 Chế tạo thành công! +${qty} ${recipe.emoji} ${recipe.name.replace('Chế ','')}`, 'gold');
+          appendLog(`🔧 Trận Vật Liệu: +${qty}× ${recipe.name.replace('Chế ','')}`, 'gold');
+        } else {
+          // Xử lý thất bại
+          const fe = recipe.failEffect || 'nothing';
+          if (fe === 'nothing') {
+            recipe.materials.forEach(({id,qty}) => { G.alchemy.ingredients[id] = (G.alchemy.ingredients[id]||0) + qty; });
+            showToast(`💥 Chế tạo thất bại! Hoàn lại nguyên liệu.`, 'danger');
+          } else if (fe === 'lose_half') {
+            recipe.materials.forEach(({id,qty}) => { G.alchemy.ingredients[id] = (G.alchemy.ingredients[id]||0) + Math.ceil(qty/2); });
+            showToast(`💥 Chế tạo thất bại! Mất nửa nguyên liệu.`, 'danger');
+          } else {
+            showToast(`💥 Chế tạo thất bại! Toàn bộ nguyên liệu mất.`, 'danger');
+          }
+        }
+        saveGame(G); renderCurrentTab();
+      });
+    });
+  },
   drawTalisman: (recipeId) => {
     import('./alchemy/phu-chu-data.js').then(({TALISMAN_RECIPES,TALISMAN_ITEMS,getTalismanRank})=>{
       const recipe=TALISMAN_RECIPES.find(r=>r.id===recipeId); if (!recipe) return;

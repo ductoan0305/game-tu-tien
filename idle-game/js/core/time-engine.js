@@ -48,6 +48,10 @@ export function tickTime(G, dt) {
   const maxLife = getMaxLifespan(G);
   const remaining = maxLife - G.gameTime.currentYear;
 
+  // ---- Giai Đoạn Suy Tàn — Age Decay Brackets ----
+  // tuổi thực = currentYear + 10 (bắt đầu tu luyện năm 10 tuổi)
+  _checkAgeDecayBrackets(G);
+
   // Cảnh báo khi gần hết tuổi thọ
   if (remaining <= 10 && remaining > 9.95) {
     bus.emit('lifespan:warning', { remaining: Math.floor(remaining), level: 'critical' });
@@ -66,6 +70,50 @@ export function tickTime(G, dt) {
   }
 
   return null;
+}
+
+// ---- Giai Đoạn Suy Tàn: kiểm tra và fire age bracket events ----
+// Chỉ fire 1 lần mỗi mốc (lưu trong _ageEventsFired)
+// tuổi thực = currentYear + 10
+function _checkAgeDecayBrackets(G) {
+  if (!G.gameTime) return;
+
+  // Khởi tạo state nếu chưa có (save cũ tương thích)
+  if (!G.gameTime._ageEventsFired) {
+    G.gameTime._ageEventsFired = { age60: false, age65: false, age70: false, age75: false };
+  }
+
+  const fired = G.gameTime._ageEventsFired;
+  const realAge = G.gameTime.currentYear + 10; // tuổi thực
+
+  // Tuổi 75 — gần cuối, penalty −50%, Đột Phá mờ
+  if (!fired.age75 && realAge >= 75) {
+    fired.age75 = true;
+    G.agePurityPenalty = 0.50;
+    bus.emit('age:decay', { bracket: 'age75', realAge: Math.floor(realAge), penalty: 0.50 });
+  }
+  // Tuổi 70 — cảnh báo lớn, penalty −30%, bar đỏ, ghi ký sự
+  else if (!fired.age70 && realAge >= 70) {
+    fired.age70 = true;
+    G.agePurityPenalty = 0.70;
+    addChronicle(G,
+      'Tuổi 70 — Khí mạch bắt đầu suy tàn nghiêm trọng.',
+      'Tốc độ tích Thuần Độ giảm 30%. Mỗi ngày qua là một cơ duyên đang mất.'
+    );
+    bus.emit('age:decay', { bracket: 'age70', realAge: Math.floor(realAge), penalty: 0.70 });
+  }
+  // Tuổi 65 — popup + notification, penalty −15%
+  else if (!fired.age65 && realAge >= 65) {
+    fired.age65 = true;
+    G.agePurityPenalty = 0.85;
+    bus.emit('age:decay', { bracket: 'age65', realAge: Math.floor(realAge), penalty: 0.85 });
+  }
+  // Tuổi 60 — lore nhẹ, chưa có penalty
+  else if (!fired.age60 && realAge >= 60) {
+    fired.age60 = true;
+    // agePurityPenalty = 1.0 (chưa giảm)
+    bus.emit('age:decay', { bracket: 'age60', realAge: Math.floor(realAge), penalty: 1.0 });
+  }
 }
 
 // ---- Lấy tuổi thọ tối đa hiện tại ----
@@ -99,6 +147,9 @@ export function onRealmBreakthrough(G, newRealmIdx) {
   // (bắt đầu đếm lại từ đầu trong cảnh giới mới)
   G.gameTime.currentYear = 0;
   G.gameTime.lifespanBonus = 0; // reset bonus — phải kiếm lại
+  // Reset age decay state — cảnh giới mới, tuổi thọ mới, bắt đầu lại
+  G.gameTime._ageEventsFired = { age60: false, age65: false, age70: false, age75: false };
+  G.agePurityPenalty = 1.0;
 
   const realmName = REALM_NAMES[newRealmIdx] || realm.name;
   addChronicle(G,

@@ -49,7 +49,9 @@ export function gameTick(G, dt = 0.1) {
     if ((G.qi ?? 0) < maxQ) {
       G.qi = Math.min(G.qi + effRate * dt, maxQ);
     } else {
-      const pRate = calcPurityRate(G) * hungerMod * nghiepMod * stoneMod;
+      // Giai Đoạn Suy Tàn: nhân hệ số suy giảm theo tuổi (soft penalty — không block đột phá)
+      const agePenalty = G.agePurityPenalty ?? 1.0;
+      const pRate = calcPurityRate(G) * hungerMod * nghiepMod * stoneMod * agePenalty;
       // R5: Ceiling override khi dùng đan dược tăng purity (bỏ qua trần công pháp tạm thời)
       const thuanDoCeiling = G._purityCeilingOverride ? Infinity : calcThuanDoCeiling(G);
       if ((G.purity ?? 0) < thuanDoCeiling) {

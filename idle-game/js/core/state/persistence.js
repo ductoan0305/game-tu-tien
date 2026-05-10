@@ -412,5 +412,3 @@ function _migrateNpcReputation(m) {
   if (!m._npcRepLastVisit  || typeof m._npcRepLastVisit  !== 'object') m._npcRepLastVisit  = {};
   if (!m._npcRepYearlyGain || typeof m._npcRepYearlyGain !== 'object') m._npcRepYearlyGain = {};
 }
-ct') m._npcRepYearlyGain = {};
-}

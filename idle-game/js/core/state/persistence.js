@@ -113,6 +113,7 @@ function _migrateAlchemy(m) {
     m.alchemy.furnaceDurability = lv > 0 ? (DUR[lv] || 10) : 0;
   }
   if (m.alchemy.danPhuongTe === undefined) m.alchemy.danPhuongTe = 0;
+  if (m.alchemy._craftQty   === undefined) m.alchemy._craftQty   = 1; // patch save cũ
   if (!m.alchemy.forge || typeof m.alchemy.forge !== 'object') {
     m.alchemy.forge = { level:0, durability:0 };
   } else {
@@ -392,6 +393,7 @@ function _migrateTutorial(m) {
   if (m.tutorial.completed === undefined) m.tutorial.completed = false;
   if (m.tutorial.startedAt === undefined) m.tutorial.startedAt = 0;
   if (!m.tutorial.seenHints || typeof m.tutorial.seenHints !== 'object') m.tutorial.seenHints = {};
+  if (m.tutorial.panelDismissed === undefined) m.tutorial.panelDismissed = false; // patch save cũ thiếu field
   if (!m.tutorial.progress || typeof m.tutorial.progress !== 'object') m.tutorial.progress = {};
 
   const p = m.tutorial.progress;

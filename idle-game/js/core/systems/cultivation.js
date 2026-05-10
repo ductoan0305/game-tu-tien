@@ -199,6 +199,7 @@ export function doFish(G) {
   if (!spendStamina(G, 5)) return { ok:false, msg:'⚠ Thể năng không đủ!', type:'danger' };
   gainKienCo(G, 3); // Câu cá tĩnh tâm — nhẹ nhàng nhất
   const roll = Math.random();
+  bus.emit('quest:update', { type:'fish', qty:1 });
   if (roll < 0.35) {
     const s = gainStone(G, Math.floor(8 + Math.random() * 20));
     G.stone += s;

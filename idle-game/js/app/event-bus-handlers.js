@@ -247,6 +247,15 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
     appendLog(`${d?.emoji||'🐾'} ${d?.name||beastId} được thả về tự nhiên.`, 'jade');
   });
 
+  // ---- Milestone LK (Giai đoạn 2) ----
+  // Narrative moments tại LK3, LK6, LK9 — show toast + log nhấn mạnh
+  bus.on('milestone:lk', ({ stage, title, msg, flavor }) => {
+    const emoji = stage === 9 ? '🔥' : stage === 6 ? '⚠️' : '🌱';
+    showToast(`${emoji} ${title}`, stage === 9 ? 'legendary' : stage === 6 ? 'epic' : 'jade');
+    appendLog(`${emoji} ${title}: ${msg}`, stage >= 6 ? 'gold' : 'jade');
+    if (flavor) appendLog(`“${flavor}”`, 'spirit');
+  });
+
   // ---- NPC Rivals (P11) ----
   bus.on('rival:encounter', ({ rival }) => {
     appendLog(`⚔ ${rival.name} (${rival.title}) chặn đường — đối thủ!`, 'gold');

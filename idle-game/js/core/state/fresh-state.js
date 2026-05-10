@@ -137,6 +137,7 @@ export function createFreshState() {
       successStreak: 0,
       danPhuongTe: 0,
       forge: { level: 0, durability: 0 },
+      _craftQty: 1,  // số lượng luyện đan mặc định
     },
 
     // ---- Nghề Nghiệp (Life Skills) state ----

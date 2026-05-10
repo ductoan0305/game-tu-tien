@@ -236,6 +236,48 @@ export function doBreakthrough(G) {
     const stageName = realm.stageNames?.[G.stage-1] ?? `Tầng ${G.stage}`;
     const flavor    = realm.breakthroughText?.[G.stage-1] ?? realm.breakthroughText?.[Math.floor(Math.random()*realm.breakthroughText?.length)] ?? '';
     addChronicle(G, `Tuổi ${Math.floor(G.gameTime?.currentYear??0)}: Đột phá ${realm.name} ${stageName} thành công. Tỷ lệ: ${chance.toFixed(1)}%.`);
+
+    // ---- Milestone narrative LK3, LK6, LK9 ----
+    // Những khoảnh khắc story đặc biệt, không phải buff — chỉ 1 lần mỗi run
+    if (G.realmIdx === 0) {
+      if (!G._lkMilestones) G._lkMilestones = {};
+      if (G.stage === 3 && !G._lkMilestones.lk3) {
+        G._lkMilestones.lk3 = true;
+        addChronicle(G,
+          'Cột Mốc Luyện Khí 3: Đủ Mạnh Để Thấy Giới Hạn',
+          'Ngươi đã đi được một phần tư hành trình Luyện Khí. Không còn là tân thủ nữa. Nhưng cũng không xa cái chết — nhìn quanh, bao nhiêu người cùng khởi điểm đã bỏ cuộc.'
+        );
+        bus.emit('milestone:lk', { stage: 3,
+          title: '🌱 Luyện Khí Tầng 3 — Bắt Đầu Thấy Rõ',
+          msg: 'Ngươi đủ mạnh để nhận ra con đường phía trước còn dài. Và đủ tỉnh để thấy thời gian đang trôi.',
+          flavor: 'Nhiều người tán tu ở đây — không phải vì yếu, mà vì không biết mình đang ở đâu.'
+        });
+      } else if (G.stage === 6 && !G._lkMilestones.lk6) {
+        G._lkMilestones.lk6 = true;
+        addChronicle(G,
+          'Cột Mốc Luyện Khí 6: Gặp Lão Tán Tu',
+          'Trong chuyến thám hiểm, gặp một lão nhân ngồi cô độc bên vệ đường. Mắt ông ta trống rỗng, nhưng khi nhìn ngươi — ánh mắt đó nói: Đừng như ta.'
+        );
+        bus.emit('milestone:lk', { stage: 6,
+          title: '⚠️ Luyện Khí Tầng 6 — Giữa Đường Gian Nan',
+          msg: 'Ngươi gặp một tán tu LK6 đang sống những năm cuối đời. Ông ta không nói nhiều. Nhưng cái nhìn của ông là lời cảnh báo rõ nhất ngươi từng thấy.',
+          flavor: '"Ta đã dừng lại ở tầng 6. Nghĩ rằng còn thời gian. Bây giờ..."'
+        });
+      } else if (G.stage === 9 && !G._lkMilestones.lk9) {
+        G._lkMilestones.lk9 = true;
+        addChronicle(G,
+          'Cột Mốc Luyện Khí 9: Cửa Sổ Đang Đóng',
+          'Luyện Khí tầng 9 — chỉ còn một bước nữa là Trúc Cơ. Nhưng bước này là bước khó nhất. Và cửa sổ tuổi thọ đang đóng dần.'
+        );
+        bus.emit('milestone:lk', { stage: 9,
+          title: '🔥 Luyện Khí Tầng 9 — Ngưỡng Cửa Cuối Cùng',
+          msg: 'Ngươi đứng trước cửa Trúc Cơ. Hành trình dài này sắp kết thúc — hoặc bằng đột phá, hoặc bằng thất bại. Không còn con đường nào khác.',
+          flavor: 'Không còn chỗ để tự dối. Chỉ còn ngươi và ngưỡng cửa trước mặt.'
+        });
+      }
+    }
+    // ---- End milestone ----
+
     return {
       ok:true, type:'stage',
       title:'✨ Tiến Cảnh Thành Công',

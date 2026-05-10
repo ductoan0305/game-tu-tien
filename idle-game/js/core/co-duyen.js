@@ -2,6 +2,7 @@
 // core/co-duyen.js — Hệ thống Cơ Duyên (Lữ)
 // Những thứ không thể mua, không thể farm
 // v2 — 52 events, phân theo zone + cảnh giới + ngũ hành
+// v3 — +18 events LK3-LK9 (Giai đoạn 2 content deepening)
 // P11 — NPC Rivals encounter system
 // ============================================================
 import { addChronicle, addLifespanBonus } from './time-engine.js';
@@ -9,7 +10,7 @@ import { bus } from '../utils/helpers.js';
 import { NPC_RIVALS } from './data.js';
 
 // ============================================================
-// BẢNG CƠ DUYÊN — 52 events
+// BẢNG CƠ DUYÊN — 70 events
 // tier 1 (xanh): phổ thông   — baseChance 0.04-0.07
 // tier 2 (tím):  hiếm        — baseChance 0.008-0.018
 // tier 3 (vàng): cực hiếm    — baseChance 0.001-0.003
@@ -784,6 +785,244 @@ export const CO_DUYEN_EVENTS = [
     conditions: ['explore', 'meditate'],
     zoneBonus: ['an_long_dong', 'thien_kiep_dia'],
   },
+
+  // ============================================================
+  // LUYỆN KHÍ (realmIdx 0, stage 3-9) — Chuyên Biệt: Dead Zone Content
+  // Mục tiêu: lấp đầy giai đoạn LK3-LK9 với narrative về tuổi tác,
+  // áp lực thời gian, tán tu, và con đường của người bình thường.
+  // ============================================================
+
+  // --- LK3 — Milestone: Đủ mạnh để thấy giới hạn ---
+  {
+    id: 'lk_wasted_year',
+    name: 'Năm Tháng Trôi Qua', tier: 1, emoji: '⏳',
+    desc: 'Trong lúc bế quan, nhận ra mình đã mất một năm mà không tiến triển gì đáng kể.',
+    lore: 'Không phải thất bại mà là tỉnh ngộ. Một năm. Ngươi nhìn bàn tay mình — nhăn hơn một chút, gân xanh hơn một chút.',
+    baseChance: 0.05,
+    effect: { type: 'purity_burst', amount: 0.03 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 3 && (G.stage ?? 1) <= 5,
+  },
+  {
+    id: 'lk_peer_surpassed',
+    name: 'Đồng Môn Vượt Trội', tier: 1, emoji: '👥',
+    desc: 'Một người vào cùng lúc với ngươi đã đột phá Trúc Cơ. Ngươi vẫn ở đây.',
+    lore: 'Cảm giác cay đắng. Nhưng cay đắng cũng là nhiên liệu — nếu ngươi biết đốt đúng cách.',
+    baseChance: 0.04,
+    effect: { type: 'exp_burst', amount: 600 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 3 && (G.stage ?? 1) <= 6,
+  },
+  {
+    id: 'lk_lifespan_panic',
+    name: 'Nhìn Lại Tuổi Thọ', tier: 1, emoji: '💀',
+    desc: 'Nhẩm tính thọ mệnh còn lại — số năm không nhiều. Tim thắt lại.',
+    lore: 'Con số thô ráp: ngươi có bao nhiêu năm còn lại? Đủ để đột phá không? Áp lực này... thực ra giúp ích.',
+    baseChance: 0.045,
+    effect: { type: 'purity_burst', amount: 0.05 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate'],
+    extraCondition: (G) => {
+      const remaining = (G.lifespan ?? 100) - (G.age ?? 16);
+      return remaining < 60 && (G.stage ?? 1) >= 3;
+    },
+  },
+
+  // --- LK4-LK5 — Tán tu: những người không vượt qua ---
+  {
+    id: 'lk_scattered_meeting',
+    name: 'Gặp Tán Tu', tier: 1, emoji: '🧓',
+    desc: 'Trong chuyến thám hiểm, gặp một người tu tiên cứng tuổi ngồi bên đường, mắt trống rỗng.',
+    lore: 'Ông ta không nói nhiều. Nhưng nhìn ngươi với ánh mắt vừa thương vừa cảnh cáo — đừng như ta.',
+    baseChance: 0.04,
+    effect: { type: 'purity_burst', amount: 0.04 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 7,
+  },
+  {
+    id: 'lk_failed_bt_lesson',
+    name: 'Thất Bại Đột Phá Ngộ Đạo', tier: 2, emoji: '💥',
+    desc: 'Lần đột phá thất bại khiến ngươi mất kiểm soát linh lực trong một giờ — nhưng sau đó, ngộ ra điều gì đó quan trọng.',
+    lore: 'Thất bại không phải lãng phí. Mỗi lần nổ tung là một lần hiểu rõ hơn giới hạn của mình.',
+    baseChance: 0.012,
+    effect: { type: '_btFailStreak_reset' },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['cultivate', 'meditate'],
+    extraCondition: (G) => (G._btFailStreak ?? 0) >= 2 && (G.stage ?? 1) >= 4,
+  },
+  {
+    id: 'lk_aging_body_push',
+    name: 'Thân Thể Tuổi Tác Phản Kháng', tier: 1, emoji: '💪',
+    desc: 'Thân thể đã bắt đầu thoái hóa nhẹ — nhưng hôm nay linh lực dâng trào bất ngờ, như ý chí kháng cự.',
+    lore: 'Tu tiên không phải chỉ là tinh thần. Thân thể cũng có ý chí. Hôm nay nó chứng minh điều đó.',
+    baseChance: 0.035,
+    effect: { type: 'permanent_stat', stat: 'ratePct', value: 4 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['cultivate', 'meditate'],
+    extraCondition: (G) => {
+      const age = G.age ?? 16;
+      return age >= 40 && (G.stage ?? 1) >= 4;
+    },
+  },
+
+  // --- LK5-LK6 — Nhận ra con đường —
+  {
+    id: 'lk_five_root_epiphany',
+    name: 'Ngộ Ngũ Căn', tier: 2, emoji: '🌿',
+    desc: 'Lần đầu tiên ngươi cảm nhận được cả năm luồng linh khí cùng một lúc — dù chỉ trong một thoáng.',
+    lore: 'Ngũ Linh Căn vốn bị xem là yếu. Nhưng trong khoảnh khắc đó, ngươi hiểu: năm con sông nhỏ cộng lại vẫn là sông.',
+    baseChance: 0.008,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 6, expBonus: 10 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => {
+      const t = G.spiritData?.type;
+      return t === 'NGU' && (G.stage ?? 1) >= 5;
+    },
+  },
+  {
+    id: 'lk_triple_root_harmony',
+    name: 'Tam Căn Hoà Hợp', tier: 2, emoji: '🔺',
+    desc: 'Ba luồng linh căn trong người đột nhiên hòa hợp hoàn toàn — linh lực vận hành mượt mà hơn bao giờ hết.',
+    lore: 'Tam Linh Căn vốn khó điều phối. Nhưng hôm nay ba luồng như ba dòng nước hợp thành một.',
+    baseChance: 0.009,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 8, qiBonus: 25 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => {
+      const t = G.spiritData?.type;
+      return t === 'TAM' && (G.stage ?? 1) >= 5;
+    },
+  },
+  {
+    id: 'lk_dual_root_resonance',
+    name: 'Song Căn Cộng Minh', tier: 2, emoji: '☯',
+    desc: 'Hai luồng linh căn đối lập trong người bỗng cộng minh — sinh ra năng lượng vượt trội.',
+    lore: 'Âm Dương tương khắc nhưng cũng tương sinh. Ngươi hôm nay ngộ được điều mà ít tu sĩ hiểu.',
+    baseChance: 0.010,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 10, atkPct: 6 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => {
+      const t = G.spiritData?.type;
+      return t === 'SONG' && (G.stage ?? 1) >= 5;
+    },
+  },
+  {
+    id: 'lk_isolated_recluse',
+    name: 'Ẩn Tu Đơn Độc', tier: 1, emoji: '🏔',
+    desc: 'Tự nguyện vào vùng hoang vu một mình, không tiếp xúc ai — sự đơn độc tự nhiên làm tâm tĩnh hơn.',
+    lore: 'Đơn độc không phải trừng phạt. Đối với tu tiên, đó là trạng thái lý tưởng — không nhiễu loạn, không phân tâm.',
+    baseChance: 0.045,
+    effect: { type: 'permanent_stat', stat: 'ratePct', value: 3 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 5 && (G.stage ?? 1) <= 8,
+  },
+
+  // --- LK6-LK7 — Giữa đường nguy hiểm nhất —
+  {
+    id: 'lk_halfway_dread',
+    name: 'Giữa Đường Sợ Hãi', tier: 1, emoji: '😰',
+    desc: 'Đêm nay trong bế quan, nỗi sợ bất ngờ tràn về — nếu không đột phá được Trúc Cơ thì sao?',
+    lore: 'Mồ hôi lạnh. Tim đập loạn. Nhưng ngươi không bỏ dậy. Không bỏ cuộc. Đó đã là chiến thắng.',
+    baseChance: 0.04,
+    effect: { type: 'purity_burst', amount: 0.06 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 6 && (G.stage ?? 1) <= 8,
+  },
+  {
+    id: 'lk_ghost_tu_encounter',
+    name: 'Gặp Tán Tu Cuối Đời', tier: 2, emoji: '👻',
+    desc: 'Gặp một tán tu đang hấp hối trong túp lều hoang — ông ta nhìn ngươi và nói: Đừng dừng lại.',
+    lore: '"Ta đã dừng ở LK6. Nghĩ rằng còn thời gian. Bây giờ..." Ông ta không nói hết. Không cần.',
+    baseChance: 0.009,
+    effect: { type: 'purity_burst', amount: 0.08 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 6,
+    cooldownSec: 86400,
+  },
+  {
+    id: 'lk_ancient_tome_lk',
+    name: 'Bí Kíp Luyện Khí Cổ', tier: 2, emoji: '📚',
+    desc: 'Tìm thấy một quyển bí kíp cũ dành riêng cho giai đoạn Luyện Khí — chứa đựng tinh hoa mà người hiện đại bỏ qua.',
+    lore: 'Người xưa không vội. Họ có thể dành cả trăm năm ở Luyện Khí và vẫn đột phá thành công. Bí quyết của họ khác.',
+    baseChance: 0.010,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 7, expBonus: 12 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 6,
+  },
+
+  // --- LK7-LK8 — Vùng nguy hiểm nhất, gần cuối —
+  {
+    id: 'lk_final_stretch_resolve',
+    name: 'Quyết Tâm Chặng Cuối', tier: 1, emoji: '🔥',
+    desc: 'LK7 — cảm giác như đã đi nửa đường. Nhưng nửa còn lại mới là thực sự khó.',
+    lore: 'Nhiều người tán tu ở LK7. Không phải vì yếu — mà vì đã kiệt sức trước khi đến đây. Ngươi vẫn còn đây.',
+    baseChance: 0.04,
+    effect: { type: 'purity_burst', amount: 0.05 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 7,
+  },
+  {
+    id: 'lk_lifespan_window_closing',
+    name: 'Cửa Sổ Đang Đóng', tier: 2, emoji: '⌛',
+    desc: 'Tính toán lại: nếu mỗi đột phá cần thêm thời gian và tuổi thọ cạn dần — cửa sổ đang đóng.',
+    lore: 'Không phải tuyệt vọng. Là tỉnh táo. Ngươi cần Trúc Cơ trong X năm nữa. Biết rõ thì mới hành động đúng.',
+    baseChance: 0.009,
+    effect: { type: 'purity_burst', amount: 0.1 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate'],
+    extraCondition: (G) => {
+      const remaining = (G.lifespan ?? 100) - (G.age ?? 16);
+      return remaining < 40 && (G.stage ?? 1) >= 7;
+    },
+    cooldownSec: 72000,
+  },
+  {
+    id: 'lk_last_companion_left',
+    name: 'Người Bạn Cuối Rời Đi', tier: 1, emoji: '🌅',
+    desc: 'Người bạn đồng hành cuối cùng cũng đã đột phá hoặc tán tu — ngươi chỉ còn lại một mình.',
+    lore: 'Cô đơn ở LK8 khác với LK1. LK1 là cô đơn của người mới bắt đầu. LK8 là cô đơn của người đã biết tất cả.',
+    baseChance: 0.04,
+    effect: { type: 'exp_burst', amount: 1500 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 8,
+  },
+
+  // --- LK9 — Ngưỡng cửa cuối cùng —
+  {
+    id: 'lk_peak_desperation',
+    name: 'Tuyệt Vọng Ở Đỉnh', tier: 2, emoji: '🗻',
+    desc: 'LK9 — stage cuối cùng trước Trúc Cơ. Ở đây, ngươi thấy rõ hơn bao giờ hết mình là ai.',
+    lore: 'Không còn chỗ để tự dối. Không còn "thời gian để tính sau". Chỉ còn ngươi và ngưỡng cửa trước mặt.',
+    baseChance: 0.012,
+    effect: { type: 'purity_burst', amount: 0.12 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 9,
+    cooldownSec: 86400,
+  },
+  {
+    id: 'lk_final_gift_ancestor',
+    name: 'Di Sản Tiền Nhân', tier: 3, emoji: '🎁',
+    desc: 'ĐẠI CƠ DUYÊN! Trong hang sâu tìm thấy di sản của một tán tu LK9 đã từng cố đột phá — thứ ông để lại là kinh nghiệm.',
+    lore: 'Ông ta ghi lại tất cả những gì mình đã sai, những gì mình đã biết quá muộn. Đây là món quà cuối của một người đã thất bại — để người sau không thất bại nữa.',
+    baseChance: 0.002,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 12, expBonus: 20 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 9,
+  },
+
 ];
 
 // ============================================================
@@ -1012,6 +1251,24 @@ export function applyCoduyen(G, event) {
       const prev = G.khiVan ?? 20;
       G.khiVan = Math.min(getKhiVanMax(G), prev + (effect.value || 5));
       detail = `+${effect.value || 5} Khí Vận (${prev} → ${G.khiVan})`;
+      break;
+    }
+    case 'purity_burst': {
+      // Tăng tức thì độ tinh thuần hiện tại — giúp LK dead zone có cảm giác tiến triển
+      // amount: tỷ lệ tăng (0.05 = +5% về phía ngưỡng đột phá)
+      const purityNeeded = (G.purityThreshold ?? 100) - (G.purity ?? 0);
+      const add = Math.floor(purityNeeded * (effect.amount || 0.05));
+      G.purity = Math.min(G.purityThreshold ?? 100, (G.purity ?? 0) + add);
+      detail = `Tâm cảnh khai sáng — tinh thuần +${add} (${Math.round((G.purity / (G.purityThreshold ?? 100)) * 100)}%)`;
+      break;
+    }
+    case '_btFailStreak_reset': {
+      // Sau chuỗi thất bại đột phá, cơ duyên giúp ngộ đạo — reset streak và bù purity
+      const streak = G._btFailStreak ?? 0;
+      G._btFailStreak = 0;
+      const bonus = Math.min(30, streak * 8);
+      G.purity = Math.min(G.purityThreshold ?? 100, (G.purity ?? 0) + bonus);
+      detail = `Thất bại ${streak} lần → Ngộ Đạo! Tinh thuần +${bonus}, streak đột phá reset`;
       break;
     }
   }

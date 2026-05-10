@@ -64,9 +64,19 @@ import { renderLinhThuTab }     from './ui/tabs/linh-thu-tab.js';
 import { moveToPhapDia, upgradeCongPhap, addCongPhapSlot, removeCongPhapSlot } from './core/phap-dia.js';
 import { expandDuocDien, plantCrop, harvestCrop, eatLinhMe,
          healAmThuong, getAmThuongStatus }                          from './core/duoc-dien-engine.js';
-import { openMaDao, gainMaQi, toggleAnMa, doMaBreakthrough,
-         completePurify, startPurifyQuest,
-         getMaDaoStatus }                                           from './core/ma-dao-engine.js';
+// Ma Đạo — tạm vô hiệu hóa (Giai đoạn 1 cleanup)
+// Hệ thống đầy đủ nhưng chưa có UI entry point → dead code cho LK
+// Bật lại sau khi LK content hoàn chỉnh
+// import { openMaDao, gainMaQi, toggleAnMa, doMaBreakthrough,
+//          completePurify, startPurifyQuest,
+//          getMaDaoStatus }                                           from './core/ma-dao-engine.js';
+const openMaDao = () => ({ ok: false, msg: 'Ma Đạo chưa mở khóa.' });
+const gainMaQi = () => ({ ok: false });
+const toggleAnMa = () => ({ ok: false, msg: 'Ma Đạo chưa mở khóa.' });
+const doMaBreakthrough = () => ({ ok: false, msg: 'Ma Đạo chưa mở khóa.' });
+const completePurify = () => ({ ok: false });
+const startPurifyQuest = () => ({ ok: false, msg: 'Ma Đạo chưa mở khóa.' });
+const getMaDaoStatus = () => null;
 import { getDanhVongTier }      from './core/danh-vong.js';
 import { getKhiVanMax }        from './core/co-duyen.js';
 import { resolveAmbushWin, resolveAmbushLoss } from './core/kiep-tu-engine.js';

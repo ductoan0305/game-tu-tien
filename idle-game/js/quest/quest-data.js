@@ -121,6 +121,153 @@ export const NPC_QUESTS = [
     nextQuest: null,
     order: 1,
   },
+
+  // ============================================================
+  // GIAI ĐOẠN 2 — LK3-LK8: NPC Quest mới (dead zone content)
+  // Nguyên tắc: mỗi quest mở ra quan hệ/thông tin/cơ hội có bối cảnh
+  // KHÔNG phải reward tài nguyên — phần thưởng là lore và mối quan hệ
+  // ============================================================
+
+  // ---- Lão Dược Sư chain 3 (LK4+) ----
+  {
+    id: 'nq_06_poison_antidote',
+    name: 'Giải Độc Cho Thôn',
+    type: 'npc_quest',
+    givenBy: 'lao_duoc_su',
+    givenByName: 'Lão Dược Sư',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 4 &&
+      G.quests?.completed?.includes('nq_02_herb_knowledge'),
+    desc: 'Lão Dược Sư trông lo lắng: Có mấy đứa trẻ trong thôn bị trúng độc từ quả rừng lạ. Ta biết thuốc giải nhưng cần Huyết Sâm Lục Diệp — chỉ mọc sâu trong vùng nguy hiểm. Ngươi đã đủ mạnh, có thể thay ta vào không?',
+    objectives: [{ key: 'gather_specific', target: 'blood_ginseng', label: 'Thu Huyết Sâm Lục Diệp', required: 3 }],
+    rewards: {
+      exp: 120,
+      items: [{ id: 'linh_ngu', qty: 1 }],
+      unlocks: 'Lão Dược Sư truyền cho ngươi bài thuốc giải độc cổ phương — mở ra kiến thức về Độc Đan.'
+    },
+    lore: '"Ba đứa trẻ nằm sốt cả tuần rồi. Thuốc thường không tác dụng gì. Ngươi đi được không?"',
+    nextQuest: 'nq_07_elder_regret',
+    order: 3,
+  },
+
+  {
+    id: 'nq_07_elder_regret',
+    name: 'Tâm Sự Của Lão Nhân',
+    type: 'npc_quest',
+    givenBy: 'lao_duoc_su',
+    givenByName: 'Lão Dược Sư',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 5 &&
+      G.quests?.completed?.includes('nq_06_poison_antidote'),
+    desc: 'Lão Dược Sư ngồi trước cửa nhìn trời, gọi ngươi lại: Ta trẻ cũng từng muốn tu tiên như ngươi. Nhưng tuổi tác... Hôm nay ta nhờ ngươi một việc cuối — tìm lại thứ ta bỏ dở.',
+    objectives: [{ key: 'explore', label: 'Thám hiểm tìm di vật', required: 5 }],
+    rewards: {
+      exp: 200,
+      unlocks: 'Lão Dược Sư trao cho ngươi cuốn nhật ký tu tiên của ông — bên trong có ghi lại những bài học đắt giá về sự thất bại.',
+      chronicle: 'Tuổi {year}: Lão Dược Sư kể về tuổi trẻ bỏ lỡ — một lời nhắc nhở về cửa sổ vàng của tu tiên.'
+    },
+    lore: '"Ta tu đến LK3 thì bỏ cuộc. Nghĩ rằng thôn cần ta hơn. Bây giờ nhìn lại... không biết mình chọn đúng hay sai."',
+    nextQuest: null,
+    order: 4,
+  },
+
+  // ---- Lão Ngư Ông chain 3 (LK5+) ----
+  {
+    id: 'nq_08_river_guardian',
+    name: 'Hộ Thần Dòng Sông',
+    type: 'npc_quest',
+    givenBy: 'lao_ngu_ong',
+    givenByName: 'Lão Ngư Ông',
+    givenByVillage: 'lam_hai_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 5 &&
+      G.quests?.completed?.includes('nq_04_river_secret'),
+    desc: 'Lão Ngư Ông nói thầm: Sông này có một con linh vật canh giữ từ ngàn năm trước. Nó đang yếu — yêu thú từ hạ lưu lợi dụng kéo lên quấy phá. Nếu linh vật chết, cả dòng sông này sẽ khô cạn dần.',
+    objectives: [{ key: 'kill_specific', target: 'water_croc', label: 'Diệt Thủy Kỳ Xâm Lấn', required: 5 }],
+    rewards: {
+      exp: 180,
+      stone: 8,
+      unlocks: 'Hộ Thần Sông ban phước — khu vực ven sông giờ có linh khí đặc biệt, tỷ lệ câu được linh ngư tăng.'
+    },
+    lore: '"Con linh vật đó già lắm rồi. Nó không chiến đấu được nữa. Ngươi giúp nó một lần thôi."',
+    nextQuest: 'nq_09_fishmans_last_lesson',
+    order: 3,
+  },
+
+  {
+    id: 'nq_09_fishmans_last_lesson',
+    name: 'Bài Học Cuối Của Ngư Ông',
+    type: 'npc_quest',
+    givenBy: 'lao_ngu_ong',
+    givenByName: 'Lão Ngư Ông',
+    givenByVillage: 'lam_hai_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 7 &&
+      G.quests?.completed?.includes('nq_08_river_guardian'),
+    desc: 'Lão Ngư Ông bây giờ đi chậm hơn, tay run. Ông gọi ngươi đến: Ta dạy ngươi câu cá từ thuở ngươi còn bé. Hôm nay ta chỉ ngươi thứ ta biết về nước — về dòng chảy, về thời cơ. Nghe một lần, nhớ cả đời.',
+    objectives: [{ key: 'fish', label: 'Câu cá (luyện tập cuối)', required: 5 }],
+    rewards: {
+      exp: 300,
+      unlocks: 'Kỹ năng "Ngư Ông Tâm Pháp" — quan sát dòng chảy linh khí tốt hơn, tăng nhận thức khi bế quan.',
+      chronicle: 'Tuổi {year}: Lão Ngư Ông truyền tâm pháp cuối — về dòng chảy, về chờ đúng thời.'
+    },
+    lore: '"Sông không vội mà vẫn đến biển. Ngươi đang vội quá — cứ sợ hết thời gian. Nước biết đợi, ngươi phải học đợi."',
+    nextQuest: null,
+    order: 4,
+  },
+
+  // ---- Bà Già Trồng Trọt (NPC mới, LK5-LK7) ----
+  {
+    id: 'nq_10_baguyen_seeds',
+    name: 'Hạt Giống Linh',
+    type: 'npc_quest',
+    givenBy: 'ba_nguyen',
+    givenByName: 'Bà Nguyên Trồng Trọt',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 5,
+    desc: 'Bà Nguyên — người trồng thuốc đã bảy mươi tuổi trong thôn — kéo tay ngươi: Ta có mấy hạt giống linh quý lắm, nhưng cần người ra vùng hoang tìm đất linh khí để gieo. Ngươi còn trẻ, còn đi được.',
+    objectives: [{ key: 'explore', label: 'Thám hiểm tìm đất linh', required: 4 }],
+    rewards: {
+      exp: 150,
+      items: [{ id: 'spirit_herb', qty: 5 }],
+      unlocks: 'Bà Nguyên dạy ngươi kỹ thuật phân biệt đất linh thổ — hữu dụng khi mở Dược Điền.'
+    },
+    lore: '"Bảy mươi năm trồng trọt. Mỗi mùa thu hoạch tôi đều nhớ ơn đất. Đất tốt thì cây sống, đất xấu thì cây héo — tu tiên cũng vậy thôi."',
+    nextQuest: 'nq_11_baguyen_confession',
+    order: 1,
+  },
+
+  {
+    id: 'nq_11_baguyen_confession',
+    name: 'Lời Tâm Sự Của Bà',
+    type: 'npc_quest',
+    givenBy: 'ba_nguyen',
+    givenByName: 'Bà Nguyên Trồng Trọt',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 7 &&
+      G.quests?.completed?.includes('nq_10_baguyen_seeds'),
+    desc: 'Bà Nguyên ngồi nhổ cỏ, không nhìn ngươi: Tôi có đứa cháu cũng tu tiên, mất tích ba năm trước. Nếu ngươi đi thám hiểm gặp... cho tôi biết tin. Tôi chỉ cần biết nó còn sống.',
+    objectives: [{ key: 'explore', label: 'Thám hiểm tìm tung tích', required: 8 }],
+    rewards: {
+      exp: 400,
+      unlocks: 'Không tìm được tin tức — nhưng hành trình đó khiến ngươi hiểu rõ hơn sự cô đơn của tu tiên.',
+      chronicle: 'Tuổi {year}: Tìm kiếm cháu Bà Nguyên — vô kết quả. Lần đầu thấy rõ cái giá của việc rời xa thôn làng.'
+    },
+    lore: '"Không cần ngươi tìm được. Chỉ cần biết có người đang tìm... là tôi yên tâm hơn rồi."',
+    nextQuest: null,
+    order: 2,
+  },
+
 ];
 
 // Map nhanh: npcId → danh sách quest có thể giao (theo thứ tự)

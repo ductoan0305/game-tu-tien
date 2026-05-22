@@ -209,6 +209,16 @@ function completeNpcQuest(G, questId) {
     }
   }
 
+  // Thưởng stat đặc biệt — Tâm Cảnh (hiểu biết chiến đấu + triết lý sống)
+  if (rewards.tamCanh) {
+    G.tamCanh = Math.min(100, (G.tamCanh ?? 50) + rewards.tamCanh);
+  }
+
+  // Thưởng stat đặc biệt — Ngộ Tính (hiểu đạo lý sâu qua cơ duyên NPC)
+  if (rewards.ngoTinh) {
+    G.ngoTinh = Math.min(100, (G.ngoTinh ?? 50) + rewards.ngoTinh);
+  }
+
   // R2: Kiên Cố — hoàn thành nhiệm vụ rèn linh lực
   // Quest có combat objective → nguy hiểm hơn → +15, còn lại +5
   const hasCombatObj = quest.objectives.some(obj =>

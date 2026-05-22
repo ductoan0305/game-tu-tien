@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<title>Map Preview — 人界全圖</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #180e06;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    gap: 10px;
+    font-family: serif;
+  }
+  .wrap {
+    position: relative;
+    width: 100%;
+    max-width: 860px;
+  }
+  canvas { display:block; width:100%; height:auto; }
+  #loading {
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#180e06; color:#c8a060;
+    font-size:14px; letter-spacing:3px;
+  }
+  p { color:#6a4820; font-size:10px; letter-spacing:2px; font-family:sans-serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="c" width="700" height="510"></canvas>
+  <div id="loading">載入中…</div>
+</div>
+<p>人界全圖 · CANVAS — PARCHMENT + OVERLAY</p>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const W = 700, H = 510;
+
+const REGIONS = [
+  {
+    id:'vinh_da', name:'Vĩnh Dạ Hàn Nguyên', chName:'永夜寒原',
+    lx:350, ly:76, implemented:false,
+    pts:[[0,0],[700,0],[700,162],[582,142],[452,158],[310,146],[168,160],[52,144],[0,168]],
+    stampChar:'寒', stampBg:'#0a1e38', stampStroke:'#88b8d8', stampLight:'#c8e0f0',
+  },
+  {
+    id:'co_vuc', name:'Cổ Vực', chName:'古域',
+    lx:40, ly:330, implemented:false,
+    pts:[[0,168],[52,144],[82,218],[65,312],[92,392],[75,492],[0,510]],
+    stampChar:'古', stampBg:'#1e0830', stampStroke:'#9858c8', stampLight:'#c8a0e8',
+  },
+  {
+    id:'khuyetvuc', name:'Khuyết Vực', chName:'缺域',
+    lx:192, ly:272, implemented:true,
+    pts:[[52,144],[168,160],[310,146],[368,158],[396,232],[374,342],[292,402],[180,410],[92,392],[65,312],[82,218]],
+    stampChar:'缺', stampBg:'#083828', stampStroke:'#2dd4bf', stampLight:'#5eead4',
+  },
+  {
+    id:'than_chau', name:'Thần Châu Linh Thổ', chName:'神州靈土',
+    lx:530, ly:240, implemented:false,
+    pts:[[310,146],[452,158],[582,142],[700,162],[700,332],[628,358],[538,364],[444,334],[396,232],[368,158]],
+    stampChar:'聖', stampBg:'#3a2800', stampStroke:'#d8a820', stampLight:'#f0d060',
+  },
+  {
+    id:'thien_tinh', name:'Thiên Tinh Hải Vực', chName:'天星海域',
+    lx:410, ly:445, implemented:false,
+    pts:[[75,492],[92,392],[180,410],[292,402],[374,342],[444,334],[538,364],[628,358],[700,332],[700,510],[0,510]],
+    stampChar:'海', stampBg:'#041428', stampStroke:'#38b8e8', stampLight:'#80d8f8',
+  },
+];
+
+function smoothPath(pts) {
+  ctx.beginPath();
+  const s = [(pts[pts.length-1][0]+pts[0][0])/2, (pts[pts.length-1][1]+pts[0][1])/2];
+  ctx.moveTo(s[0], s[1]);
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], n = pts[(i+1)%pts.length];
+    ctx.quadraticCurveTo(p[0], p[1], (p[0]+n[0])/2, (p[1]+n[1])/2);
+  }
+  ctx.closePath();
+}
+
+function roundRect(x,y,w,h,r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function drawStamp(r) {
+  const {lx,ly,stampChar,stampBg,stampStroke,stampLight,implemented} = r;
+  const sy = ly - 42;
+  ctx.save();
+  ctx.globalAlpha = implemented ? 1.0 : 0.36;
+
+  if (implemented) {
+    const glow = ctx.createRadialGradient(lx,sy,2,lx,sy,32);
+    glow.addColorStop(0, stampStroke+'66');
+    glow.addColorStop(1, stampStroke+'00');
+    ctx.fillStyle = glow; ctx.fillRect(lx-32,sy-32,64,64);
+  }
+
+  ctx.shadowColor = 'rgba(0,0,0,0.80)';
+  ctx.shadowBlur  = implemented ? 12 : 5;
+  ctx.fillStyle   = stampBg;
+  roundRect(lx-19,sy-19,38,38,4); ctx.fill();
+  ctx.shadowBlur  = 0;
+
+  ctx.strokeStyle = stampStroke;
+  ctx.lineWidth   = implemented ? 2.4 : 1.3;
+  roundRect(lx-19,sy-19,38,38,4); ctx.stroke();
+
+  ctx.globalAlpha = (implemented ? 1.0 : 0.36) * 0.40;
+  ctx.lineWidth   = 0.7;
+  roundRect(lx-15,sy-15,30,30,2); ctx.stroke();
+  ctx.globalAlpha = implemented ? 1.0 : 0.36;
+
+  ctx.fillStyle     = stampLight;
+  ctx.font          = `bold 23px 'Noto Serif SC','PingFang SC','STSong',serif`;
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'middle';
+  ctx.fillText(stampChar, lx, sy+1);
+  ctx.restore();
+}
+
+function drawLabel(r) {
+  ctx.save();
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.globalAlpha  = r.implemented ? 1 : 0.40;
+
+  if (r.implemented) {
+    ctx.shadowColor = 'rgba(0,0,0,0.70)'; ctx.shadowBlur = 5;
+    ctx.fillStyle   = r.stampLight;
+    ctx.font        = `bold 11px 'Noto Serif SC','STSong',serif`;
+    ctx.fillText(r.name, r.lx, r.ly + 8);
+  } else {
+    ctx.fillStyle = r.stampLight;
+    ctx.font      = `9px 'Noto Serif SC','STSong',serif`;
+    const words = r.name.split(' ');
+    if (words.length > 2) {
+      const m = Math.ceil(words.length / 2);
+      ctx.fillText(words.slice(0,m).join(' '), r.lx, r.ly + 4);
+      ctx.fillText(words.slice(m).join(' '),   r.lx, r.ly + 16);
+      ctx.globalAlpha = 0.38;
+      ctx.fillStyle   = '#b08840';
+      ctx.font        = `7px sans-serif`;
+      ctx.fillText('未 探 索', r.lx, r.ly + 30);
+    } else {
+      ctx.fillText(r.name, r.lx, r.ly + 8);
+      ctx.globalAlpha = 0.38;
+      ctx.fillStyle   = '#b08840';
+      ctx.font        = `7px sans-serif`;
+      ctx.fillText('未 探 索', r.lx, r.ly + 22);
+    }
+  }
+  ctx.restore();
+}
+
+function cloudPuff(cx,cy,r) {
+  const o = [[0,0,1],[.55,-.28,.72],[-.55,-.28,.68],[.88,.05,.58],[-.88,.05,.54],[.22,-.52,.55],[-.22,-.52,.52]];
+  o.forEach(([dx,dy,s]) => { ctx.beginPath(); ctx.arc(cx+dx*r,cy+dy*r,r*s,0,Math.PI*2); ctx.fill(); });
+}
+
+// ═════════════════════════════════════════════════════════
+function draw(parchment) {
+  document.getElementById('loading').style.display = 'none';
+
+  // 1. PARCHMENT — full background, no modification
+  ctx.drawImage(parchment, 0, 0, W, H);
+
+  // 2. REGION BORDERS — ink strokes only, no fill
+  //    Locked: faint dashed border
+  //    Active (Khuyết Vực): solid glowing border
+  REGIONS.forEach(r => {
+    smoothPath(r.pts);
+    if (r.implemented) {
+      // Bright active border with glow
+      ctx.shadowColor = 'rgba(45,212,191,0.50)';
+      ctx.shadowBlur  = 14;
+      ctx.strokeStyle = 'rgba(45,212,191,0.60)';
+      ctx.lineWidth   = 2.5;
+      ctx.lineJoin    = 'round';
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+      // Second pass — thinner bright inner line
+      ctx.strokeStyle = 'rgba(94,234,212,0.40)';
+      ctx.lineWidth   = 1.0;
+      ctx.stroke();
+    } else {
+      // Subtle ink border for locked regions
+      ctx.setLineDash([6,5]);
+      ctx.strokeStyle = 'rgba(60,35,10,0.28)';
+      ctx.lineWidth   = 1.2;
+      ctx.lineJoin    = 'round';
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // 3. LOCKED REGION VIGNETTE — very subtle dark overlay (not foggy)
+  REGIONS.forEach(r => {
+    if (!r.implemented) {
+      smoothPath(r.pts);
+      ctx.fillStyle = 'rgba(15,8,2,0.22)';
+      ctx.fill();
+    }
+  });
+
+  // 4. KHUYẾT VỰC inner highlight — warm light inside active region
+  smoothPath(REGIONS[2].pts);
+  ctx.save();
+  ctx.clip();
+  const kv = REGIONS[2];
+  const hg = ctx.createRadialGradient(kv.lx,kv.ly,10,kv.lx,kv.ly,180);
+  hg.addColorStop(0, 'rgba(200,240,220,0.12)');
+  hg.addColorStop(1, 'rgba(200,240,220,0)');
+  ctx.fillStyle = hg; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+
+  // 5. DOTTED ROUTES (Khuyết Vực)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(100,65,20,0.55)';
+  ctx.lineWidth   = 1.1;
+  ctx.setLineDash([4,5]);
+  ctx.lineCap     = 'round';
+  [[192,272,265,238],[192,272,162,348],[192,272,118,258],[265,238,310,188]].forEach(([x1,y1,x2,y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.setLineDash([]); ctx.restore();
+
+  // 6. STAMPS 印章
+  REGIONS.forEach(drawStamp);
+
+  // 7. LABELS
+  REGIONS.forEach(drawLabel);
+
+  // 8. CLOUD BORDER (cream, matching parchment edge)
+  ctx.save();
+  ctx.fillStyle  = 'rgba(225,208,172,0.88)';
+  ctx.shadowColor = 'rgba(220,200,155,0.55)'; ctx.shadowBlur = 14;
+  for (let x=0; x<=W; x+=82) cloudPuff(x, -4, 28+(x*.09)%8);
+  for (let x=0; x<=W; x+=82) cloudPuff(x, H+4, 28+(x*.07)%8);
+  for (let y=68; y<=H-68; y+=80) cloudPuff(-5, y, 24);
+  for (let y=68; y<=H-68; y+=80) cloudPuff(W+5, y, 24);
+  [[0,0,48],[W,0,48],[0,H,48],[W,H,48]].forEach(([cx,cy,r]) => cloudPuff(cx,cy,r));
+  ctx.restore();
+
+  // 9. VIGNETTE
+  const vig = ctx.createRadialGradient(350,255,130,350,255,390);
+  vig.addColorStop(0.4,'rgba(0,0,0,0)');
+  vig.addColorStop(1,'rgba(12,6,1,0.55)');
+  ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
+
+  // 10. MAP TITLE
+  ctx.globalAlpha  = 0.40;
+  ctx.fillStyle    = '#2a1808';
+  ctx.font         = `11px 'Noto Serif SC','PingFang SC',serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('✦  人 界 全 圖  ✦', 350, 505);
+  ctx.globalAlpha  = 1;
+
+  // 11. COMPASS (subtle)
+  ctx.save(); ctx.translate(655,464); ctx.globalAlpha = 0.25;
+  ctx.strokeStyle='#907028'; ctx.lineWidth=0.9;
+  ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.stroke();
+  [[-13,0,13,0],[0,-13,0,13]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.fillStyle='#b08030';
+  ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(-3,-7); ctx.lineTo(0,-9.5); ctx.lineTo(3,-7); ctx.closePath(); ctx.fill();
+  ctx.font=`6.5px 'Noto Serif SC',serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('北',0,-18); ctx.globalAlpha=0.18;
+  ctx.fillText('東',19,0); ctx.fillText('西',-19,0); ctx.fillText('南',0,19);
+  ctx.restore();
+
+  // 12. ANIMATED PULSE — Khuyết Vực
+  let t = 0;
+  let lastPulseCanvas = null;
+  (function pulse() {
+    // Patch only the pulse area
+    if (lastPulseCanvas) {
+      ctx.putImageData(lastPulseCanvas, 192-24, 272-24);
+    }
+    // Save the region before drawing
+    lastPulseCanvas = ctx.getImageData(192-24, 272-24, 48, 48);
+
+    const p = (Math.sin(t)+1)/2;
+    ctx.save();
+    ctx.strokeStyle = `rgba(45,212,191,${0.15+p*0.28})`;
+    ctx.lineWidth   = 1.8;
+    ctx.shadowColor = 'rgba(45,212,191,0.45)'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(192,272,8+p*7,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle   = `rgba(45,212,191,${0.65+p*0.35})`;
+    ctx.shadowBlur  = 7;
+    ctx.beginPath(); ctx.arc(192,272,3.8,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    t += 0.05;
+    requestAnimationFrame(pulse);
+  })();
+}
+
+// LOAD + DRAW
+const img = new Image();
+img.onload  = () => draw(img);
+img.onerror = () => {
+  ctx.fillStyle='#d4b070'; ctx.fillRect(0,0,W,H);
+  draw({ drawImage: function(){} });
+};
+img.src = 'assets/map-parchment.svg';
+</script>
+</body>
+</html>

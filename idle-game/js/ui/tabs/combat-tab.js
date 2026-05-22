@@ -43,8 +43,13 @@ export function renderCombatTab(G, actions) {
     _combatActive = false;
     _lastEnemyId  = null;
     _eventsWired  = false;
-    panel.innerHTML = renderEnemySelect(G);
-    wireEnemySelectEvents(G, actions);
+    if (G.combat?._lastResult) {
+      panel.innerHTML = renderCombatResult(G.combat._lastResult);
+      wireCombatResultEvents(G, actions);
+    } else {
+      panel.innerHTML = renderEnemySelect(G);
+      wireEnemySelectEvents(G, actions);
+    }
   }
 }
 
@@ -383,6 +388,42 @@ function wireCombatEvents(G, actions) {
 function wireEnemySelectEvents(G, actions) {
   document.querySelectorAll('.btn-hunt').forEach(btn => {
     btn.addEventListener('click', () => actions.startHunt(btn.dataset.enemyId));
+  });
+}
+
+// ── Màn hình kết quả chiến đấu ──────────────────────────────────────────────
+function renderCombatResult({ victory, enemy, rewards }) {
+  const icon     = victory ? '🏆' : '💀';
+  const title    = victory ? 'Chiến Thắng!' : 'Bại Trận!';
+  const colorCls = victory ? 'result-victory' : 'result-defeat';
+  const rewardLine = victory && rewards?.stone
+    ? `<div class="result-reward">+${fmtNum(rewards.stone)} 💎 linh thạch</div>`
+    : '';
+  const expLine = victory && rewards?.exp
+    ? `<div class="result-reward">+${fmtNum(rewards.exp)} EXP</div>`
+    : '';
+  return `
+    <div class="combat-result-screen ${colorCls}">
+      <div class="result-icon">${icon}</div>
+      <h3 class="result-title">${title}</h3>
+      <div class="result-enemy-name">${enemy?.name ?? ''}</div>
+      ${rewardLine}${expLine}
+      <button class="btn btn-primary btn-result-continue" id="btn-result-continue">
+        Tiếp tục
+      </button>
+    </div>`;
+}
+
+function wireCombatResultEvents(G, actions) {
+  const btn = document.getElementById('btn-result-continue');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    G.combat._lastResult = null;
+    // Re-render tab để trở về màn hình chọn quái
+    const panel = document.getElementById('panel-combat');
+    if (!panel) return;
+    panel.innerHTML = renderEnemySelect(G);
+    wireEnemySelectEvents(G, actions);
   });
 }
 // ── Combat log formatter ──────────────────────────────────────────────────

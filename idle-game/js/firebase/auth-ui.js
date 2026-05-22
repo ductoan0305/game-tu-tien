@@ -7,6 +7,7 @@ import {
 } from './auth-engine.js';
 import { downloadSave, uploadSave, pickNewerSave } from './cloud-save.js';
 import { REALM_NAMES } from '../core/constants.js';
+import { applyCloudSaveMigrations } from '../core/state/persistence.js';
 
 let _onAnonReady   = null;
 let _onGoogleReady = null;
@@ -143,7 +144,8 @@ async function _tryMergeCloudSave() {
   }
 
   console.log('[Auth] Có cloud save, setupDone =', result.G?.setupDone, '→', result.G?.setupDone ? 'startGame' : 'initSetupScreen');
-  // Có cloud save → dùng luôn
+  // Có cloud save → chạy migration rồi mới startGame
+  applyCloudSaveMigrations(result.G);
   _onGoogleReady?.(result.G);
 }
 

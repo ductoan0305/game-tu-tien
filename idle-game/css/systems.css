@@ -566,6 +566,18 @@
 }
 .npc-opt-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--border-glow); }
 .npc-opt-close { color: var(--text-dim); margin-top: 4px; }
+/* S8 — Age-reactive NPC remark (LK only) */
+.npc-age-remark {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border-left: 2px solid #8a7fd4;
+  color: #b0a8cc;
+  font-size: 12px;
+  line-height: 1.55;
+  background: rgba(138,127,212,0.07);
+  border-radius: 0 4px 4px 0;
+  font-style: italic;
+}
 
 /* ============================================================
    QUICK BUTTONS MEDITATE ACTIVE STATE
@@ -845,6 +857,71 @@
   border-color: #4a9eff;
   color: #4a9eff;
   box-shadow: 0 0 8px rgba(74,158,255,0.25);
+}
+
+/* ── Ngộ Tính mini-bar (Sprint 4) ── */
+.tl-ngotinh-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 2px;
+}
+.tl-ngotinh-lbl {
+  font-size: 10px;
+  color: #c8a84b;
+  white-space: nowrap;
+  min-width: 64px;
+}
+.tl-ngotinh-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tl-ngotinh-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #7fb2ff;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+.tl-ngotinh-val {
+  font-size: 10px;
+  color: #c8a84b;
+  min-width: 44px;
+  text-align: right;
+}
+
+/* ── Chiêm Nghiệm Sâu button (Sprint 4) ── */
+.tl-btn-chiem-nghiem {
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(192,122,245,0.30);
+  background: rgba(192,122,245,0.08);
+  color: #b89ae8;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.tl-btn-chiem-nghiem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tl-btn-chiem-nghiem.ready {
+  border-color: rgba(192,122,245,0.55);
+  background: rgba(192,122,245,0.13);
+  color: #c07af5;
+}
+.tl-btn-chiem-nghiem.ready:hover {
+  background: rgba(192,122,245,0.20);
+  border-color: rgba(192,122,245,0.80);
+}
+.tl-btn-chiem-nghiem.tl-btn-cd {
+  color: #888;
+  border-color: rgba(255,255,255,0.10);
+  background: transparent;
 }
 
 /* Breakthrough button */
@@ -1171,6 +1248,71 @@
   border-color: #4a9eff;
   color: #4a9eff;
   box-shadow: 0 0 8px rgba(74,158,255,0.25);
+}
+
+/* ── Ngộ Tính mini-bar (Sprint 4) ── */
+.tl-ngotinh-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 2px;
+}
+.tl-ngotinh-lbl {
+  font-size: 10px;
+  color: #c8a84b;
+  white-space: nowrap;
+  min-width: 64px;
+}
+.tl-ngotinh-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tl-ngotinh-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #7fb2ff;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+.tl-ngotinh-val {
+  font-size: 10px;
+  color: #c8a84b;
+  min-width: 44px;
+  text-align: right;
+}
+
+/* ── Chiêm Nghiệm Sâu button (Sprint 4) ── */
+.tl-btn-chiem-nghiem {
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(192,122,245,0.30);
+  background: rgba(192,122,245,0.08);
+  color: #b89ae8;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.tl-btn-chiem-nghiem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tl-btn-chiem-nghiem.ready {
+  border-color: rgba(192,122,245,0.55);
+  background: rgba(192,122,245,0.13);
+  color: #c07af5;
+}
+.tl-btn-chiem-nghiem.ready:hover {
+  background: rgba(192,122,245,0.20);
+  border-color: rgba(192,122,245,0.80);
+}
+.tl-btn-chiem-nghiem.tl-btn-cd {
+  color: #888;
+  border-color: rgba(255,255,255,0.10);
+  background: transparent;
 }
 
 /* Breakthrough button */

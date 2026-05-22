@@ -20,7 +20,7 @@ import { NPC_REWARDS } from '../npc-data.js';
  * @returns {{ danBonus: number, atkPct: number, eventRatePct: number }}
  */
 export function calcKhauKhauBonus(G) {
-  const result = { danBonus: 0, atkPct: 0, eventRatePct: 0 };
+  const result = { danBonus: 0, atkPct: 0, eventRatePct: 0, ratePct: 0 };
   if (!G._npcKhauKhau) return result;
 
   for (const [npcId, active] of Object.entries(G._npcKhauKhau)) {
@@ -32,6 +32,7 @@ export function calcKhauKhauBonus(G) {
       case 'danBonus':      result.danBonus     += value; break;
       case 'atkPct':        result.atkPct       += value; break;
       case 'eventRatePct':  result.eventRatePct += value; break;
+      case 'ratePct':       result.ratePct      += value; break;
     }
   }
   return result;
@@ -68,9 +69,11 @@ export function calcQiRate(G) {
   if (G.eventRateBonus > 0)          base *= (1 + G.eventRateBonus / 100);
   if (G.prestige?.bonuses?.ratePct)  base *= (1 + G.prestige.bonuses.ratePct / 100);
 
-  // L7 — H3: Khẩu Khẩu permanent eventRatePct (Lão Ngư Ông +3%)
+  // L7 — H3: Khẩu Khẩu buffs
   const kkBonus = calcKhauKhauBonus(G);
   if (kkBonus.eventRatePct > 0) base *= (1 + kkBonus.eventRatePct / 100);
+  // Sprint 6: ratePct từ khẩu khẩu (Bà Nguyên +2%, Ẩn Tu Băng +3%)
+  if (kkBonus.ratePct > 0)      base *= (1 + kkBonus.ratePct / 100);
 
   // Linh Thực buff
   if (Array.isArray(G.linhThuc?.activeBuffs)) {

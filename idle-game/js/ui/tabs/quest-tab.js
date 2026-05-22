@@ -19,7 +19,11 @@ export function renderQuestTab(G, actions) {
   const active     = getActiveQuests(G);
   const daily      = getDailyQuests(G);
   const bounties   = getAvailableBounties(G);
-  const sectQuests = G.sectId ? getAvailableSectQuests(G) : [];
+  // Gate sect quests: chỉ hiện sau khi hoàn thành intro quest của tông môn (§6)
+  // Tránh việc bảng nhiệm vụ tông môn xuất hiện ngay khi chưa vào cổng tông môn lần đầu
+  const _sectIntroId      = G.sectId ? `sq_sect_intro_${G.sectId}` : null;
+  const _sectIntroDone    = _sectIntroId && (G.quests.completed || []).includes(_sectIntroId);
+  const sectQuests = (_sectIntroDone) ? getAvailableSectQuests(G) : [];
 
   // Tổng số quest player đang theo dõi (chỉ NPC quest + story quest active)
   const totalActive = npcActive.length + active.length;
@@ -27,7 +31,7 @@ export function renderQuestTab(G, actions) {
   // Gate bounty board + daily quests: chỉ hiện sau khi player đã tương tác
   // với hệ thống quest (nhận NPC quest hoặc hoàn thành ít nhất 1 quest).
   // Triết lý §6: mọi quest phải có người giao — không auto-appear từ bảng rỗng.
-  const hasQuestActivity = npcActive.length > 0 || G.quests.completed.length > 0;
+  const hasQuestActivity = G.quests.completed.length > 0;
 
   // Reset time
   const now = Date.now();

@@ -330,7 +330,7 @@ function _renderLockedProfProgress(profId, G) {
         ${hasFireRoot && path1Done
           ? `<div style="color:#56c46a;font-size:10px;margin-top:4px">✓ Đủ điều kiện — tự động mở khi vào tab</div>`
           : hasFireRoot
-            ? `<div style="color:#888;font-size:10px;margin-top:4px">Cần thêm ${(40 - ngoTinh).toFixed(1)} Ngộ Tính nữa (thiền định)</div>`
+            ? `<div style="color:#888;font-size:10px;margin-top:4px">Cần thêm ${(40 - ngoTinh).toFixed(1)} Ngộ Tính nữa (thiền định hoặc 🌌 Chiêm Nghiệm Sâu)</div>`
             : `<div style="color:#666;font-size:10px;margin-top:4px">Linh căn không phù hợp — thử con đường khác</div>`}
       </div>`;
 

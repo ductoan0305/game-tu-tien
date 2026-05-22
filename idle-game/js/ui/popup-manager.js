@@ -326,6 +326,18 @@ const PopupManager = {
   },
 
   /**
+   * Đưa popup lên trên cùng z-stack.
+   * Dùng khi popup bị che khuất bởi popup khác sau khi setContent.
+   * @param {string} id
+   */
+  bringToFront(id) {
+    if (!_popups.has(id)) return;
+    const { el } = _popups.get(id);
+    _zCounter += 1;
+    el.style.zIndex = _zCounter;
+  },
+
+  /**
    * Đóng tất cả popup đang mở.
    */
   closeAll() {

@@ -3,7 +3,7 @@
 // Nền gradient: dùng CSS trên lớp HTML (SVG fill không hỗ trợ linear-gradient).
 // ============================================================
 import { STARTER_VILLAGES, _setupDrag, _handleLocAction } from './location-popup.js';
-import { svgZoneLocLabel } from './map-data.js';
+import { svgZoneLocLabel, KHUYETVUC_TERRITORIES, FACTION_COLORS } from './map-data.js';
 import { getNpcPendingQuest } from '../quest/quest-engine.js';
 // L7 — H3: Secret zone unlock indicator
 import { NPC_REWARDS } from '../core/npc-data.js';
@@ -165,7 +165,7 @@ function _buildLocNodes(village, G) {
 // ============================================================
 // Drag helper cho sv-side-popup (absolute position trong map container)
 // ============================================================
-function _makeSvPopupDraggable(popupEl, handleEl) {
+export function _makeSvPopupDraggable(popupEl, handleEl) {
   if (!handleEl || !popupEl) return;
   let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
 
@@ -221,6 +221,19 @@ export function renderStarterVillage(G, actions) {
   if (!G.worldMap) G.worldMap = {};
   if (village.nearZone) G.worldMap.currentNodeId = village.nearZone;
 
+  // Tìm lãnh thổ Khuyết Vực chứa thôn này
+  const _ter = village.nearZone
+    ? KHUYETVUC_TERRITORIES.find(t => t.nodeId === village.nearZone)
+    : null;
+  const _fc  = _ter ? FACTION_COLORS[_ter.faction] : null;
+  const _locationBreadcrumb = _ter
+    ? `<div class="sv-location-breadcrumb" style="border-color:${_fc.stroke}40">` +
+      `<span class="sv-lb-region" style="color:${_fc.stroke}">缺域 · Khuyết Vực</span>` +
+      `<span class="sv-lb-sep"> › </span>` +
+      `<span class="sv-lb-territory" style="color:${_fc.light}">${_ter.name}</span>` +
+      `</div>`
+    : '';
+
   const vid = village.id;
   const locSvg = _buildLocNodes(village, G);
   const svgInner = `
@@ -258,6 +271,7 @@ export function renderStarterVillage(G, actions) {
           <button class="sv-popup-close" id="sv-popup-close" title="Đóng">✕</button>
         </div>
         <div class="sv-popup-body">
+          ${_locationBreadcrumb}
           <div class="mst2-zone-desc">${village.desc}</div>
           <div class="village-map-hint">Bấm <strong>Bản Đồ</strong> dưới thanh điều hướng để xem toàn Phàm Nhân Giới.</div>
           <div class="mst2-loc-info" id="mst2-loc-info">
@@ -337,7 +351,7 @@ export function renderStarterVillage(G, actions) {
 function _getStarterLocBtns(loc) {
   const map = {
     npc:        [['npc','💬 Nói Chuyện']],
-    market:     [['shop','🏪 Mua Sắm']],
+    market:     [['shop','🛒 Mua Sắm']],
     hunt_zone:  [['combat','⚔ Săn Thú'],['gather','🌿 Thu Thập']],
     gather_zone:[['gather','🌿 Thu Thảo']],
     exit:       [['exit','🚪 Rời Thôn']],

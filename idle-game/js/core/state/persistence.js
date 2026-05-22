@@ -61,6 +61,8 @@ export function loadGame() {
     _migrateFlags(merged);
     _migrateBreakthroughCooldown(merged);
     _migrateNpcReputation(merged);
+    _migrateSectZone(merged);
+    _migrateCorruptCombat(merged);
 
     console.log('[loadGame] Loaded successfully, setupDone:', merged.setupDone);
     return merged;
@@ -411,4 +413,93 @@ function _migrateNpcReputation(m) {
   if (!m.npcReputation     || typeof m.npcReputation     !== 'object') m.npcReputation     = {};
   if (!m._npcRepLastVisit  || typeof m._npcRepLastVisit  !== 'object') m._npcRepLastVisit  = {};
   if (!m._npcRepYearlyGain || typeof m._npcRepYearlyGain !== 'object') m._npcRepYearlyGain = {};
+}
+
+// ============================================================
+// Export để auth-ui.js gọi trên cloud save data (không qua loadGame)
+// ============================================================
+export function applyCloudSaveMigrations(G) {
+  if (!G) return G;
+  _migrateNpcReputation(G);
+  _migrateSectZone(G);
+  _migrateCorruptCombat(G);
+  return G;
+}
+
+// ============================================================
+// L6 — H5: Cleanup combat state bị corrupt khi save giữa chừng
+// Xảy ra khi: player đang combat → đóng tab → cloud save ghi active=true
+// Triệu chứng: banner "ĐANG CHIẾN ĐẤU" kẹt, enemy HP = 0
+// ============================================================
+function _migrateCorruptCombat(m) {
+  if (!m.combat) {
+    console.log('[migrate] _migrateCorruptCombat: no combat object');
+    return;
+  }
+  const c = m.combat;
+  console.log('[migrate] _migrateCorruptCombat: checking', {
+    active: c.active,
+    phase: c.phase,
+    enemyHp: c.enemy?.currentHp,
+    enemyMaxHp: c.enemy?.maxHp,
+    playerHp: c.playerHp,
+  });
+  if (!c.active) return; // không có vấn đề
+
+  // null currentHp = enemy chưa được init đúng hoặc bị mất data → cũng là corrupt
+  const enemyDead  = c.enemy && (c.enemy.currentHp == null || c.enemy.currentHp <= 0);
+  const phaseStuck = c.phase === 'result';
+  // phase='enemy' mà enemy HP null = lượt địch nhưng không có HP → stuck
+  const enemyTurnNoHp = c.phase === 'enemy' && c.enemy && c.enemy.currentHp == null;
+
+  if (enemyDead || phaseStuck || enemyTurnNoHp) {
+    console.log('[migrate] _migrateCorruptCombat: CLEARING stuck state',
+      { enemyDead, phaseStuck });
+    if (typeof c.playerHp === 'number' && c.playerHp > 0) {
+      m.hp = Math.min(c.playerHp, m.hp ?? c.playerHp);
+    }
+    c.active = false;
+    c.phase  = 'idle';
+    c.enemy  = null;
+    c.log    = [];
+  } else {
+    console.log('[migrate] _migrateCorruptCombat: combat active but not corrupt — leaving as-is');
+  }
+}
+
+// ============================================================
+// L6 — H4: Sect zone migration cho save cũ
+// Fix save khi player đã gia nhập tông môn (sectId set) nhưng
+// worldMap.currentNodeId chưa được cập nhật đúng — xảy ra với
+// các save tạo trước khi showSectJoinModal được patch.
+// ============================================================
+function _migrateSectZone(m) {
+  if (!m.sectId || !m.setupDone) return;
+  const SECT_ZONE = {
+    kiem_tong: 'thanh_van_son',
+    dan_tong:  'van_linh_thi',
+    tran_phap: 'thien_kiep_dia',
+    the_tu:    'an_long_dong',
+  };
+  const expectedZone = SECT_ZONE[m.sectId];
+  if (!expectedZone) return;
+  if (!m.worldMap || typeof m.worldMap !== 'object') m.worldMap = {};
+  // Chỉ migrate nếu leftStarter chưa được set đúng
+  // (player đã join sect nhưng worldMap vẫn ở trạng thái tán tu)
+  if (!m.worldMap.leftStarter) {
+    m.worldMap.currentNodeId = expectedZone;
+    m.worldMap.leftStarter   = true;
+    console.log('[migrate] _migrateSectZone: fixed worldMap for sect', m.sectId, '→', expectedZone);
+  }
+  // Cũng sửa nếu currentNodeId trỏ sai zone (e.g. 'thanh_van_son' khi sect là 'the_tu')
+  if (m.worldMap.leftStarter && m.worldMap.currentNodeId !== expectedZone) {
+    const allZones = Object.values(SECT_ZONE);
+    const pointsToWrongSectZone = allZones.includes(m.worldMap.currentNodeId) &&
+                                  m.worldMap.currentNodeId !== expectedZone;
+    if (pointsToWrongSectZone) {
+      console.log('[migrate] _migrateSectZone: corrected wrong zone',
+        m.worldMap.currentNodeId, '→', expectedZone, 'for sect', m.sectId);
+      m.worldMap.currentNodeId = expectedZone;
+    }
+  }
 }

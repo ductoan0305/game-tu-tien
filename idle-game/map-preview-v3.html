@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<title>Map Preview v3 — 人界全圖 SVG Terrain</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #100a04;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    gap: 8px;
+    font-family: serif;
+  }
+  #frame {
+    width: 100%;
+    max-width: 860px;
+    border: 1px solid #3a2010;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 20px rgba(180,120,30,0.15);
+  }
+  #frame svg { display:block; width:100%; height:auto; }
+  p { color:#5a3818; font-size:9px; letter-spacing:2px; font-family:sans-serif; }
+</style>
+</head>
+<body>
+<div id="frame"></div>
+<p>人界全圖 · SVG v3 — feTurbulence + feDisplacementMap + clipPath terrain</p>
+
+<script>
+// ──────────────────────────────────────────────
+// REGION DATA (exact polygon points from map-data.js)
+// ──────────────────────────────────────────────
+const W = 700, H = 510;
+
+const REGIONS = [
+  {
+    id:'vinh_da', name:'Vĩnh Dạ Hàn Nguyên', chName:'永夜寒原',
+    lx:350, ly:76, implemented:false,
+    pts:[[0,0],[700,0],[700,162],[582,142],[452,158],[310,146],[168,160],[52,144],[0,168]],
+    stampChar:'寒', stampBg:'#0a1e38', stampStroke:'#88b8d8', stampLight:'#c8e0f0',
+    baseColor:'#d8e8f0', fogColor:'rgba(200,220,240,0.18)',
+  },
+  {
+    id:'co_vuc', name:'Cổ Vực', chName:'古域',
+    lx:40, ly:330, implemented:false,
+    pts:[[0,168],[52,144],[82,218],[65,312],[92,392],[75,492],[0,510]],
+    stampChar:'古', stampBg:'#1e0830', stampStroke:'#9858c8', stampLight:'#c8a0e8',
+    baseColor:'#2a1838', fogColor:'rgba(80,20,120,0.22)',
+  },
+  {
+    id:'khuyetvuc', name:'Khuyết Vực', chName:'缺域',
+    lx:192, ly:290, implemented:true,
+    pts:[[52,144],[168,160],[310,146],[368,158],[396,232],[374,342],[292,402],[180,410],[92,392],[65,312],[82,218]],
+    stampChar:'缺', stampBg:'#083828', stampStroke:'#2dd4bf', stampLight:'#5eead4',
+    baseColor:'#8db870', fogColor:'rgba(80,140,60,0.10)',
+  },
+  {
+    id:'than_chau', name:'Thần Châu Linh Thổ', chName:'神州靈土',
+    lx:530, ly:248, implemented:false,
+    pts:[[310,146],[452,158],[582,142],[700,162],[700,332],[628,358],[538,364],[444,334],[396,232],[368,158]],
+    stampChar:'聖', stampBg:'#3a2800', stampStroke:'#d8a820', stampLight:'#f0d060',
+    baseColor:'#c8a060', fogColor:'rgba(180,130,20,0.15)',
+  },
+  {
+    id:'thien_tinh', name:'Thiên Tinh Hải Vực', chName:'天星海域',
+    lx:410, ly:445, implemented:false,
+    pts:[[75,492],[92,392],[180,410],[292,402],[374,342],[444,334],[538,364],[628,358],[700,332],[700,510],[0,510]],
+    stampChar:'海', stampBg:'#041428', stampStroke:'#38b8e8', stampLight:'#80d8f8',
+    baseColor:'#1a4060', fogColor:'rgba(20,80,130,0.20)',
+  },
+];
+
+// ──────────────────────────────────────────────
+// SVG PATH HELPERS
+// ──────────────────────────────────────────────
+function polyToPath(pts) {
+  return pts.map((p,i) => (i===0?'M':'L')+p[0]+','+p[1]).join(' ') + ' Z';
+}
+
+// Smooth polygon via midpoint quadratic curves
+function smoothPolyPath(pts) {
+  const last = pts[pts.length-1];
+  const first = pts[0];
+  const sx = (last[0]+first[0])/2;
+  const sy = (last[1]+first[1])/2;
+  let d = `M${sx},${sy} `;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    const n = pts[(i+1)%pts.length];
+    const mx = (p[0]+n[0])/2;
+    const my = (p[1]+n[1])/2;
+    d += `Q${p[0]},${p[1]} ${mx},${my} `;
+  }
+  d += 'Z';
+  return d;
+}
+
+// Mountain silhouette — bezier peak
+function mtn(cx, cy, h, w, jagged=0) {
+  const lx = cx - w/2, rx = cx + w/2;
+  const jl = jagged * (Math.random()*0.4+0.8);
+  const jr = jagged * (Math.random()*0.4+0.8);
+  const cp1x = cx - w*0.28 + (Math.random()-0.5)*jagged;
+  const cp2x = cx + w*0.28 + (Math.random()-0.5)*jagged;
+  return `M${lx},${cy} C${cp1x},${cy-h*0.3} ${cx-w*0.12},${cy-h} ${cx},${cy-h} C${cx+w*0.12},${cy-h} ${cp2x},${cy-h*0.3} ${rx},${cy}`;
+}
+
+// Snow cap on a mountain
+function snowCap(cx, cy, h, w) {
+  const sh = h * 0.28;
+  const sw = w * 0.25;
+  return `M${cx-sw*0.6},${cy-h+sh*0.7} C${cx-sw*0.3},${cy-h+sh*0.2} ${cx+sw*0.3},${cy-h+sh*0.2} ${cx+sw*0.6},${cy-h+sh*0.7} C${cx+sw*0.2},${cy-h-sh*0.05} ${cx-sw*0.2},${cy-h-sh*0.05} Z`;
+}
+
+// Mountain lit face (right slope highlight)
+function mtnLit(cx, cy, h, w) {
+  return `M${cx},${cy-h} C${cx+w*0.12},${cy-h} ${cx+w*0.28},${cy-h*0.3} ${cx+w/2},${cy} L${cx+w*0.05},${cy} C${cx+w*0.18},${cy-h*0.28} ${cx+w*0.04},${cy-h*0.85} Z`;
+}
+
+// Organic blob tree using bezier
+function tree(cx, cy, sc=1) {
+  const s = sc;
+  return `M${cx},${cy-18*s} C${cx+8*s},${cy-22*s} ${cx+16*s},${cy-14*s} ${cx+14*s},${cy-6*s} C${cx+20*s},${cy-10*s} ${cx+18*s},${cy+2*s} ${cx+10*s},${cy+4*s} C${cx+12*s},${cy+10*s} ${cx+4*s},${cy+14*s} ${cx},${cy+12*s} C${cx-4*s},${cy+14*s} ${cx-12*s},${cy+10*s} ${cx-10*s},${cy+4*s} C${cx-18*s},${cy+2*s} ${cx-20*s},${cy-10*s} ${cx-14*s},${cy-6*s} C${cx-16*s},${cy-14*s} ${cx-8*s},${cy-22*s} Z`;
+}
+
+// Pine-ish tree variant
+function pine(cx, cy, h, w) {
+  return `M${cx},${cy-h} L${cx-w/2},${cy} L${cx+w/2},${cy} Z M${cx},${cy-h*0.6} L${cx-w*0.6},${cy-h*0.15} L${cx+w*0.6},${cy-h*0.15} Z`;
+}
+
+// Wave path segment (horizontal wavy line)
+function wavePath(y, amp, wl, phase=0, count=6) {
+  let d = `M0,${y}`;
+  for (let i=0;i<count;i++) {
+    const x1 = i*wl + wl*0.25;
+    const x2 = i*wl + wl*0.75;
+    const x3 = (i+1)*wl;
+    const yp = (i%2===0) ? y-amp : y+amp;
+    const yn = (i%2===0) ? y+amp : y-amp;
+    d += ` C${x1},${yp} ${x2},${yn} ${x3},${y}`;
+  }
+  return d;
+}
+
+// Pagoda silhouette
+function pagoda(cx, by) {
+  const floors = 3;
+  let d = '';
+  for (let f=0;f<floors;f++) {
+    const fy = by - f*22;
+    const fw = 32 - f*8;
+    const fh = 10;
+    // Roof
+    d += `M${cx-fw},${fy} L${cx},${fy-fh} L${cx+fw},${fy} Z `;
+    // Wall
+    if(f===0) d += `M${cx-fw*0.6},${fy} L${cx-fw*0.6},${fy+14} L${cx+fw*0.6},${fy+14} L${cx+fw*0.6},${fy} Z `;
+    else d += `M${cx-fw*0.5},${fy} L${cx-fw*0.5},${fy+12} L${cx+fw*0.5},${fy+12} L${cx+fw*0.5},${fy} Z `;
+    // Eave curl
+    d += `M${cx-fw},${fy} Q${cx-fw-6},${fy+4} ${cx-fw-4},${fy+8} M${cx+fw},${fy} Q${cx+fw+6},${fy+4} ${cx+fw+4},${fy+8} `;
+  }
+  // Spire
+  d += `M${cx},${by-floors*22} L${cx},${by-floors*22-14} `;
+  return d;
+}
+
+// Pillar ruin
+function ruin(cx, by, h, lean=0) {
+  const w = 6;
+  return `M${cx-w/2+lean},${by-h} L${cx+w/2+lean},${by-h} L${cx+w/2},${by} L${cx-w/2},${by} Z`;
+}
+
+// ──────────────────────────────────────────────
+// SEEDED PSEUDO-RANDOM (consistent layout)
+// ──────────────────────────────────────────────
+let _seed = 42;
+function rng() { _seed = (_seed * 9301 + 49297) % 233280; return _seed / 233280; }
+function rngs() { return rng()*2-1; }
+
+// ──────────────────────────────────────────────
+// BUILD SVG
+// ──────────────────────────────────────────────
+function buildSVG() {
+  _seed = 42; // reset for consistent render
+
+  // ── DEFS ────────────────────────────────────
+  const defs = `
+<defs>
+  <!-- ░░ PARCHMENT BASE TEXTURE ░░ -->
+  <filter id="f-parchment" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.65 0.55" numOctaves="4" seed="3" result="noise"/>
+    <feColorMatrix type="saturate" values="0" in="noise" result="grey"/>
+    <feBlend in="SourceGraphic" in2="grey" mode="multiply" result="blended"/>
+    <feComponentTransfer in="blended">
+      <feFuncR type="linear" slope="1.08" intercept="-0.04"/>
+      <feFuncG type="linear" slope="0.98" intercept="-0.02"/>
+      <feFuncB type="linear" slope="0.82" intercept="-0.04"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- ░░ INK BORDER DISTORT ░░ -->
+  <filter id="f-ink-border" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="turbulence" baseFrequency="0.04 0.03" numOctaves="3" seed="7" result="turb"/>
+    <feDisplacementMap in="SourceGraphic" in2="turb" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <!-- ░░ ACTIVE BORDER GLOW ░░ -->
+  <filter id="f-active-glow" x="-15%" y="-15%" width="130%" height="130%">
+    <feTurbulence type="turbulence" baseFrequency="0.035 0.025" numOctaves="3" seed="11" result="turb"/>
+    <feDisplacementMap in="SourceGraphic" in2="turb" scale="8" xChannelSelector="R" yChannelSelector="G" result="warped"/>
+    <feGaussianBlur in="warped" stdDeviation="2.5" result="glow"/>
+    <feBlend in="warped" in2="glow" mode="screen"/>
+  </filter>
+
+  <!-- ░░ MOUNTAIN HAZE (distant layer) ░░ -->
+  <filter id="f-haze" x="-5%" y="-5%" width="110%" height="110%">
+    <feGaussianBlur stdDeviation="2.8"/>
+    <feComponentTransfer>
+      <feFuncA type="linear" slope="0.55"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- ░░ SOFT SHADOW ░░ -->
+  <filter id="f-soft" x="-5%" y="-5%" width="110%" height="110%">
+    <feGaussianBlur stdDeviation="1.4"/>
+    <feComponentTransfer>
+      <feFuncA type="linear" slope="0.7"/>
+    </feComponentTransfer>
+  </filter>
+
+  <!-- ░░ WAVE SHIMMER ░░ -->
+  <filter id="f-water" x="-2%" y="-5%" width="104%" height="115%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.08" numOctaves="2" seed="5" result="wturb">
+      <animate attributeName="baseFrequency" values="0.02 0.08;0.025 0.09;0.02 0.08" dur="4s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="wturb" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <!-- ░░ FOREST TEXTURE ░░ -->
+  <filter id="f-forest" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="14" result="fnoise"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.1  0 0 0 0 0.3  0 0 0 0 0.05  0 0 0 0.3 0" in="fnoise" result="ftint"/>
+    <feBlend in="SourceGraphic" in2="ftint" mode="multiply"/>
+  </filter>
+
+  <!-- ░░ ICE CRYSTAL TEXTURE ░░ -->
+  <filter id="f-ice" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="turbulence" baseFrequency="0.15 0.25" numOctaves="2" seed="9" result="iturb"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.6  0 0 0 0 0.75  0 0 0 0 0.9  0 0 0 0.25 0" in="iturb" result="itint"/>
+    <feBlend in="SourceGraphic" in2="itint" mode="screen"/>
+  </filter>
+
+  <!-- ░░ STAMP GLOW ░░ -->
+  <filter id="f-stamp-glow" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="5" result="blur"/>
+    <feBlend in="SourceGraphic" in2="blur" mode="screen"/>
+  </filter>
+
+  <!-- ░░ RADIAL GRADIENTS - REGION FILLS ░░ -->
+  <radialGradient id="rg-vinh-da" cx="50%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="#d8ecf4"/>
+    <stop offset="60%" stop-color="#b0cce0"/>
+    <stop offset="100%" stop-color="#8aa8c0"/>
+  </radialGradient>
+  <radialGradient id="rg-co-vuc" cx="30%" cy="40%" r="70%">
+    <stop offset="0%" stop-color="#3a2050"/>
+    <stop offset="70%" stop-color="#1e0e2c"/>
+    <stop offset="100%" stop-color="#0e0818"/>
+  </radialGradient>
+  <radialGradient id="rg-khuyetvuc" cx="45%" cy="45%" r="65%">
+    <stop offset="0%" stop-color="#b8d890"/>
+    <stop offset="55%" stop-color="#88b860"/>
+    <stop offset="100%" stop-color="#608040"/>
+  </radialGradient>
+  <radialGradient id="rg-than-chau" cx="55%" cy="40%" r="65%">
+    <stop offset="0%" stop-color="#e8c880"/>
+    <stop offset="55%" stop-color="#c09040"/>
+    <stop offset="100%" stop-color="#886020"/>
+  </radialGradient>
+  <radialGradient id="rg-thien-tinh" cx="50%" cy="50%" r="65%">
+    <stop offset="0%" stop-color="#2860a8"/>
+    <stop offset="60%" stop-color="#143870"/>
+    <stop offset="100%" stop-color="#081828"/>
+  </radialGradient>
+
+  <!-- ░░ TREE GRADIENTS ░░ -->
+  <radialGradient id="rg-tree-dark" cx="40%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#6ca050"/>
+    <stop offset="100%" stop-color="#304820"/>
+  </radialGradient>
+  <radialGradient id="rg-tree-bright" cx="40%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#90c868"/>
+    <stop offset="100%" stop-color="#4a7030"/>
+  </radialGradient>
+  <radialGradient id="rg-tree-autumn" cx="40%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#c87840"/>
+    <stop offset="100%" stop-color="#7a3818"/>
+  </radialGradient>
+
+  <!-- ░░ MOUNTAIN GRADIENTS ░░ -->
+  <linearGradient id="lg-mtn-ice" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#e8f4f8"/>
+    <stop offset="40%" stop-color="#b8ccd8"/>
+    <stop offset="100%" stop-color="#8098b0"/>
+  </linearGradient>
+  <linearGradient id="lg-mtn-forest" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#708858"/>
+    <stop offset="50%" stop-color="#4a6838"/>
+    <stop offset="100%" stop-color="#304820"/>
+  </linearGradient>
+  <linearGradient id="lg-mtn-desert" x1="0" y1="0" x2="0.3" y2="1">
+    <stop offset="0%" stop-color="#e8c870"/>
+    <stop offset="50%" stop-color="#b89040"/>
+    <stop offset="100%" stop-color="#806020"/>
+  </linearGradient>
+  <linearGradient id="lg-mtn-ruin" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#6040a0"/>
+    <stop offset="60%" stop-color="#3a2068"/>
+    <stop offset="100%" stop-color="#200838"/>
+  </linearGradient>
+
+  <!-- ░░ OCEAN GRADIENT ░░ -->
+  <linearGradient id="lg-ocean" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1a4878"/>
+    <stop offset="40%" stop-color="#0d2e58"/>
+    <stop offset="100%" stop-color="#060f28"/>
+  </linearGradient>
+
+  <!-- ░░ PARCHMENT BACKGROUND GRADIENT ░░ -->
+  <radialGradient id="rg-parchment" cx="50%" cy="46%" r="65%">
+    <stop offset="0%" stop-color="#e8d9b0"/>
+    <stop offset="55%" stop-color="#d4c090"/>
+    <stop offset="100%" stop-color="#b89868"/>
+  </radialGradient>
+
+  <!-- ░░ VIGNETTE ░░ -->
+  <radialGradient id="rg-vignette" cx="50%" cy="50%" r="55%">
+    <stop offset="40%" stop-color="rgba(0,0,0,0)"/>
+    <stop offset="100%" stop-color="rgba(8,4,0,0.60)"/>
+  </radialGradient>
+
+  <!-- ░░ CLIP PATHS (exact polygon per region) ░░ -->
+  ${REGIONS.map(r => `
+  <clipPath id="clip-${r.id}">
+    <path d="${polyToPath(r.pts)}"/>
+  </clipPath>`).join('')}
+
+  <!-- ░░ WAVE ANIMATION PATTERN ░░ -->
+  <pattern id="pat-waves" x="0" y="0" width="120" height="40" patternUnits="userSpaceOnUse">
+    <path d="M0,20 C15,12 25,28 40,20 C55,12 65,28 80,20 C95,12 105,28 120,20" fill="none" stroke="rgba(160,210,240,0.35)" stroke-width="1.2">
+      <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="-120 0" dur="5s" repeatCount="indefinite"/>
+    </path>
+    <path d="M0,28 C20,20 30,36 50,28 C70,20 80,36 100,28 C110,24 115,32 120,28" fill="none" stroke="rgba(100,180,220,0.22)" stroke-width="0.8">
+      <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="-120 0" dur="7s" repeatCount="indefinite"/>
+    </path>
+  </pattern>
+</defs>`;
+
+  // ── PARCHMENT BACKGROUND ─────────────────────
+  const bg = `
+<!-- ░░░ PARCHMENT BACKGROUND ░░░ -->
+<rect width="${W}" height="${H}" fill="url(#rg-parchment)" filter="url(#f-parchment)"/>
+<!-- subtle aged spots -->
+<circle cx="120" cy="80" r="60" fill="rgba(100,70,20,0.04)"/>
+<circle cx="580" cy="420" r="80" fill="rgba(80,50,10,0.05)"/>
+<circle cx="400" cy="250" r="110" fill="rgba(60,40,10,0.03)"/>`;
+
+  // ── REGION BASE FILLS ────────────────────────
+  const regionFills = REGIONS.map(r => {
+    const gradMap = {
+      vinh_da:'rg-vinh-da', co_vuc:'rg-co-vuc', khuyetvuc:'rg-khuyetvuc',
+      than_chau:'rg-than-chau', thien_tinh:'rg-thien-tinh'
+    };
+    const op = r.implemented ? 0.48 : 0.28;
+    return `<path d="${smoothPolyPath(r.pts)}" fill="url(#${gradMap[r.id]})" opacity="${op}"/>`;
+  }).join('\n');
+
+  // ── TERRAIN PER REGION ───────────────────────
+
+  // ─── VĨNH DẠ HÀN NGUYÊN — ice / snowy mountains ───
+  const vinhDaTerrain = (() => {
+    const clip = 'clip-vinh_da';
+    let out = `<g clip-path="url(#${clip})">`;
+    // Ground — icy plain
+    out += `<rect x="0" y="100" width="${W}" height="80" fill="rgba(200,225,240,0.30)" filter="url(#f-ice)"/>`;
+    // Distant hazy mountains (layer 1)
+    out += `<g filter="url(#f-haze)" opacity="0.5">`;
+    const dmtns = [
+      [80,155,60,90],[200,150,75,110],[330,148,65,95],[480,148,80,115],[620,152,70,100],[700,156,55,80]
+    ];
+    dmtns.forEach(([cx,cy,h,w]) => {
+      out += `<path d="${mtn(cx,cy,h,w,3)}" fill="url(#lg-mtn-ice)" opacity="0.7"/>`;
+    });
+    out += `</g>`;
+    // Mid mountains (layer 2)
+    out += `<g opacity="0.75">`;
+    const mmtns = [
+      [50,160,80,100],[160,156,95,120],[290,152,85,115],[430,152,100,130],[570,156,90,120],[680,160,70,95]
+    ];
+    mmtns.forEach(([cx,cy,h,w]) => {
+      out += `<path d="${mtn(cx,cy,h,w,2)}" fill="url(#lg-mtn-ice)" opacity="0.8"/>`;
+      out += `<path d="${mtnLit(cx,cy,h,w)}" fill="rgba(240,248,255,0.20)"/>`;
+    });
+    out += `</g>`;
+    // Foreground mountains with snow caps (layer 3)
+    out += `<g opacity="0.95">`;
+    const fmtns = [
+      [120,162,100,130],[280,158,110,140],[450,158,105,135],[630,162,95,125]
+    ];
+    fmtns.forEach(([cx,cy,h,w]) => {
+      out += `<path d="${mtn(cx,cy,h,w,1.5)}" fill="url(#lg-mtn-ice)"/>`;
+      out += `<path d="${mtnLit(cx,cy,h,w)}" fill="rgba(240,250,255,0.28)"/>`;
+      out += `<path d="${snowCap(cx,cy,h,w)}" fill="rgba(248,252,255,0.92)" filter="url(#f-soft)"/>`;
+    });
+    out += `</g>`;
+    // Ice sheet overlay
+    out += `<rect x="0" y="130" width="${W}" height="40" fill="rgba(210,235,248,0.22)" filter="url(#f-ice)"/>`;
+    // Aurora shimmer (top band)
+    out += `<rect x="0" y="0" width="${W}" height="50" fill="rgba(80,160,200,0.08)"/>`;
+    out += `</g>`;
+    return out;
+  })();
+
+  // ─── CỔ VỰC — ancient ruins ───
+  const coVucTerrain = (() => {
+    const clip = 'clip-co_vuc';
+    let out = `<g clip-path="url(#${clip})">`;
+    // Ground dark
+    out += `<rect x="0" y="140" width="100" height="380" fill="rgba(30,10,50,0.35)"/>`;
+    // Ruin pillars
+    const pillars = [
+      [15,420,60,2],[25,400,80,-3],[35,430,50,1.5],[55,410,70,-2],[70,440,45,2.5],[12,460,35,-1]
+    ];
+    pillars.forEach(([cx,by,h,lean]) => {
+      out += `<path d="${ruin(cx,by,h,lean)}" fill="url(#lg-mtn-ruin)" opacity="0.85"/>`;
+      // Crumbled top
+      out += `<circle cx="${cx+lean}" cy="${by-h}" r="4" fill="rgba(80,50,100,0.7)"/>`;
+    });
+    // Glowing particles
+    for(let i=0;i<8;i++) {
+      const px = 5 + rng()*80;
+      const py = 220 + rng()*220;
+      const pr = 1.2 + rng()*2;
+      const dur = 2.5 + rng()*3;
+      out += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${pr.toFixed(1)}" fill="rgba(160,80,220,0.8)">
+        <animate attributeName="opacity" values="0.2;0.9;0.2" dur="${dur.toFixed(1)}s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="${py.toFixed(1)};${(py-12).toFixed(1)};${py.toFixed(1)}" dur="${dur.toFixed(1)}s" repeatCount="indefinite"/>
+      </circle>`;
+    }
+    // Autumn-ish gnarled trees
+    const atrees = [[18,300,0.55],[40,280,0.45],[8,350,0.50]];
+    atrees.forEach(([cx,cy,sc]) => {
+      out += `<path d="${tree(cx,cy,sc)}" fill="url(#rg-tree-autumn)" opacity="0.6"/>`;
+    });
+    out += `</g>`;
+    return out;
+  })();
+
+  // ─── KHUYẾT VỰC — forest hills, river ───
+  const khuyetVucTerrain = (() => {
+    const clip = 'clip-khuyetvuc';
+    let out = `<g clip-path="url(#${clip})">`;
+    // Ground — rolling green
+    out += `<ellipse cx="220" cy="340" rx="180" ry="60" fill="rgba(100,150,60,0.22)"/>`;
+    // Background forest layer (hazy)
+    out += `<g filter="url(#f-haze)" opacity="0.55">`;
+    const bgtrees = [[90,260,0.7],[110,255,0.65],[130,258,0.72],[150,254,0.68],[170,256,0.70],[190,254,0.65],[210,257,0.68],[230,253,0.70],[250,256,0.65],[270,258,0.68],[290,255,0.70]];
+    bgtrees.forEach(([cx,cy,sc]) => {
+      out += `<path d="${tree(cx,cy,sc)}" fill="url(#lg-mtn-forest)"/>`;
+    });
+    out += `</g>`;
+    // Mid hills
+    out += `<path d="M52,300 C100,268 150,280 200,272 C250,264 310,275 370,268 L370,310 L52,310 Z" fill="rgba(80,120,50,0.35)"/>`;
+    // River (wavy path through region)
+    out += `<path d="M180,410 C185,385 178,362 188,340 C196,322 183,300 190,280 C197,260 185,250 192,235" fill="none" stroke="rgba(60,140,180,0.65)" stroke-width="4" stroke-linecap="round" filter="url(#f-water)"/>`;
+    out += `<path d="M180,410 C185,385 178,362 188,340 C196,322 183,300 190,280 C197,260 185,250 192,235" fill="none" stroke="rgba(120,200,230,0.30)" stroke-width="2" stroke-linecap="round"/>`;
+    // Foreground trees
+    const fgtrees = [
+      [100,310,0.85],[120,305,0.90],[140,308,0.82],[160,304,0.88],[200,306,0.85],
+      [220,302,0.90],[240,305,0.85],[260,307,0.82],[280,303,0.88],[300,306,0.84],
+      [320,304,0.90],[340,307,0.85],[360,305,0.82]
+    ];
+    out += `<g filter="url(#f-forest)">`;
+    fgtrees.forEach(([cx,cy,sc]) => {
+      out += `<path d="${tree(cx,cy,sc)}" fill="url(#rg-tree-bright)" opacity="0.88"/>`;
+    });
+    out += `</g>`;
+    // Scattered small trees
+    for(let i=0;i<10;i++) {
+      const tx = 75 + rng()*280;
+      const ty = 320 + rng()*60;
+      const ts = 0.45 + rng()*0.30;
+      out += `<path d="${tree(tx.toFixed(1),ty.toFixed(1),ts.toFixed(2))}" fill="url(#rg-tree-dark)" opacity="0.70"/>`;
+    }
+    // Active pulse marker will be drawn separately on top
+    out += `</g>`;
+    return out;
+  })();
+
+  // ─── THẦN CHÂU LINH THỔ — golden dunes + pagoda ───
+  const thanChauTerrain = (() => {
+    const clip = 'clip-than_chau';
+    let out = `<g clip-path="url(#${clip})">`;
+    // Dune hills
+    out += `<g opacity="0.50">`;
+    const dunes = [
+      [430,310,45,160],[520,300,55,140],[600,306,48,130],[490,330,38,120],[560,322,42,110]
+    ];
+    dunes.forEach(([cx,cy,h,w]) => {
+      out += `<path d="${mtn(cx,cy,h,w,5)}" fill="url(#lg-mtn-desert)"/>`;
+    });
+    out += `</g>`;
+    // Distant hazy dunes
+    out += `<g filter="url(#f-haze)" opacity="0.35">`;
+    [[470,240,35,140],[560,235,42,130],[640,238,38,120]].forEach(([cx,cy,h,w]) => {
+      out += `<path d="${mtn(cx,cy,h,w,4)}" fill="url(#lg-mtn-desert)"/>`;
+    });
+    out += `</g>`;
+    // Grass brushstrokes
+    for(let i=0;i<18;i++) {
+      const gx = 330 + rng()*350;
+      const gy = 220 + rng()*130;
+      const gl = 6 + rng()*10;
+      const ga = (rng()-0.5)*0.4;
+      out += `<line x1="${gx.toFixed(1)}" y1="${gy.toFixed(1)}" x2="${(gx+Math.sin(ga)*gl).toFixed(1)}" y2="${(gy-gl).toFixed(1)}" stroke="rgba(160,120,30,0.40)" stroke-width="1.2" stroke-linecap="round"/>`;
+    }
+    // Pagoda silhouette
+    out += `<path d="${pagoda(560,300)}" fill="rgba(60,30,5,0.75)" stroke="rgba(180,120,20,0.60)" stroke-width="0.8"/>`;
+    // Glowing spire tip
+    out += `<circle cx="560" cy="${300-3*22-14}" r="2.5" fill="rgba(240,200,60,0.80)">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite"/>
+    </circle>`;
+    // Scattered sparse trees
+    [[470,280,0.55],[490,290,0.50],[590,270,0.52]].forEach(([cx,cy,sc]) => {
+      out += `<path d="${tree(cx,cy,sc)}" fill="rgba(80,60,20,0.55)" opacity="0.60"/>`;
+    });
+    out += `</g>`;
+    return out;
+  })();
+
+  // ─── THIÊN TINH HẢI VỰC — animated ocean waves + islands ───
+  const thienTinhTerrain = (() => {
+    const clip = 'clip-thien_tinh';
+    let out = `<g clip-path="url(#${clip})">`;
+    // Ocean base
+    out += `<rect x="0" y="330" width="${W}" height="180" fill="url(#lg-ocean)" opacity="0.80"/>`;
+    // Wave pattern fill
+    out += `<rect x="0" y="330" width="${W}" height="180" fill="url(#pat-waves)"/>`;
+    // Wave strokes (animated)
+    const waveDefs = [
+      {y:355, amp:4, wl:110, dur:'6s', op:0.50, sw:1.4, col:'rgba(100,180,240,0.70)'},
+      {y:375, amp:5, wl:130, dur:'7s', op:0.40, sw:1.2, col:'rgba(80,160,220,0.55)'},
+      {y:395, amp:4, wl:100, dur:'5.5s', op:0.45, sw:1.3, col:'rgba(120,200,250,0.50)'},
+      {y:420, amp:5, wl:115, dur:'8s', op:0.35, sw:1.0, col:'rgba(60,140,200,0.45)'},
+      {y:450, amp:6, wl:140, dur:'6.5s', op:0.30, sw:1.2, col:'rgba(40,100,180,0.40)'},
+    ];
+    waveDefs.forEach(({y,amp,wl,dur,op,sw,col}) => {
+      const wd = wavePath(y, amp, wl, 0, 7);
+      out += `<g opacity="${op}" filter="url(#f-water)">
+        <path d="${wd}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="translate" from="0 0" to="${-wl} 0" dur="${dur}" repeatCount="indefinite"/>
+        </path>
+      </g>`;
+    });
+    // Islands
+    const islands = [
+      {cx:200, cy:430, rx:28, ry:12},
+      {cx:380, cy:455, rx:22, ry:9},
+      {cx:580, cy:420, rx:18, ry:8},
+      {cx:480, cy:480, rx:15, ry:7},
+    ];
+    islands.forEach(({cx,cy,rx,ry}) => {
+      out += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="rgba(80,110,50,0.80)"/>`;
+      out += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry*0.5}" fill="rgba(110,150,60,0.45)" transform="translate(0,-${ry*0.4})"/>`;
+      // Small trees on islands
+      if(rx > 18) {
+        out += `<path d="${tree(cx-10,cy-ry+2,0.35)}" fill="url(#rg-tree-bright)" opacity="0.80"/>`;
+        out += `<path d="${tree(cx+8,cy-ry+1,0.30)}" fill="url(#rg-tree-dark)" opacity="0.75"/>`;
+      } else {
+        out += `<path d="${pine(cx,cy-ry,ry*0.9,rx*0.4)}" fill="rgba(50,80,30,0.80)"/>`;
+      }
+    });
+    // Star reflections
+    for(let i=0;i<12;i++) {
+      const sx = 30 + rng()*640;
+      const sy = 360 + rng()*140;
+      out += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${(0.5+rng()).toFixed(1)}" fill="rgba(200,230,255,0.60)">
+        <animate attributeName="opacity" values="0.2;0.8;0.2" dur="${(2+rng()*3).toFixed(1)}s" repeatCount="indefinite"/>
+      </circle>`;
+    }
+    out += `</g>`;
+    return out;
+  })();
+
+  // ── REGION BORDERS ───────────────────────────
+  const borders = REGIONS.map(r => {
+    if (r.implemented) {
+      return `
+<!-- Active border: ${r.name} -->
+<g filter="url(#f-active-glow)">
+  <path d="${smoothPolyPath(r.pts)}" fill="none"
+    stroke="rgba(45,212,191,0.70)" stroke-width="2.8" stroke-linejoin="round"/>
+</g>
+<path d="${smoothPolyPath(r.pts)}" fill="none"
+  stroke="rgba(94,234,212,0.45)" stroke-width="1.2" stroke-linejoin="round"/>`;
+    } else {
+      return `
+<!-- Locked border: ${r.name} -->
+<path d="${smoothPolyPath(r.pts)}" fill="none"
+  stroke="rgba(60,35,10,0.35)" stroke-width="1.4" stroke-linejoin="round"
+  stroke-dasharray="7,5" filter="url(#f-ink-border)"/>`;
+    }
+  }).join('\n');
+
+  // ── LOCKED VIGNETTE OVERLAY ─────────────────
+  const lockedOverlay = REGIONS.filter(r => !r.implemented).map(r =>
+    `<path d="${smoothPolyPath(r.pts)}" fill="rgba(12,6,2,0.28)"/>`
+  ).join('\n');
+
+  // ── STAMPS ───────────────────────────────────
+  function stamp(r) {
+    const {lx, ly, stampChar, stampBg, stampStroke, stampLight, implemented} = r;
+    const sy = ly - 44;
+    const op = implemented ? 1.0 : 0.38;
+    let out = `<g opacity="${op}" transform="translate(${lx},${sy})">`;
+    if (implemented) {
+      out += `<circle cx="0" cy="0" r="30" fill="${stampStroke}22" filter="url(#f-stamp-glow)"/>`;
+    }
+    out += `<rect x="-19" y="-19" width="38" height="38" rx="4" fill="${stampBg}" stroke="${stampStroke}" stroke-width="${implemented?2.4:1.3}"/>`;
+    out += `<rect x="-15" y="-15" width="30" height="30" rx="2" fill="none" stroke="${stampStroke}" stroke-width="0.7" opacity="0.40"/>`;
+    out += `<text x="0" y="1" text-anchor="middle" dominant-baseline="middle" fill="${stampLight}" font-size="23" font-weight="bold" font-family="'Noto Serif SC','PingFang SC','STSong',serif">${stampChar}</text>`;
+    out += `</g>`;
+    return out;
+  }
+
+  const stamps = REGIONS.map(stamp).join('\n');
+
+  // ── LABELS ───────────────────────────────────
+  function label(r) {
+    const op = r.implemented ? 1.0 : 0.42;
+    const sz = r.implemented ? 11 : 9;
+    let out = `<g opacity="${op}">`;
+    if (r.implemented) {
+      out += `<text x="${r.lx}" y="${r.ly+8}" text-anchor="middle" fill="${r.stampLight}" font-size="${sz}" font-weight="bold" font-family="'Noto Serif SC','STSong',serif" filter="url(#f-soft)">${r.name}</text>`;
+    } else {
+      const words = r.name.split(' ');
+      if (words.length > 2) {
+        const m = Math.ceil(words.length / 2);
+        out += `<text x="${r.lx}" y="${r.ly+4}" text-anchor="middle" fill="${r.stampLight}" font-size="${sz}" font-family="'Noto Serif SC','STSong',serif">${words.slice(0,m).join(' ')}</text>`;
+        out += `<text x="${r.lx}" y="${r.ly+16}" text-anchor="middle" fill="${r.stampLight}" font-size="${sz}" font-family="'Noto Serif SC','STSong',serif">${words.slice(m).join(' ')}</text>`;
+        out += `<text x="${r.lx}" y="${r.ly+30}" text-anchor="middle" fill="#b08840" font-size="7" font-family="sans-serif" opacity="0.40">未 探 索</text>`;
+      } else {
+        out += `<text x="${r.lx}" y="${r.ly+8}" text-anchor="middle" fill="${r.stampLight}" font-size="${sz}" font-family="'Noto Serif SC','STSong',serif">${r.name}</text>`;
+        out += `<text x="${r.lx}" y="${r.ly+22}" text-anchor="middle" fill="#b08840" font-size="7" font-family="sans-serif" opacity="0.40">未 探 索</text>`;
+      }
+    }
+    out += `</g>`;
+    return out;
+  }
+
+  const labels = REGIONS.map(label).join('\n');
+
+  // ── DOTTED ROUTE PATHS (Khuyết Vực) ─────────
+  const routes = `
+<g stroke="rgba(100,65,20,0.55)" stroke-width="1.1" stroke-dasharray="4,5" stroke-linecap="round" fill="none">
+  <line x1="192" y1="290" x2="265" y2="250"/>
+  <line x1="192" y1="290" x2="162" y2="355"/>
+  <line x1="192" y1="290" x2="118" y2="268"/>
+  <line x1="265" y1="250" x2="308" y2="200"/>
+</g>`;
+
+  // ── ACTIVE PULSE (Khuyết Vực marker) ─────────
+  const pulse = `
+<g>
+  <circle cx="192" cy="290" r="16" fill="none" stroke="rgba(45,212,191,0.22)" stroke-width="1.5">
+    <animate attributeName="r" values="10;20;10" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="192" cy="290" r="4" fill="rgba(45,212,191,0.90)">
+    <animate attributeName="r" values="3.5;5;3.5" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+</g>`;
+
+  // ── CLOUD BORDER ─────────────────────────────
+  function cloudPuffSVG(cx, cy, r) {
+    const offsets = [[0,0,1],[0.55,-0.28,0.72],[-0.55,-0.28,0.68],[0.88,0.05,0.58],[-0.88,0.05,0.54],[0.22,-0.52,0.55],[-0.22,-0.52,0.52]];
+    return offsets.map(([dx,dy,s]) =>
+      `<circle cx="${(cx+dx*r).toFixed(1)}" cy="${(cy+dy*r).toFixed(1)}" r="${(r*s).toFixed(1)}"/>`
+    ).join('');
+  }
+  let cloudPaths = `<g fill="rgba(228,212,178,0.90)" opacity="0.88">`;
+  for(let x=0;x<=W;x+=82) cloudPaths += cloudPuffSVG(x,-4,28+(x*0.09)%8);
+  for(let x=0;x<=W;x+=82) cloudPaths += cloudPuffSVG(x,H+4,28+(x*0.07)%8);
+  for(let y=68;y<=H-68;y+=80) cloudPaths += cloudPuffSVG(-5,y,24);
+  for(let y=68;y<=H-68;y+=80) cloudPaths += cloudPuffSVG(W+5,y,24);
+  [[0,0,48],[W,0,48],[0,H,48],[W,H,48]].forEach(([cx,cy,r]) => { cloudPaths += cloudPuffSVG(cx,cy,r); });
+  cloudPaths += `</g>`;
+
+  // ── COMPASS ──────────────────────────────────
+  const compass = `
+<g transform="translate(655,464)" opacity="0.28">
+  <circle r="16" fill="none" stroke="#907028" stroke-width="0.9"/>
+  <line x1="-13" y1="0" x2="13" y2="0" stroke="#907028" stroke-width="0.9"/>
+  <line x1="0" y1="-13" x2="0" y2="13" stroke="#907028" stroke-width="0.9"/>
+  <path d="M0,-13 L-3,-7 L0,-9.5 L3,-7 Z" fill="#b08030"/>
+  <text x="0" y="-17" text-anchor="middle" dominant-baseline="middle" font-size="6.5" font-family="'Noto Serif SC',serif" fill="#b08030">北</text>
+  <text x="18" y="0" text-anchor="middle" dominant-baseline="middle" font-size="6" font-family="serif" fill="#b08030" opacity="0.55">東</text>
+  <text x="-18" y="0" text-anchor="middle" dominant-baseline="middle" font-size="6" font-family="serif" fill="#b08030" opacity="0.55">西</text>
+  <text x="0" y="18" text-anchor="middle" dominant-baseline="middle" font-size="6" font-family="serif" fill="#b08030" opacity="0.55">南</text>
+</g>`;
+
+  // ── MAP TITLE ────────────────────────────────
+  const title = `
+<text x="350" y="505" text-anchor="middle" fill="#2a1808" font-size="11" font-family="'Noto Serif SC','PingFang SC',serif" opacity="0.42" letter-spacing="4">✦  人 界 全 圖  ✦</text>`;
+
+  // ── VIGNETTE ─────────────────────────────────
+  const vignette = `<rect width="${W}" height="${H}" fill="url(#rg-vignette)"/>`;
+
+  // ── ASSEMBLE ─────────────────────────────────
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+${defs}
+
+<!-- === LAYER 0: PARCHMENT BASE === -->
+${bg}
+
+<!-- === LAYER 1: REGION BASE FILLS === -->
+${regionFills}
+
+<!-- === LAYER 2: TERRAIN (per region, clipped) === -->
+${vinhDaTerrain}
+${coVucTerrain}
+${khuyetVucTerrain}
+${thanChauTerrain}
+${thienTinhTerrain}
+
+<!-- === LAYER 3: REGION BORDERS === -->
+${borders}
+
+<!-- === LAYER 4: LOCKED VIGNETTE === -->
+${lockedOverlay}
+
+<!-- === LAYER 5: DOTTED ROUTES === -->
+${routes}
+
+<!-- === LAYER 6: STAMPS === -->
+${stamps}
+
+<!-- === LAYER 7: LABELS === -->
+${labels}
+
+<!-- === LAYER 8: ACTIVE PULSE === -->
+${pulse}
+
+<!-- === LAYER 9: CLOUD BORDER === -->
+${cloudPaths}
+
+<!-- === LAYER 10: VIGNETTE === -->
+${vignette}
+
+<!-- === LAYER 11: COMPASS === -->
+${compass}
+
+<!-- === LAYER 12: TITLE === -->
+${title}
+</svg>`;
+
+  return svg;
+}
+
+// Inject
+document.getElementById('frame').innerHTML = buildSVG();
+</script>
+</body>
+</html>

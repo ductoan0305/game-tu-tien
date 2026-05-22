@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<title>Map Preview — Nhân Giới Toàn Đồ</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #0e0b07;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Noto Serif SC', 'PingFang SC', 'STSong', Georgia, serif;
+    gap: 16px;
+    padding: 20px;
+  }
+  h2 { color: #c8a860; font-size: 13px; letter-spacing: 3px; opacity: 0.7; }
+  .map-frame {
+    border: 2px solid #6a4820;
+    box-shadow:
+      0 0 0 4px #2a1808,
+      0 0 0 6px #6a4820,
+      0 0 40px rgba(80,40,8,0.5),
+      inset 0 0 20px rgba(0,0,0,0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 800px;
+  }
+  svg { display: block; width: 100%; }
+  .label {
+    color: #8a6030;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h2>✦ 人 界 全 圖 PREVIEW ✦</h2>
+
+<div class="map-frame">
+<svg viewBox="0 0 700 510" xmlns="http://www.w3.org/2000/svg">
+<defs>
+
+  <!-- ═══ PARCHMENT PAPER TEXTURE ═══ -->
+  <filter id="f-parchment" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.72 0.85" numOctaves="4"
+      seed="3" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix type="matrix" in="noise" result="sepia"
+      values="0.55 0.30 0.10 0 0.52
+              0.42 0.22 0.08 0 0.39
+              0.20 0.10 0.04 0 0.18
+              0    0    0    1  0"/>
+  </filter>
+
+  <!-- ═══ INK BRUSH — makes polygon edges look hand-drawn ═══ -->
+  <filter id="f-ink" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency="0.038 0.045" numOctaves="3"
+      seed="7" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp"
+      scale="9" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <!-- ═══ INK BLEED — dark border/bleeding around each region ═══ -->
+  <filter id="f-bleed" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+    <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="2"
+      seed="11" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="5"
+      xChannelSelector="R" yChannelSelector="G" result="warped"/>
+    <feMorphology in="warped" operator="dilate" radius="3.5" result="thick"/>
+    <feFlood flood-color="#1a0c04" flood-opacity="0.85" result="ink"/>
+    <feComposite in="ink" in2="thick" operator="in" result="border"/>
+    <feGaussianBlur in="border" stdDeviation="1.8" result="soft"/>
+    <feMerge>
+      <feMergeNode in="soft"/>
+      <feMergeNode in="warped"/>
+    </feMerge>
+  </filter>
+
+  <!-- ═══ WATER SHIMMER ═══ -->
+  <filter id="f-water" x="-4%" y="-4%" width="108%" height="108%">
+    <feTurbulence type="turbulence" baseFrequency="0.018 0.04" numOctaves="2" seed="2" result="wave">
+      <animate attributeName="baseFrequency" values="0.018 0.04;0.021 0.043;0.018 0.04"
+        dur="5s" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="wave" scale="5"
+      xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <!-- ═══ CLOUD SOFTNESS ═══ -->
+  <filter id="f-cloud" x="-15%" y="-15%" width="130%" height="130%">
+    <feGaussianBlur stdDeviation="2.5"/>
+  </filter>
+
+  <!-- ═══ STAMP GLOW ═══ -->
+  <filter id="f-stamp" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="5" result="blur"/>
+    <feComposite in="blur" in2="SourceGraphic" operator="over"/>
+  </filter>
+
+  <!-- ═══ MOUNTAIN gradient ═══ -->
+  <linearGradient id="g-mtn-vinh" x1="0" y1="0" x2="0.5" y2="1">
+    <stop offset="0%" stop-color="#d8e4f0"/>
+    <stop offset="35%" stop-color="#8a9aaa"/>
+    <stop offset="100%" stop-color="#4a5060"/>
+  </linearGradient>
+  <linearGradient id="g-mtn-dark" x1="0" y1="0" x2="0.5" y2="1">
+    <stop offset="0%" stop-color="#e0d0b8"/>
+    <stop offset="40%" stop-color="#8a7858"/>
+    <stop offset="100%" stop-color="#3a2e1e"/>
+  </linearGradient>
+  <linearGradient id="g-mtn-forest" x1="0" y1="0" x2="0.5" y2="1">
+    <stop offset="0%" stop-color="#c8d8a0"/>
+    <stop offset="50%" stop-color="#6a8848"/>
+    <stop offset="100%" stop-color="#2a3e18"/>
+  </linearGradient>
+
+  <!-- ═══ REGION-specific patterns (subtle) ═══ -->
+  <pattern id="pat-ice" width="30" height="30" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="15" x2="30" y2="15" stroke="rgba(180,210,240,0.12)" stroke-width="0.6"/>
+    <line x1="15" y1="0" x2="15" y2="30" stroke="rgba(180,210,240,0.08)" stroke-width="0.4"/>
+    <circle cx="15" cy="15" r="1.2" fill="rgba(220,235,255,0.12)"/>
+    <circle cx="0" cy="0" r="0.8" fill="rgba(220,235,255,0.09)"/>
+    <circle cx="30" cy="30" r="0.8" fill="rgba(220,235,255,0.09)"/>
+  </pattern>
+
+  <pattern id="pat-ruins" width="24" height="24" patternUnits="userSpaceOnUse">
+    <rect x="3" y="8" width="7" height="10" fill="none" stroke="rgba(160,80,200,0.18)" stroke-width="0.6"/>
+    <rect x="14" y="5" width="5" height="13" fill="none" stroke="rgba(160,80,200,0.12)" stroke-width="0.5"/>
+    <line x1="0" y1="18" x2="24" y2="18" stroke="rgba(120,60,160,0.10)" stroke-width="0.4"/>
+  </pattern>
+
+  <pattern id="pat-land" width="32" height="32" patternUnits="userSpaceOnUse">
+    <path d="M0,16 Q8,13 16,16 Q24,19 32,16" fill="none" stroke="rgba(80,58,20,0.07)" stroke-width="0.5"/>
+    <path d="M16,0 Q13,8 16,16 Q19,24 16,32" fill="none" stroke="rgba(80,58,20,0.05)" stroke-width="0.5"/>
+  </pattern>
+
+  <pattern id="pat-ocean" width="28" height="14" patternUnits="userSpaceOnUse">
+    <path d="M0,7 Q7,3 14,7 Q21,11 28,7" fill="none" stroke="rgba(50,140,180,0.18)" stroke-width="0.8"/>
+    <path d="M0,13 Q7,9 14,13 Q21,17 28,13" fill="none" stroke="rgba(50,140,180,0.10)" stroke-width="0.5"/>
+  </pattern>
+
+  <!-- ═══ VIGNETTE ═══ -->
+  <radialGradient id="g-vignette" cx="50%" cy="48%" r="58%">
+    <stop offset="45%" stop-color="rgba(0,0,0,0)"/>
+    <stop offset="100%" stop-color="rgba(8,4,1,0.78)"/>
+  </radialGradient>
+
+</defs>
+
+<!-- ════════════════════════════════════════
+     LAYER 1 — PARCHMENT BACKGROUND
+═════════════════════════════════════════ -->
+<rect width="700" height="510" filter="url(#f-parchment)"/>
+<!-- Warm overlay tint -->
+<rect width="700" height="510" fill="#d4a860" opacity="0.30"/>
+<!-- Subtle aged center -->
+<ellipse cx="350" cy="255" rx="320" ry="240" fill="#e8c888" opacity="0.20"/>
+
+<!-- ════════════════════════════════════════
+     LAYER 2 — REGION POLYGONS (ink-distorted edges)
+═════════════════════════════════════════ -->
+
+<!-- INK BLEED BORDERS (rendered first, under fills) -->
+<g filter="url(#f-bleed)" opacity="1">
+  <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+    fill="#6a9ab8"/>
+  <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+    fill="#7a5a8a"/>
+  <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+    fill="#5a8840"/>
+  <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+    fill="#c8a030"/>
+  <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+    fill="#3a7898"/>
+</g>
+
+<!-- REGION FILLS with ink-distorted edges -->
+<g filter="url(#f-ink)">
+  <!-- Vĩnh Dạ Hàn Nguyên — ice blue-gray -->
+  <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+    fill="#b8cdd8" opacity="0.82"/>
+  <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+    fill="url(#pat-ice)" opacity="0.6"/>
+
+  <!-- Cổ Vực — deep purple-dark -->
+  <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+    fill="#5a3868" opacity="0.70"/>
+  <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+    fill="url(#pat-ruins)" opacity="0.8"/>
+
+  <!-- Khuyết Vực — muted olive green -->
+  <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+    fill="#7a9848" opacity="0.75"/>
+  <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+    fill="url(#pat-land)" opacity="0.7"/>
+
+  <!-- Thần Châu Linh Thổ — warm golden-tan -->
+  <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+    fill="#c8a040" opacity="0.65"/>
+  <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+    fill="url(#pat-land)" opacity="0.5"/>
+
+  <!-- Thiên Tinh Hải Vực — teal sea -->
+  <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+    fill="#3a7898" opacity="0.72"/>
+  <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+    fill="url(#pat-ocean)" opacity="0.8"/>
+</g>
+
+<!-- WATER SHIMMER overlay on ocean -->
+<g filter="url(#f-water)" opacity="0.4">
+  <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+    fill="#5ab0d0"/>
+</g>
+
+<!-- FOG overlay on locked regions -->
+<g pointer-events="none" opacity="0.38">
+  <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+    fill="#1a1008"/>
+  <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+    fill="#100808"/>
+  <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+    fill="#180e00"/>
+  <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+    fill="#080c18"/>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 3 — TERRAIN ILLUSTRATIONS
+     Mountains = 山 style (3-peak clusters)
+     Forests = 木 style (organic blobs)
+═════════════════════════════════════════ -->
+
+<!-- Helper mountain shape — reusable via <use> by translating <g> -->
+<!-- Mountains across Vĩnh Dạ (north strip) -->
+<g fill="url(#g-mtn-vinh)" stroke="#1a2030" stroke-width="0.6" stroke-linejoin="round" opacity="0.78">
+  <!-- Mountain cluster 1 (far left) -->
+  <g transform="translate(72,58)">
+    <polygon points="-12,8 0,-18 12,8"/>
+    <polygon points="-6,8 4,-10 14,8" fill="#c8d8e8" opacity="0.65"/>
+    <polygon points="-20,8 -10,-8 0,8" fill="#9aaabe" opacity="0.55"/>
+    <polygon points="-4,-12 0,-18 4,-12" fill="#f0f4f8" opacity="0.70"/>
+  </g>
+  <!-- Cluster 2 -->
+  <g transform="translate(178,52)">
+    <polygon points="-10,8 0,-16 10,8"/>
+    <polygon points="-4,8 5,-9 13,8" fill="#c8d8e8" opacity="0.55"/>
+    <polygon points="-3,-11 0,-16 3,-11" fill="#f0f4f8" opacity="0.65"/>
+  </g>
+  <!-- Cluster 3 (center-north) -->
+  <g transform="translate(310,50)">
+    <polygon points="-14,9 -2,-20 10,9"/>
+    <polygon points="-6,9 6,-13 16,9" fill="#c8d8e8" opacity="0.60"/>
+    <polygon points="-22,9 -12,-10 -4,9" fill="#9aaabe" opacity="0.50"/>
+    <polygon points="-5,-14 -2,-20 2,-14" fill="#f0f4f8" opacity="0.75"/>
+  </g>
+  <!-- Cluster 4 -->
+  <g transform="translate(450,54)">
+    <polygon points="-11,8 1,-15 12,8"/>
+    <polygon points="-5,8 4,-10 13,8" fill="#c8d8e8" opacity="0.55"/>
+    <polygon points="-2,-10 1,-15 4,-10" fill="#f0f4f8" opacity="0.60"/>
+  </g>
+  <!-- Cluster 5 (far right) -->
+  <g transform="translate(578,50)">
+    <polygon points="-13,8 0,-17 13,8"/>
+    <polygon points="-7,8 5,-11 15,8" fill="#c8d8e8" opacity="0.60"/>
+    <polygon points="-4,-12 0,-17 4,-12" fill="#f0f4f8" opacity="0.70"/>
+  </g>
+  <!-- Cluster 6 far right -->
+  <g transform="translate(648,56)">
+    <polygon points="-8,7 0,-13 8,7"/>
+    <polygon points="-2,-9 0,-13 3,-9" fill="#f0f4f8" opacity="0.60"/>
+  </g>
+</g>
+
+<!-- Mountains on Khuyết Vực (center, darker) -->
+<g fill="url(#g-mtn-dark)" stroke="#2a1e0c" stroke-width="0.6" stroke-linejoin="round" opacity="0.72">
+  <g transform="translate(108,178)">
+    <polygon points="-9,7 0,-13 9,7"/>
+    <polygon points="-5,7 4,-8 11,7" opacity="0.70"/>
+  </g>
+  <g transform="translate(158,225)">
+    <polygon points="-10,8 0,-15 10,8"/>
+    <polygon points="-4,8 5,-9 13,8" opacity="0.65"/>
+    <polygon points="-2,-10 0,-15 2,-10" fill="#e8ddc8" opacity="0.50"/>
+  </g>
+  <g transform="translate(100,295)">
+    <polygon points="-8,7 0,-12 8,7"/>
+    <polygon points="-3,7 4,-7 10,7" opacity="0.60"/>
+  </g>
+  <g transform="translate(188,308)">
+    <polygon points="-10,7 0,-14 10,7"/>
+    <polygon points="-5,7 4,-9 12,7" opacity="0.65"/>
+  </g>
+  <g transform="translate(258,272)">
+    <polygon points="-9,7 0,-13 9,7"/>
+    <polygon points="-3,7 4,-8 10,7" opacity="0.60"/>
+  </g>
+  <g transform="translate(298,195)">
+    <polygon points="-8,6 0,-11 8,6"/>
+    <polygon points="-4,6 3,-7 9,6" opacity="0.55"/>
+  </g>
+</g>
+
+<!-- Mountains on Thần Châu (golden terrain) -->
+<g fill="url(#g-mtn-dark)" stroke="#2a1a04" stroke-width="0.6" stroke-linejoin="round" opacity="0.65">
+  <g transform="translate(438,188)">
+    <polygon points="-10,7 0,-14 10,7"/>
+    <polygon points="-5,7 4,-9 12,7" opacity="0.65"/>
+  </g>
+  <g transform="translate(488,228)">
+    <polygon points="-9,7 0,-13 9,7"/>
+    <polygon points="-4,7 3,-8 10,7" opacity="0.60"/>
+  </g>
+  <g transform="translate(528,268)">
+    <polygon points="-8,6 0,-12 8,6"/>
+    <polygon points="-3,6 3,-7 9,6" opacity="0.55"/>
+  </g>
+  <g transform="translate(620,248)">
+    <polygon points="-11,8 0,-16 11,8"/>
+    <polygon points="-5,8 4,-10 13,8" opacity="0.60"/>
+    <polygon points="-3,-11 0,-16 3,-11" fill="#f0e8d0" opacity="0.40"/>
+  </g>
+</g>
+
+<!-- Forest trees — organic blob style (Khuyết Vực) -->
+<g fill="#283e14" stroke="#1a2a0a" stroke-width="0.5" opacity="0.80">
+  <g transform="translate(172,192)">
+    <ellipse cx="0" cy="-6" rx="7" ry="9"/>
+    <ellipse cx="-5" cy="-2" rx="5.5" ry="7.5"/>
+    <ellipse cx="5" cy="-2" rx="5.5" ry="7.5"/>
+    <rect x="-2" y="3" width="4" height="6" fill="#3a2208"/>
+    <ellipse cx="-1" cy="-9" rx="3" ry="4" fill="#3a5a1e" opacity="0.7"/>
+  </g>
+  <g transform="translate(218,248)">
+    <ellipse cx="0" cy="-5" rx="6.5" ry="8.5"/>
+    <ellipse cx="-5" cy="-1" rx="5" ry="7"/>
+    <ellipse cx="5" cy="-1" rx="5" ry="7"/>
+    <rect x="-2" y="3" width="4" height="5" fill="#3a2208"/>
+  </g>
+  <g transform="translate(268,328)">
+    <ellipse cx="0" cy="-6" rx="7" ry="9"/>
+    <ellipse cx="-5" cy="-2" rx="5.5" ry="7.5"/>
+    <ellipse cx="5" cy="-2" rx="5.5" ry="7.5"/>
+    <rect x="-2" y="3" width="4" height="6" fill="#3a2208"/>
+  </g>
+  <g transform="translate(322,285)">
+    <ellipse cx="0" cy="-5" rx="6" ry="8"/>
+    <ellipse cx="-4" cy="-1" rx="5" ry="6.5"/>
+    <ellipse cx="4" cy="-1" rx="5" ry="6.5"/>
+    <rect x="-1.5" y="3" width="3" height="5" fill="#3a2208"/>
+  </g>
+  <g transform="translate(158,345)">
+    <ellipse cx="0" cy="-6" rx="6.5" ry="8.5"/>
+    <ellipse cx="-5" cy="-2" rx="5" ry="7"/>
+    <ellipse cx="5" cy="-2" rx="5" ry="7"/>
+    <rect x="-2" y="2" width="4" height="5" fill="#3a2208"/>
+  </g>
+  <g transform="translate(228,382)">
+    <ellipse cx="0" cy="-5" rx="6" ry="7.5"/>
+    <ellipse cx="-4" cy="-1" rx="4.5" ry="6"/>
+    <ellipse cx="4" cy="-1" rx="4.5" ry="6"/>
+    <rect x="-1.5" y="2" width="3" height="5" fill="#3a2208"/>
+  </g>
+</g>
+
+<!-- Forest trees on Thần Châu (slightly lighter tone) -->
+<g fill="#3a4e18" stroke="#2a3808" stroke-width="0.5" opacity="0.70">
+  <g transform="translate(398,195)">
+    <ellipse cx="0" cy="-5" rx="6" ry="8"/>
+    <ellipse cx="-4" cy="-1" rx="5" ry="7"/>
+    <ellipse cx="4" cy="-1" rx="5" ry="7"/>
+    <rect x="-1.5" y="3" width="3" height="5" fill="#4a3010"/>
+  </g>
+  <g transform="translate(452,228)">
+    <ellipse cx="0" cy="-6" rx="7" ry="9"/>
+    <ellipse cx="-5" cy="-2" rx="5.5" ry="7.5"/>
+    <ellipse cx="5" cy="-2" rx="5.5" ry="7.5"/>
+    <rect x="-2" y="3" width="4" height="6" fill="#4a3010"/>
+  </g>
+  <g transform="translate(498,262)">
+    <ellipse cx="0" cy="-5" rx="6" ry="7.5"/>
+    <ellipse cx="-4" cy="-1" rx="5" ry="6.5"/>
+    <ellipse cx="4" cy="-1" rx="5" ry="6.5"/>
+    <rect x="-1.5" y="3" width="3" height="5" fill="#4a3010"/>
+  </g>
+  <g transform="translate(440,300)">
+    <ellipse cx="0" cy="-5" rx="6" ry="8"/>
+    <ellipse cx="-4" cy="-1" rx="5" ry="7"/>
+    <ellipse cx="4" cy="-1" rx="5" ry="7"/>
+    <rect x="-1.5" y="3" width="3" height="5" fill="#4a3010"/>
+  </g>
+</g>
+
+<!-- Ocean islands (Thiên Tinh) -->
+<g opacity="0.55">
+  <ellipse cx="192" cy="460" rx="19" ry="9" fill="#5a8878" stroke="#3a6858" stroke-width="0.8"/>
+  <ellipse cx="190" cy="457" rx="8" ry="4" fill="#6a9878" opacity="0.5"/>
+  <ellipse cx="348" cy="488" rx="14" ry="6" fill="#5a8878" stroke="#3a6858" stroke-width="0.8"/>
+  <ellipse cx="478" cy="472" rx="17" ry="8" fill="#5a8878" stroke="#3a6858" stroke-width="0.8"/>
+  <ellipse cx="476" cy="468" rx="7" ry="3.5" fill="#6a9878" opacity="0.5"/>
+  <ellipse cx="588" cy="456" rx="21" ry="9" fill="#5a8878" stroke="#3a6858" stroke-width="0.8"/>
+  <ellipse cx="585" cy="452" rx="9" ry="4" fill="#6a9878" opacity="0.5"/>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 4 — CON DẤU 印章 (Region Stamps)
+     Khuyết Vực: active (full opacity, glowing)
+     Others: faded (locked)
+═════════════════════════════════════════ -->
+
+<!-- Khuyết Vực stamp — ACTIVE -->
+<g transform="translate(192,232)" filter="url(#f-stamp)">
+  <!-- Outer glow -->
+  <rect x="-21" y="-21" width="42" height="42" rx="6"
+    fill="#0a443a" opacity="0.35"/>
+  <!-- Main stamp body -->
+  <rect x="-18" y="-18" width="36" height="36" rx="4"
+    fill="#082e28" stroke="#2dd4bf" stroke-width="2.0"/>
+  <!-- Inner border -->
+  <rect x="-15" y="-15" width="30" height="30" rx="2"
+    fill="none" stroke="#2dd4bf" stroke-width="0.6" opacity="0.5"/>
+  <!-- Character -->
+  <text x="0" y="9" text-anchor="middle" font-size="21" fill="#5eead4"
+    font-weight="bold"
+    font-family="'Noto Serif SC','PingFang SC','STSong','Source Han Serif',serif">缺</text>
+</g>
+
+<!-- Vĩnh Dạ stamp — LOCKED (faded) -->
+<g transform="translate(350,58)" opacity="0.38">
+  <rect x="-17" y="-17" width="34" height="34" rx="4"
+    fill="#0f2341" stroke="#93c5fd" stroke-width="1.2"/>
+  <rect x="-14" y="-14" width="28" height="28" rx="2"
+    fill="none" stroke="#93c5fd" stroke-width="0.5" opacity="0.4"/>
+  <text x="0" y="8" text-anchor="middle" font-size="19" fill="#bfdbfe"
+    font-family="'Noto Serif SC','PingFang SC','STSong',serif">寒</text>
+</g>
+
+<!-- Cổ Vực stamp — LOCKED -->
+<g transform="translate(40,290)" opacity="0.38">
+  <rect x="-16" y="-16" width="32" height="32" rx="4"
+    fill="#230a37" stroke="#a855f7" stroke-width="1.1"/>
+  <rect x="-13" y="-13" width="26" height="26" rx="2"
+    fill="none" stroke="#a855f7" stroke-width="0.5" opacity="0.4"/>
+  <text x="0" y="8" text-anchor="middle" font-size="18" fill="#d8b4fe"
+    font-family="'Noto Serif SC','PingFang SC','STSong',serif">古</text>
+</g>
+
+<!-- Thần Châu stamp — LOCKED -->
+<g transform="translate(530,200)" opacity="0.38">
+  <rect x="-17" y="-17" width="34" height="34" rx="4"
+    fill="#523e08" stroke="#eab308" stroke-width="1.2"/>
+  <rect x="-14" y="-14" width="28" height="28" rx="2"
+    fill="none" stroke="#eab308" stroke-width="0.5" opacity="0.4"/>
+  <text x="0" y="8" text-anchor="middle" font-size="19" fill="#fde047"
+    font-family="'Noto Serif SC','PingFang SC','STSong',serif">聖</text>
+</g>
+
+<!-- Thiên Tinh stamp — LOCKED -->
+<g transform="translate(420,410)" opacity="0.38">
+  <rect x="-17" y="-17" width="34" height="34" rx="4"
+    fill="#051437" stroke="#38bdf8" stroke-width="1.2"/>
+  <rect x="-14" y="-14" width="28" height="28" rx="2"
+    fill="none" stroke="#38bdf8" stroke-width="0.5" opacity="0.4"/>
+  <text x="0" y="8" text-anchor="middle" font-size="19" fill="#7dd3fc"
+    font-family="'Noto Serif SC','PingFang SC','STSong',serif">海</text>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 5 — REGION NAME LABELS
+═════════════════════════════════════════ -->
+
+<!-- Vĩnh Dạ — small, faded -->
+<g pointer-events="none" opacity="0.40">
+  <text x="350" y="94" text-anchor="middle" font-size="9" fill="#bfdbfe"
+    letter-spacing="1.5" font-family="'Noto Serif SC','STSong',serif">Vĩnh Dạ Hàn Nguyên</text>
+  <text x="350" y="106" text-anchor="middle" font-size="7" fill="rgba(180,150,90,0.6)"
+    letter-spacing="1.2" font-family="sans-serif">未 探 索</text>
+</g>
+
+<!-- Cổ Vực — rotated/vertical feel -->
+<g pointer-events="none" opacity="0.38">
+  <text x="40" y="350" text-anchor="middle" font-size="7.5" fill="#d8b4fe"
+    letter-spacing="0.5" font-family="'Noto Serif SC','STSong',serif">Cổ Vực</text>
+  <text x="40" y="362" text-anchor="middle" font-size="6" fill="rgba(180,150,90,0.5)"
+    letter-spacing="1" font-family="sans-serif">未探索</text>
+</g>
+
+<!-- Khuyết Vực — ACTIVE, bright -->
+<g pointer-events="none">
+  <text x="192" y="296" text-anchor="middle" font-size="10" fill="#5eead4"
+    letter-spacing="0.8" font-weight="bold"
+    font-family="'Noto Serif SC','STSong',serif">Khuyết Vực</text>
+</g>
+
+<!-- Thần Châu — faded -->
+<g pointer-events="none" opacity="0.40">
+  <text x="530" y="260" text-anchor="middle" font-size="8.5" fill="#fde047"
+    letter-spacing="0.8" font-family="'Noto Serif SC','STSong',serif">Thần Châu</text>
+  <text x="530" y="272" text-anchor="middle" font-size="7.5" fill="#fde047"
+    letter-spacing="0.5" font-family="'Noto Serif SC','STSong',serif">Linh Thổ</text>
+  <text x="530" y="284" text-anchor="middle" font-size="6" fill="rgba(180,150,90,0.5)"
+    letter-spacing="1" font-family="sans-serif">未探索</text>
+</g>
+
+<!-- Thiên Tinh — faded -->
+<g pointer-events="none" opacity="0.38">
+  <text x="420" y="455" text-anchor="middle" font-size="8.5" fill="#7dd3fc"
+    letter-spacing="0.8" font-family="'Noto Serif SC','STSong',serif">Thiên Tinh Hải Vực</text>
+  <text x="420" y="467" text-anchor="middle" font-size="6" fill="rgba(180,150,90,0.5)"
+    letter-spacing="1" font-family="sans-serif">未探索</text>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 6 — DOTTED PATH (Khuyết Vực internal routes)
+═════════════════════════════════════════ -->
+<g stroke="#8a7040" stroke-width="0.8" stroke-dasharray="3 4" fill="none" opacity="0.40">
+  <path d="M192,272 Q220,250 265,235"/>
+  <path d="M192,272 Q170,310 158,345"/>
+  <path d="M192,272 Q145,260 108,252"/>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 7 — CLOUD BORDER (parchment cream puffs)
+     Using filter for soft edges
+═════════════════════════════════════════ -->
+<g class="cloud-border" pointer-events="none" filter="url(#f-cloud)">
+  <!-- TOP edge clouds -->
+  <g fill="rgba(235,220,190,0.90)">
+    <circle cx="0" cy="-4" r="32"/><circle cx="22" cy="-10" r="24"/><circle cx="-22" cy="-10" r="22"/>
+    <circle cx="40" cy="-2" r="20"/><circle cx="-38" cy="-2" r="19"/>
+    <circle cx="10" cy="-22" r="18"/><circle cx="-8" cy="-22" r="16"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(90,0)">
+    <circle cx="0" cy="-4" r="28"/><circle cx="20" cy="-9" r="21"/><circle cx="-20" cy="-9" r="20"/>
+    <circle cx="35" cy="-2" r="17"/><circle cx="-34" cy="-2" r="16"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(180,0)">
+    <circle cx="0" cy="-5" r="30"/><circle cx="22" cy="-10" r="22"/><circle cx="-22" cy="-10" r="21"/>
+    <circle cx="38" cy="-2" r="18"/><circle cx="-36" cy="-2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(268,0)">
+    <circle cx="0" cy="-4" r="27"/><circle cx="19" cy="-8" r="20"/><circle cx="-19" cy="-8" r="19"/>
+    <circle cx="32" cy="-2" r="16"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(350,0)">
+    <circle cx="0" cy="-5" r="31"/><circle cx="23" cy="-10" r="23"/><circle cx="-23" cy="-10" r="22"/>
+    <circle cx="40" cy="-2" r="19"/><circle cx="-38" cy="-2" r="18"/>
+    <circle cx="10" cy="-24" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(440,0)">
+    <circle cx="0" cy="-4" r="28"/><circle cx="20" cy="-9" r="21"/><circle cx="-20" cy="-9" r="20"/>
+    <circle cx="35" cy="-2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(530,0)">
+    <circle cx="0" cy="-5" r="30"/><circle cx="22" cy="-10" r="22"/><circle cx="-22" cy="-10" r="21"/>
+    <circle cx="38" cy="-2" r="18"/><circle cx="-36" cy="-2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(620,0)">
+    <circle cx="0" cy="-4" r="29"/><circle cx="21" cy="-9" r="22"/><circle cx="-21" cy="-9" r="20"/>
+    <circle cx="38" cy="-2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(700,0)">
+    <circle cx="0" cy="-4" r="32"/><circle cx="-22" cy="-10" r="22"/><circle cx="-8" cy="-22" r="16"/>
+  </g>
+
+  <!-- BOTTOM edge clouds -->
+  <g fill="rgba(235,220,190,0.90)" transform="translate(0,510)">
+    <circle cx="0" cy="4" r="32"/><circle cx="22" cy="10" r="24"/><circle cx="-22" cy="10" r="22"/>
+    <circle cx="40" cy="2" r="20"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(100,510)">
+    <circle cx="0" cy="4" r="28"/><circle cx="20" cy="9" r="21"/><circle cx="-20" cy="9" r="20"/>
+    <circle cx="35" cy="2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(200,510)">
+    <circle cx="0" cy="5" r="30"/><circle cx="22" cy="10" r="22"/><circle cx="-22" cy="10" r="21"/>
+    <circle cx="38" cy="2" r="18"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(300,510)">
+    <circle cx="0" cy="4" r="29"/><circle cx="20" cy="9" r="22"/><circle cx="-20" cy="9" r="21"/>
+    <circle cx="35" cy="2" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(400,510)">
+    <circle cx="0" cy="5" r="31"/><circle cx="22" cy="10" r="23"/><circle cx="-22" cy="10" r="22"/>
+    <circle cx="40" cy="2" r="19"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(500,510)">
+    <circle cx="0" cy="4" r="28"/><circle cx="20" cy="9" r="21"/><circle cx="-20" cy="9" r="20"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(600,510)">
+    <circle cx="0" cy="5" r="30"/><circle cx="22" cy="10" r="22"/><circle cx="-22" cy="10" r="21"/>
+  </g>
+  <g fill="rgba(235,220,190,0.90)" transform="translate(700,510)">
+    <circle cx="0" cy="4" r="32"/><circle cx="-22" cy="10" r="22"/>
+  </g>
+
+  <!-- LEFT edge -->
+  <g fill="rgba(235,220,190,0.86)" transform="translate(0,70)">
+    <circle cx="-4" cy="0" r="28"/><circle cx="-10" cy="20" r="21"/><circle cx="-10" cy="-20" r="20"/>
+    <circle cx="-2" cy="35" r="17"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(0,160)">
+    <circle cx="-4" cy="0" r="26"/><circle cx="-9" cy="19" r="19"/><circle cx="-9" cy="-19" r="18"/>
+    <circle cx="-2" cy="32" r="15"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(0,250)">
+    <circle cx="-5" cy="0" r="29"/><circle cx="-10" cy="21" r="22"/><circle cx="-10" cy="-21" r="20"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(0,340)">
+    <circle cx="-4" cy="0" r="27"/><circle cx="-9" cy="20" r="20"/><circle cx="-9" cy="-20" r="19"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(0,430)">
+    <circle cx="-4" cy="0" r="28"/><circle cx="-9" cy="20" r="21"/><circle cx="-9" cy="-20" r="20"/>
+  </g>
+
+  <!-- RIGHT edge -->
+  <g fill="rgba(235,220,190,0.86)" transform="translate(700,80)">
+    <circle cx="4" cy="0" r="28"/><circle cx="10" cy="20" r="21"/><circle cx="10" cy="-20" r="20"/>
+    <circle cx="2" cy="36" r="16"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(700,170)">
+    <circle cx="4" cy="0" r="26"/><circle cx="9" cy="19" r="19"/><circle cx="9" cy="-19" r="18"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(700,260)">
+    <circle cx="5" cy="0" r="29"/><circle cx="10" cy="21" r="22"/><circle cx="10" cy="-21" r="20"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(700,350)">
+    <circle cx="4" cy="0" r="27"/><circle cx="9" cy="20" r="20"/><circle cx="9" cy="-20" r="19"/>
+  </g>
+  <g fill="rgba(235,220,190,0.86)" transform="translate(700,440)">
+    <circle cx="4" cy="0" r="28"/><circle cx="9" cy="20" r="21"/><circle cx="9" cy="-20" r="20"/>
+  </g>
+</g>
+
+<!-- ════════════════════════════════════════
+     LAYER 8 — VIGNETTE + MAP TITLE
+═════════════════════════════════════════ -->
+<rect width="700" height="510" fill="url(#g-vignette)" pointer-events="none"/>
+
+<!-- Compass rose (bottom right) -->
+<g transform="translate(658,465)" pointer-events="none" opacity="0.28">
+  <circle cx="0" cy="0" r="17" fill="none" stroke="#a08040" stroke-width="0.8"/>
+  <circle cx="0" cy="0" r="12" fill="none" stroke="#a08040" stroke-width="0.4"/>
+  <line x1="0" y1="-14" x2="0" y2="14" stroke="#a08040" stroke-width="0.9"/>
+  <line x1="-14" y1="0" x2="14" y2="0" stroke="#a08040" stroke-width="0.9"/>
+  <polygon points="0,-14 -3,-8 0,-10 3,-8" fill="#c09040"/>
+  <text x="0" y="-16" text-anchor="middle" font-size="7" fill="#c09040"
+    font-family="serif">北</text>
+  <text x="16" y="4" text-anchor="start" font-size="6" fill="#a08040"
+    font-family="serif">東</text>
+  <text x="-16" y="4" text-anchor="end" font-size="6" fill="#a08040"
+    font-family="serif">西</text>
+  <text x="0" y="24" text-anchor="middle" font-size="6" fill="#a08040"
+    font-family="serif">南</text>
+</g>
+
+<!-- Map title -->
+<text x="350" y="504" text-anchor="middle" font-size="10"
+  fill="rgba(60,40,10,0.45)" letter-spacing="6" pointer-events="none"
+  font-family="'Noto Serif SC','PingFang SC','STSong',serif">✦ 人 界 全 圖 ✦</text>
+
+<!-- Khuyết Vực active pulse indicator -->
+<g pointer-events="none">
+  <circle cx="192" cy="272" r="6" fill="none" stroke="#2dd4bf" stroke-width="1.5" opacity="0.7">
+    <animate attributeName="r" values="6;11;6" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="192" cy="272" r="3.5" fill="#2dd4bf" opacity="0.9"/>
+</g>
+
+</svg>
+</div>
+
+<p class="label">↑ Preview — Painted Scroll Map với SVG filters (feTurbulence + feDisplacementMap)</p>
+
+<div style="margin-top:20px;max-width:700px;color:#8a7040;font-size:11px;line-height:1.7;text-align:center;font-family:sans-serif;">
+  <strong style="color:#c8a060">Kỹ thuật dùng trong file này:</strong><br/>
+  feTurbulence parchment texture · feDisplacementMap ink-distorted borders ·
+  feMorphology + feGaussianBlur ink-bleed · feDisplacementMap water shimmer ·
+  Multi-peak mountain clusters · Organic forest blob trees · Animated pulse indicator
+</div>
+
+</body>
+</html>

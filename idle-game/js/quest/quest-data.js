@@ -118,7 +118,7 @@ export const NPC_QUESTS = [
       unlocks: 'Đao Khách Già chỉ ngươi điểm yếu của yêu thú hệ Hỏa — tăng damage khi chiến đấu trong vùng núi lửa.'
     },
     lore: '"Ta không dạy kẻ yếu đuối. Không phải vì ta khinh — mà vì dạy kẻ chưa sẵn sàng chỉ tổ hại họ thêm."',
-    nextQuest: null,
+    nextQuest: 'nq_12_dao_khach_scar',
     order: 1,
   },
 
@@ -171,8 +171,34 @@ export const NPC_QUESTS = [
       chronicle: 'Tuổi {year}: Lão Dược Sư kể về tuổi trẻ bỏ lỡ — một lời nhắc nhở về cửa sổ vàng của tu tiên.'
     },
     lore: '"Ta tu đến LK3 thì bỏ cuộc. Nghĩ rằng thôn cần ta hơn. Bây giờ nhìn lại... không biết mình chọn đúng hay sai."',
-    nextQuest: null,
+    nextQuest: 'nq_19_duoc_su_pre_breakthrough',
     order: 4,
+  },
+
+  // ---- Lão Dược Sư chain 5 (LK9+) — đêm trước Trúc Cơ ----
+  {
+    id: 'nq_19_duoc_su_pre_breakthrough',
+    name: 'Đêm Trước Trúc Cơ',
+    type: 'npc_quest',
+    givenBy: 'lao_duoc_su',
+    givenByName: 'Lão Dược Sư',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 9 &&
+      G.quests?.completed?.includes('nq_07_elder_regret'),
+    desc: 'Lão Dược Sư tìm ngươi vào ban đêm — lần đầu tiên ông chủ động tìm. Ông ngồi dưới gốc cây già, nhìn trời: Ta nghe nói ngươi gần đến LK9 rồi. Ngồi xuống đây — ta có thứ muốn nói trước khi ngươi đi xa hơn ta.',
+    objectives: [{ key: 'meditate_time', label: 'Thiền định cùng Lão Dược Sư (giây thực)', required: 600 }],
+    rewards: {
+      exp: 500,
+      ngoTinh: 2,
+      tamCanh: 4,
+      unlocks: 'Lão Dược Sư đưa ngươi trang cuối nhật ký tu tiên — bài học ông chưa kịp áp dụng. Ngộ Tính và Tâm Cảnh tăng mạnh.',
+      chronicle: 'Tuổi {year}: Đêm trước đột phá, ngồi cùng Lão Dược Sư nghe chuyện một đời bỏ lỡ — lòng quyết tâm hơn bao giờ hết.',
+    },
+    lore: '"Ta đã tu đến LK3 — dừng lại vì thôn cần ta. Nhưng thật ra... ta sợ. Sợ thất bại thật sự. Ngươi sắp bước qua cửa ải ta chưa từng dám. Đừng nhìn lại nhé."',
+    nextQuest: null,
+    order: 5,
   },
 
   // ---- Lão Ngư Ông chain 3 (LK5+) ----
@@ -264,8 +290,185 @@ export const NPC_QUESTS = [
       chronicle: 'Tuổi {year}: Tìm kiếm cháu Bà Nguyên — vô kết quả. Lần đầu thấy rõ cái giá của việc rời xa thôn làng.'
     },
     lore: '"Không cần ngươi tìm được. Chỉ cần biết có người đang tìm... là tôi yên tâm hơn rồi."',
-    nextQuest: null,
+    nextQuest: 'nq_18_baguyen_truth',
     order: 2,
+  },
+
+  {
+    id: 'nq_18_baguyen_truth',
+    name: 'Điều Đất Biết',
+    type: 'npc_quest',
+    givenBy: 'ba_nguyen',
+    givenByName: 'Bà Nguyên Trồng Trọt',
+    givenByVillage: 'thanh_phong_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 8 &&
+      G.quests?.completed?.includes('nq_11_baguyen_confession'),
+    desc: 'Bà Nguyên ngồi yên bên luống đất, không nhổ cỏ, không tưới cây. Bà nói không nhìn ngươi: Có điều ta muốn biết. Không phải để hy vọng. Chỉ để biết thôi.',
+    objectives: [
+      { key: 'explore', label: 'Thám hiểm tìm dấu vết cuối cùng', required: 1 },
+    ],
+    rewards: {
+      exp: 250,
+      tamCanh: 3,
+      unlocks: 'Bà Nguyên gật đầu — không nói thêm gì. Ngươi hiểu có những sự thật không cần lời...',
+      chronicle: 'Tuổi {year}: Mang tin về đứa cháu Bà Nguyên. Không có lời cảm ơn — chỉ có im lặng.',
+    },
+    lore: '"Tôi tìm thấy một ngôi mộ không tên ở phía đông. Không biết có phải cháu tôi không. Nhưng... tôi nghĩ là vậy. Cảm ơn ngươi đã đi tìm."',
+    nextQuest: null,
+    order: 3,
+  },
+
+  // ============================================================
+  // GIAI ĐOẠN 3 — Đao Khách Già Chain (LK3-LK7)
+  // Arc: cựu chiến binh dừng lại ở LK8 vì thiếu can đảm, kể câu
+  //      chuyện thật của mình cho người duy nhất ông tin tưởng.
+  // Nguyên tắc: phần thưởng là lore + mối quan hệ, không phải linh thạch.
+  // ============================================================
+
+  {
+    id: 'nq_12_dao_khach_scar',
+    name: 'Vết Thương Không Lành',
+    type: 'npc_quest',
+    givenBy: 'dao_khach_gia',
+    givenByName: 'Đao Khách Già',
+    givenByVillage: 'hoa_diem_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 3 &&
+      G.quests?.completed?.includes('nq_05_forge_test'),
+    desc: 'Đao Khách Già gọi ngươi ra sau nhà, kéo tay áo lên. Một vết sẹo dài từ vai đến khuỷu tay — kinh mạch tổn thương từ lần đột phá thất bại năm xưa. "Ta chịu đựng ba mươi năm rồi. Cần thảo dược từ vùng nguy hiểm — ngươi đủ mạnh để vào đó không?"',
+    objectives: [{ key: 'gather', label: 'Thu thập thảo dược vùng nguy hiểm', required: 5 }],
+    rewards: {
+      exp: 180,
+      stone: 6,
+      unlocks: 'Đao Khách Già kể câu chuyện đột phá thất bại năm xưa — lần đầu tiên ông nói với ai về vết thương kinh mạch.',
+    },
+    lore: '"Không ai biết chuyện này. Ngươi là người đầu tiên. Đừng thấy ta yếu mà khinh — ta chịu đau được, nhưng thảo dược thì ta không tự tìm được nữa."',
+    nextQuest: 'nq_13_dao_khach_duel',
+    order: 2,
+  },
+
+  {
+    id: 'nq_13_dao_khach_duel',
+    name: 'Một Trận Thật Lòng',
+    type: 'npc_quest',
+    givenBy: 'dao_khach_gia',
+    givenByName: 'Đao Khách Già',
+    givenByVillage: 'hoa_diem_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 5 &&
+      G.quests?.completed?.includes('nq_12_dao_khach_scar'),
+    desc: 'Đao Khách Già đứng giữa sân, tay đặt trên cán đao. "Ngươi mạnh hơn rồi — ta cảm nhận được. Nhưng mạnh trên giấy khác mạnh thật. Ta muốn thấy ngươi đấu thật với yêu thú trước mặt ta — không chạy, không núp."',
+    objectives: [{ key: 'kill', label: 'Diệt yêu thú trước mặt Đao Khách Già', required: 8 }],
+    rewards: {
+      exp: 280,
+      unlocks: 'Đao Khách Già chỉ điểm yếu của yêu thú hệ Hỏa — nhận thức chiến đấu của ngươi sâu sắc thêm một tầng.',
+    },
+    lore: '"Ta không thể dạy người chưa biết chiến đấu thật. Đọc sách một trăm cuốn không bằng một trận máu thật. Đi đi — ta nhìn từ đây."',
+    nextQuest: 'nq_14_dao_khach_farewell',
+    order: 3,
+  },
+
+  {
+    id: 'nq_14_dao_khach_farewell',
+    name: 'Lời Cuối Của Kẻ Dừng Lại',
+    type: 'npc_quest',
+    givenBy: 'dao_khach_gia',
+    givenByName: 'Đao Khách Già',
+    givenByVillage: 'hoa_diem_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 7 &&
+      G.quests?.completed?.includes('nq_13_dao_khach_duel'),
+    desc: 'Đao Khách Già ngồi trước lò lửa, lưng khom hơn trước. Ông gọi ngươi vào, giọng trầm: "Ta đã đến LK8. Dừng lại vì... không phải thiếu sức mạnh. Thiếu can đảm nhìn thẳng vào thất bại. Ngươi ngồi xuống — ta kể ngươi nghe điều ta chưa kể ai."',
+    objectives: [{ key: 'explore', label: 'Suy ngẫm và lắng nghe (thám hiểm)', required: 3 }],
+    rewards: {
+      exp: 420,
+      tamCanh: 5,
+      unlocks: 'Đao Khách Già trao di vật — mảnh kinh cũ về ý chí vượt ải. Tâm Cảnh của ngươi sâu sắc thêm.',
+    },
+    lore: '"Ta không thua thiên phú. Ta thua chính mình. Ngươi đã vượt LK7 — ngươi đã vượt qua điểm ta sợ nhất. Đừng dừng lại như ta."',
+    nextQuest: null,
+    order: 4,
+  },
+
+  // ============================================================
+  // GIAI ĐOẠN 4 — Ẩn Tu Băng Chain (LK1-LK7) — Hàn Băng Thôn
+  // Arc KHÁC với Đao Khách Già:
+  //   Đao Khách Già: dừng vì SỢ → hối tiếc → muốn player đi tiếp.
+  //   Ẩn Tu Băng: dừng vì TRÍ TUỆ → không hối tiếc → muốn player hiểu bản thân.
+  // Chuỗi 3 quest về tĩnh lặng, hiểu mình, chấp nhận vô điều kiện.
+  // ============================================================
+
+  {
+    id: 'nq_15_an_tu_first_lesson',
+    name: 'Bài Học Đầu Tiên Của Băng',
+    type: 'npc_quest',
+    givenBy: 'an_tu_bang',
+    givenByName: 'Ẩn Tu Băng',
+    givenByVillage: 'han_bang_thon',
+    giveCondition: (G) =>
+      G.setupDone && G.realmIdx === 0 && G.stage >= 1,
+    desc: 'Ẩn Tu Băng nhìn ngươi một lúc không nói. Rồi ông chỉ tay vào một tảng đá phẳng trước mặt: "Ngồi xuống đó. Nhắm mắt. Đừng cố tu luyện — chỉ cần ngồi. Ta sẽ nói tiếp khi ngươi thật sự ngồi yên được."',
+    objectives: [{ key: 'meditate_time', label: 'Bế quan thiền định (giây thực)', required: 300 }],
+    rewards: {
+      exp: 90,
+      ngoTinh: 1,
+      unlocks: 'Ẩn Tu Băng hài lòng — ông chỉ cho ngươi cách thở đúng khi thiền định, tăng nhẹ Ngộ Tính.',
+    },
+    lore: '"Ngươi đang cố gắng. Ta thấy rõ. Nhưng thiền định không phải về cố gắng. Là về buông bỏ. Ngồi yên đủ lâu — ngươi sẽ hiểu sự khác nhau."',
+    nextQuest: 'nq_16_an_tu_stillness',
+    order: 1,
+  },
+
+  {
+    id: 'nq_16_an_tu_stillness',
+    name: 'Tĩnh Lặng Trong Bão',
+    type: 'npc_quest',
+    givenBy: 'an_tu_bang',
+    givenByName: 'Ẩn Tu Băng',
+    givenByVillage: 'han_bang_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 4 &&
+      G.quests?.completed?.includes('nq_15_an_tu_first_lesson'),
+    desc: 'Ẩn Tu Băng lần này không ngồi thiền — ông đứng, nhìn về phía hồ băng. "Ngươi mạnh hơn rồi. Nhưng ta nhìn mắt ngươi thấy nôn nóng. Cái gì đang đuổi ngươi chạy vậy? Hãy ra ngoài kia — đi chậm, quan sát, đừng vội."',
+    objectives: [{ key: 'explore', label: 'Thám hiểm chậm rãi, quan sát', required: 5 }],
+    rewards: {
+      exp: 220,
+      ngoTinh: 2,
+      unlocks: 'Ẩn Tu Băng kể lần đầu ông nhận ra mình đã đến LK9 — không phải vì vui mà vì ngạc nhiên. Ngộ Tính của ngươi tăng.',
+    },
+    lore: '"Ta không chạy đua với ai. Không có ai đang đợi ta ở cuối đường. Khi nhận ra điều đó — mọi thứ đột nhiên nhẹ nhàng hẳn."',
+    nextQuest: 'nq_17_an_tu_acceptance',
+    order: 2,
+  },
+
+  {
+    id: 'nq_17_an_tu_acceptance',
+    name: 'Người Biết Dừng Lại',
+    type: 'npc_quest',
+    givenBy: 'an_tu_bang',
+    givenByName: 'Ẩn Tu Băng',
+    givenByVillage: 'han_bang_thon',
+    giveCondition: (G) =>
+      G.setupDone &&
+      G.realmIdx === 0 && G.stage >= 7 &&
+      G.quests?.completed?.includes('nq_16_an_tu_stillness'),
+    desc: 'Ẩn Tu Băng ngồi bên hồ băng, mắt nhắm, hoàn toàn tĩnh lặng. Ông gọi ngươi đến ngồi cạnh: "Ta muốn ngươi ngồi thiền cùng ta một lần trước khi ngươi đi quá xa. Không phải để tu luyện — là để ngươi biết mình đang đi đâu."',
+    objectives: [{ key: 'meditate_time', label: 'Thiền định bên hồ băng (giây thực)', required: 1200 }],
+    rewards: {
+      exp: 450,
+      ngoTinh: 3,
+      tamCanh: 3,
+      unlocks: 'Ẩn Tu Băng kể đã từ chối đột phá Trúc Cơ dù có cơ hội — vì ông hiểu đó không phải con đường của mình. Ngộ Tính và Tâm Cảnh tăng.',
+    },
+    lore: '"Ta đến LK9. Nhìn cửa Trúc Cơ rồi quay đi. Không phải vì sợ — mà vì ta biết mình là ai. Đó là lần đầu tiên ta thật sự hiểu bản thân. Ngươi sẽ có khoảnh khắc đó của mình — khi đó, hãy thành thật."',
+    nextQuest: null,
+    order: 3,
   },
 
 ];

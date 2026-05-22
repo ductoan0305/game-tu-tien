@@ -11,7 +11,7 @@ import { createFreshState, saveGame, loadGame,
          calcQiRate, calcMaxQi }                                     from './core/state.js';
 import { gameTick, checkAchievements, applyCharacterSetup,
          doBreakthrough, toggleMeditate, doRest, doExplore, doFish,
-         doArray, doSpar, doMeditation, learnSkill, buyItem, useItem,
+         doArray, doSpar, doMeditation, doChiemNghiem, learnSkill, buyItem, useItem,
          calcBreakthroughChance }                                    from './core/actions.js';
 import { REALMS, SKILLS, ITEMS }                                     from './core/data.js';
 import { REALM_NAMES }                                              from './core/constants.js';
@@ -487,7 +487,8 @@ const cultivateActions = {
   fish:       () => { const r = doFish(G); if (r?.ok) trackStaminaAction(G); handleAction(r); },
   array:      () => { const r = doArray(G); if (r?.ok) trackStaminaAction(G); handleAction(r); },
   spar:       () => { const r = doSpar(G); if (r?.ok) trackStaminaAction(G); handleAction(r); },
-  meditation: () => { const r = doMeditation(G); if (r?.ok) trackStaminaAction(G); handleAction(r); },
+  meditation:    () => { const r = doMeditation(G);    if (r?.ok) trackStaminaAction(G); handleAction(r); },
+  chiemNghiem:   () => { const r = doChiemNghiem(G);  if (r?.ok) trackStaminaAction(G); handleAction(r); },
   breakthrough: () => {
     trackBreakthroughAttempt(G);
     const result = doBreakthrough(G);
@@ -520,6 +521,9 @@ const combatActions = {
   startHunt: (enemyId) => {
     const result = startCombat(G, enemyId);
     if (!result.ok) { showToast(result.msg, 'danger'); return; }
+    // Đánh dấu combat bắt đầu từ trong tab popup → giữ popup mở sau khi kết thúc
+    G.combat._fromTabPopup = true;
+    G.combat._lastResult = null;
     showToast(`⚔ Bắt đầu chiến đấu: ${result.enemy.name}`, 'danger');
     renderCurrentTab();
   },
@@ -533,7 +537,15 @@ const combatActions = {
     if (result.ended) {
       if (result.victory) showToast(`🏆 Chiến thắng! +${result.rewards?.stone}💎`, 'gold');
       else { showToast('💀 Bại trận!', 'danger'); flashScreen('death'); }
-      if (!G.dungeon?.active) { setTimeout(() => { _switchTabWithPopup('cultivate'); }, 1200); return; }
+      if (!G.dungeon?.active) {
+        if (G.combat?._fromTabPopup) {
+          // bus handler đã set _lastResult và gọi renderCurrentTab — chỉ cần clear flag
+          G.combat._fromTabPopup = false;
+          return;
+        }
+        setTimeout(() => { _switchTabWithPopup('cultivate'); }, 1200);
+        return;
+      }
     }
     renderCurrentTab();
   },

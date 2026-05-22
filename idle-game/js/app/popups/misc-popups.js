@@ -227,11 +227,28 @@ export function showSectJoinModal(G, sectId, sectName, { appendLog, renderCurren
 
   document.getElementById('btn-join-confirm')?.addEventListener('click', () => {
     G.sectId = sectId;
-    const CP_MAP = { kiem_tong:'kiem_quyet_ha', dan_tong:'dan_kinh_ha', tran_phap:'tran_phap_ha', the_tu:'the_tu_ha' };
+    const CP_MAP  = { kiem_tong:'kiem_quyet_ha', dan_tong:'dan_kinh_ha', tran_phap:'tran_phap_ha', the_tu:'the_tu_ha' };
+    const ZONE_MAP = { kiem_tong:'thanh_van_son', dan_tong:'van_linh_thi', tran_phap:'thien_kiep_dia', the_tu:'an_long_dong' };
     if (!G.congPhap) G.congPhap = { currentId:'vo_danh', unlockedIds:[] };
     const cpId = CP_MAP[sectId];
-    if (cpId) { G.congPhap.currentId = cpId; G.congPhap.unlockedIds = [cpId]; }
-    showToast(`🎉 Gia nhập ${info.name} thành công!`, 'legendary');
+    if (cpId) {
+      G.congPhap.currentId   = cpId;
+      G.congPhap.unlockedIds = ['vo_danh', cpId];
+      if (!G.congPhap.activeIds)  G.congPhap.activeIds = [];
+      if (!G.congPhap.activeIds.includes(cpId)) G.congPhap.activeIds = [cpId];
+      if (!G.congPhap.mastery)    G.congPhap.mastery = {};
+      if (G.congPhap.mastery[cpId] === undefined) G.congPhap.mastery[cpId] = 0;
+    }
+    // Cập nhật worldMap — chuyển player đến zone của tông môn
+    const zoneId = ZONE_MAP[sectId];
+    if (zoneId) {
+      if (!G.worldMap) G.worldMap = {};
+      G.worldMap.currentNodeId    = zoneId;
+      G.worldMap.leftStarter      = true;
+      G.worldMap.starterVillageId = G.worldMap.starterVillageId || null;
+    }
+    if (!G.sect) G.sect = { rank:0, exp:0, totalContributions:0, cooldowns:{} };
+    showToast(`🎉 Gia nhập ${info.name} thành công! Hãy đến ${zoneId ? 'tông môn' : 'bản đồ'} để bắt đầu.`, 'legendary');
     appendLog(`🏯 Chính thức trở thành đệ tử ${info.name}. Công pháp: ${cpId}`, 'gold');
     overlay.remove();
     saveGame(G);

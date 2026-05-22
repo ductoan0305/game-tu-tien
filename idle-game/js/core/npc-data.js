@@ -68,6 +68,52 @@ export const NPC_REWARDS = {
     },
   },
 
+  // ── Bà Nguyên Trồng Trọt — Thanh Phong Thôn / Thanh Vân Sơn ─────────────
+  ba_nguyen: {
+    tier2_secret: {
+      zoneId: 'linh_phu_nguyen_vuon',
+      label:  'Linh Phủ Vườn Nguyên',
+      hint:   'Vườn linh thảo ẩn bảy mươi năm của Bà Nguyên — không ai biết đường vào ngoài bà.',
+    },
+    tier3_gift: {
+      type:   'inventory',
+      itemId: 'linh_me_seed',
+      qty:    3,
+      label:  'Hạt Linh Mễ (×3)',
+      emoji:  '🫘',
+      once:   true,
+    },
+    tier4_buff: {
+      statKey: 'eventRatePct',
+      value:   2,
+      label:   'Đệ tử khẩu khẩu Bà Nguyên',
+      desc:    '+2% tốc độ tu luyện vĩnh viễn (bảy mươi năm gắn bó đất — kiên nhẫn thấm vào ngươi)',
+    },
+  },
+
+  // ── Ẩn Tu Băng — Hàn Băng Thôn / Hắc Phong Lâm ──────────────────────────
+  an_tu_bang: {
+    tier2_secret: {
+      zoneId: 'bang_dong_bi_canh',
+      label:  'Băng Động Bí Cảnh',
+      hint:   'Động băng giá ẩn sau rừng già Hắc Phong Lâm — nơi Ẩn Tu Băng thiền định suốt thập kỷ.',
+    },
+    tier3_gift: {
+      type:    'stat',
+      statKey: 'ngoTinh',
+      value:   5,
+      label:   'Tâm Pháp Thiền Băng',
+      emoji:   '🧊',
+      once:    true,
+    },
+    tier4_buff: {
+      statKey: 'ratePct',
+      value:   3,
+      label:   'Đệ tử khẩu khẩu Ẩn Tu Băng',
+      desc:    '+3% tốc độ tu luyện vĩnh viễn (thiền sâu — linh lực lưu thông không trở ngại)',
+    },
+  },
+
   // ── Đao Khách Già — Hỏa Diệm Thôn / Thiên Kiếp Địa ──────────────────────
   dao_khach_gia: {
     tier2_secret: {

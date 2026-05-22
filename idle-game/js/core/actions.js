@@ -7,7 +7,8 @@
 //   tick.js         — gameTick, checkAchievements, learnSkill, canPrestige, doPrestige
 // ============================================================
 export { applyCharacterSetup, toggleMeditate, doRest,
-         doExplore, doFish, doArray, doSpar, doMeditation } from './systems/cultivation.js';
+         doExplore, doFish, doArray, doSpar, doMeditation,
+         doChiemNghiem } from './systems/cultivation.js';
 
 export { calcBreakthroughChance, doBreakthrough,
          applyRealmBreakthrough }                           from './systems/breakthrough.js';

@@ -8,6 +8,7 @@
 import { addChronicle, addLifespanBonus } from './time-engine.js';
 import { bus } from '../utils/helpers.js';
 import { NPC_RIVALS } from './data.js';
+import { calcPurityThreshold } from './state/computed.js';
 
 // ============================================================
 // BẢNG CƠ DUYÊN — 70 events
@@ -825,7 +826,7 @@ export const CO_DUYEN_EVENTS = [
     unlockRealm: 0, maxRealm: 0,
     conditions: ['meditate'],
     extraCondition: (G) => {
-      const remaining = (G.lifespan ?? 100) - (G.age ?? 16);
+      const remaining = (G.gameTime?.lifespanMax ?? 100) - (G.gameTime?.currentYear ?? 16);
       return remaining < 60 && (G.stage ?? 1) >= 3;
     },
   },
@@ -863,7 +864,7 @@ export const CO_DUYEN_EVENTS = [
     unlockRealm: 0, maxRealm: 0,
     conditions: ['cultivate', 'meditate'],
     extraCondition: (G) => {
-      const age = G.age ?? 16;
+      const age = G.gameTime?.currentYear ?? 16;
       return age >= 40 && (G.stage ?? 1) >= 4;
     },
   },
@@ -981,7 +982,7 @@ export const CO_DUYEN_EVENTS = [
     unlockRealm: 0, maxRealm: 0,
     conditions: ['meditate'],
     extraCondition: (G) => {
-      const remaining = (G.lifespan ?? 100) - (G.age ?? 16);
+      const remaining = (G.gameTime?.lifespanMax ?? 100) - (G.gameTime?.currentYear ?? 16);
       return remaining < 40 && (G.stage ?? 1) >= 7;
     },
     cooldownSec: 72000,
@@ -1021,6 +1022,258 @@ export const CO_DUYEN_EVENTS = [
     unlockRealm: 0, maxRealm: 0,
     conditions: ['explore'],
     extraCondition: (G) => (G.stage ?? 1) >= 9,
+  },
+
+  // ============================================================
+  // SPRINT 5 — LK Hậu Kỳ Atmospheric Events (stage ≥ 7)
+  // Không khí nặng nề, cô đơn, và những khoảnh khắc thiên nhiên
+  // mang ý nghĩa sâu hơn khi ngươi đã đứng quá lâu ở ngưỡng cửa.
+  // ============================================================
+  {
+    id: 'lk_hk_stone_crack',
+    name: 'Vết Nứt Trên Đá', tier: 1, emoji: '🪨',
+    desc: 'Trong chuyến thám hiểm, ngươi nhìn thấy nước nhỏ giọt đã xẻ đôi một tảng đá khổng lồ — không phải bằng lực, mà bằng thời gian.',
+    lore: '"Nước không cố gắng phá đá. Nước chỉ là nước. Nhưng đá thì vỡ."',
+    baseChance: 0.030,
+    effect: { type: 'permanent_stat', stat: 'ratePct', value: 5 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'gather'],
+    extraCondition: (G) => (G.stage ?? 1) >= 7,
+    cooldownSec: 604800,
+  },
+  {
+    id: 'lk_hk_yearend_moon',
+    name: 'Trăng Cuối Năm', tier: 1, emoji: '🌕',
+    desc: 'Đêm cuối năm, trăng sáng như bạc. Ngươi ngồi thiền dưới ánh trăng và cảm thấy linh lực trong không khí dày đặc hơn bình thường.',
+    lore: 'Trăng không hỏi ngươi đã tu bao năm. Trăng chỉ chiếu — và chiếu như nhau cho tất cả mọi người.',
+    baseChance: 0.025,
+    effect: { type: 'qi_burst', pct: 0.40 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 7,
+    cooldownSec: 259200,
+  },
+  {
+    id: 'lk_hk_breakthrough_witness',
+    name: 'Tiếng Trống Trúc Cơ', tier: 2, emoji: '🥁',
+    desc: 'Từ phía núi xa, một luồng linh khí bùng lên — ai đó đã đột phá Trúc Cơ. Tiếng vang như sấm, xuyên qua mây và đến tai ngươi.',
+    lore: 'Một phần ngươi ghen tị. Một phần ngươi vui cho họ. Nhưng phần lớn hơn — ngươi muốn biết: tại sao họ được và ta thì chưa?',
+    baseChance: 0.012,
+    effect: { type: 'khivan_boost', value: 8 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 7,
+    cooldownSec: 432000,
+  },
+  {
+    id: 'lk_hk_butterfly_fog',
+    name: 'Cánh Bướm Qua Màn Sương', tier: 2, emoji: '🦋',
+    desc: 'Ngồi thiền trong buổi sáng sương mù, một con bướm bay ngang — chậm rãi, không mục đích rõ ràng, nhưng chính xác đến nơi nó muốn đến.',
+    lore: 'Con bướm không cố trở thành bướm. Nó chỉ là bướm. Khoảnh khắc đó, ngươi hiểu ra điều gì đó không thể nói bằng lời.',
+    baseChance: 0.010,
+    effect: { type: 'ngoTinh_boost', value: 5 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 8,
+    cooldownSec: 604800,
+  },
+  {
+    id: 'lk_hk_empty_cave',
+    name: 'Động Không Người', tier: 3, emoji: '🕳',
+    desc: 'ĐẠI CƠ DUYÊN! Trong hang núi hoang vắng, ngươi tìm thấy dấu vết của một tu sĩ đã bế quan hàng thập kỷ — và không ai biết họ đã đi đâu.',
+    lore: '"Họ có thể đã đột phá. Họ có thể đã chết trong im lặng. Ngươi không biết — và chính sự không biết đó là thứ khiến ngươi nhớ mãi: con đường này cô đơn đến tận cùng."',
+    baseChance: 0.003,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 8, expBonus: 15 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 7,
+  },
+
+  // ============================================================
+  // SPRINT 3 — Age Crisis Events (tuổi 65-80, LK only)
+  // Cơ duyên đặc biệt cho tu sĩ già trong LK — áp lực thời gian,
+  // sự tương phản với người đã đột phá, và những lựa chọn liều lĩnh.
+  // ============================================================
+  {
+    id: 'age_crisis_suhuynh',
+    name: 'Sư Huynh Đã Trúc Cơ', tier: 1, emoji: '🙏',
+    desc: 'Trong chuyến thám hiểm, ngươi tình cờ gặp lại một người từng tu tiên cùng năm. Hắn đã Trúc Cơ. Ngươi vẫn đang ở LK.',
+    lore: '"Đường của ta và đường của ngươi khác nhau. Nhưng ngươi vẫn còn thời gian — đừng nhìn ta mà tự bỏ cuộc."',
+    baseChance: 0.035,
+    effect: { type: 'khivan_boost', value: 6 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.gameTime?.currentYear ?? 0) >= 65,
+    cooldownSec: 172800,
+  },
+  {
+    id: 'age_crisis_diary',
+    name: 'Nhật Ký Bỏ Lại', tier: 1, emoji: '📓',
+    desc: 'Trong một hang đá cũ, ngươi tìm thấy nhật ký của một tu sĩ đã mất ở tuổi 78, dừng lại mãi mãi ở LK8.',
+    lore: '"Ngày 72 tuổi: vẫn còn hy vọng. Ngày 78 tuổi: hối tiếc không dùng thời gian tốt hơn — đừng như ta."',
+    baseChance: 0.040,
+    effect: { type: 'purity_burst', amount: 0.08 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'gather'],
+    extraCondition: (G) => (G.gameTime?.currentYear ?? 0) >= 65,
+    cooldownSec: 259200,
+  },
+  {
+    id: 'age_crisis_elder_secret',
+    name: 'Tiên Lão Trao Bí', tier: 2, emoji: '👴',
+    desc: 'Một lão tu sĩ đang hấp hối, thọ mệnh gần cạn, muốn truyền lại kiến thức cả đời trước khi về hư vô.',
+    lore: '"Ta sắp đi. Thứ này không mang được theo — hãy mang đi giúp ta, và đừng lãng phí nó."',
+    baseChance: 0.010,
+    effect: { type: 'ngoTinh_boost', value: 4 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => {
+      const age = G.gameTime?.currentYear ?? 0;
+      return age >= 67 && age <= 80;
+    },
+    cooldownSec: 604800,
+  },
+  {
+    id: 'age_crisis_risky_pill',
+    name: 'Linh Dược Đánh Cược', tier: 2, emoji: '⚗',
+    desc: 'Một lão dược sư hấp hối muốn trao viên linh dược bí truyền cuối đời — kết quả tốt xấu không ai biết trước.',
+    lore: '"Đến tuổi này mới hiểu — tiếc cái gì đó chưa dùng còn tệ hơn dùng mà thất bại. Uống đi."',
+    baseChance: 0.008,
+    effect: { type: 'risky_lifespan', successYears: 20, successPct: 0.60, failYears: -8, failCanCotPenalty: 5 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => {
+      const age = G.gameTime?.currentYear ?? 0;
+      return age >= 67 && age <= 80;
+    },
+    cooldownSec: 604800,
+  },
+  {
+    id: 'age_crisis_last_chance',
+    name: 'Vô Thường Cơ Duyên', tier: 3, emoji: '☯',
+    desc: 'Ngay khoảnh khắc gần như từ bỏ, một cảm ngộ kỳ lạ ập đến — như thiên đạo thấy lòng ngươi vẫn chưa tắt.',
+    lore: '"Đạo không từ bỏ kẻ không từ bỏ đạo."',
+    baseChance: 0.002,
+    effect: { type: '_btFailStreak_reset' },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => {
+      const age = G.gameTime?.currentYear ?? 0;
+      return age >= 70 && (G._btFailStreak ?? 0) >= 2;
+    },
+  },
+
+  // ============================================================
+  // SPRINT 9 — LK Stage 4-6: Những khoảnh khắc giữa đường
+  // Dead zone content: không còn hứng thú của người mới,
+  // chưa có áp lực của người gần cuối.
+  // Chủ đề: thành thạo nghề, buông bỏ vội vàng, tìm vận nhỏ.
+  // ============================================================
+
+  // --- Tier 1 ---
+  {
+    id: 'lk_familiar_forest',
+    name: 'Rừng Quen Như Nhà', tier: 1, emoji: '🌲',
+    desc: 'Sau hàng ngàn lần đi qua, rừng này không còn xa lạ. Một nhánh cành tự buông xuống trước mặt — đó là linh thảo ngươi từng tìm mãi không thấy.',
+    lore: 'Cây cối không tặng thứ gì cho người lạ. Nhưng người đã đủ quen — thì khác.',
+    baseChance: 0.040,
+    effect: { type: 'add_ingredient', itemId: 'spirit_herb', qty: 6 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'gather'],
+    extraCondition: (G) => (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 7,
+  },
+  {
+    id: 'lk_nightwatch_calm',
+    name: 'Đêm Canh Tĩnh Lặng', tier: 1, emoji: '🌙',
+    desc: 'Canh ba đêm nay không có gì cả. Không kỳ ngộ, không cơ duyên. Chỉ có ngươi và sự tĩnh lặng. Và ngươi chợt nhận ra — đây mới là tu tiên thật.',
+    lore: 'Người ta hay hỏi tu tiên có gì hay. Câu trả lời là: đêm nay. Không có gì. Và vẫn ngồi đây.',
+    baseChance: 0.045,
+    effect: { type: 'ngoTinh_boost', value: 2 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'cultivate'],
+    extraCondition: (G) => (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 6,
+  },
+  {
+    id: 'lk_market_rumor',
+    name: 'Tin Đồn Thị Trường', tier: 1, emoji: '🗣',
+    desc: 'Người bán hàng già kéo ngươi lại thì thầm: "Năm trước ai đó để lại một túi linh thạch dưới gốc đa phía đông..." Ngươi thử đi tìm — và có thật.',
+    lore: 'Vận may đôi khi đến từ những tin đồn không ai tin.',
+    baseChance: 0.050,
+    effect: { type: 'stone_reward', min: 300, max: 900 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore'],
+    extraCondition: (G) => (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 6,
+  },
+  {
+    id: 'lk_craft_intuition',
+    name: 'Tay Nghề Trực Giác', tier: 1, emoji: '🤲',
+    desc: 'Trong khi hành nghề, đột nhiên tay ngươi biết làm gì trước khi đầu óc nghĩ xong — bản năng của người đã quen việc.',
+    lore: 'Thành thạo không phải khi ngươi làm được. Mà khi ngươi làm mà không cần nghĩ.',
+    baseChance: 0.035,
+    effect: { type: 'permanent_stat', stat: 'danBonus', value: 8 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['alchemy', 'array'],
+    extraCondition: (G) =>
+      (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 7 &&
+      (G.flags?.unlockedProfessions ?? []).length >= 1,
+  },
+
+  // --- Tier 2 ---
+  {
+    id: 'lk_dao_resonance',
+    name: 'Đạo Lý Chợt Thấu', tier: 2, emoji: '💡',
+    desc: 'Không phải trong lúc thiền định mà khi đang nhặt củi — ngươi đột nhiên hiểu một tầng đạo lý mà tháng trước còn mù tịt.',
+    lore: 'Ngộ đạo không cần tư thế. Nó đến khi tâm thật sự buông — dù tay đang làm gì.',
+    baseChance: 0.010,
+    effect: { type: 'permanent_stat_multi', stats: { ratePct: 5, expBonus: 8 } },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['meditate', 'explore'],
+    extraCondition: (G) =>
+      (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 7 &&
+      (G.ngoTinh ?? 0) >= 45,
+    cooldownSec: 259200,
+  },
+  {
+    id: 'lk_tamcanh_tempest',
+    name: 'Bão Bên Trong', tier: 2, emoji: '⛈',
+    desc: 'Trong chuyến thám hiểm, gặp phải tình huống không tưởng — và ngươi vượt qua không bằng sức mạnh mà bằng bình tĩnh. Tâm Cảnh tăng thật sự là vậy.',
+    lore: 'Sức mạnh thật sự không phải là không bị lung lay. Là bị lung lay mà vẫn đứng vững.',
+    baseChance: 0.009,
+    effect: { type: 'tamCanh_boost', value: 4 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'combat'],
+    extraCondition: (G) =>
+      (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 6 &&
+      (G.tamCanh ?? 50) < 65,
+    cooldownSec: 345600,
+  },
+  {
+    id: 'lk_profession_mastery',
+    name: 'Bước Qua Ngưỡng', tier: 2, emoji: '🏅',
+    desc: 'Lần đầu tiên thứ ngươi làm tốt hơn những gì ngươi được dạy — ngươi đã không còn là học trò nữa.',
+    lore: '"Có người dạy ngươi cách cầm bút. Nhưng ai dạy ngươi viết điều chưa ai viết?"',
+    baseChance: 0.010,
+    effect: { type: 'khivan_boost', value: 6 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['alchemy', 'array'],
+    extraCondition: (G) =>
+      (G.stage ?? 1) >= 4 && (G.stage ?? 1) <= 7 &&
+      (G.flags?.unlockedProfessions ?? []).length >= 1,
+    cooldownSec: 432000,
+  },
+  {
+    id: 'lk_elder_nod',
+    name: 'Lão Nhân Gật Đầu', tier: 2, emoji: '👁',
+    desc: 'Một ẩn tu già đang ngồi bên đường. Ngươi cúi đầu qua. Ông nhìn ngươi một lúc rồi gật đầu — không nói gì. Cảm giác đó theo ngươi cả tuần.',
+    lore: 'Không phải lời khen nào cũng bằng lời. Đôi khi một cái gật đầu từ đúng người đúng lúc còn có giá hơn một năm tu luyện.',
+    baseChance: 0.009,
+    effect: { type: 'ngoTinh_boost', value: 3 },
+    unlockRealm: 0, maxRealm: 0,
+    conditions: ['explore', 'meditate'],
+    extraCondition: (G) =>
+      (G.stage ?? 1) >= 5 && (G.stage ?? 1) <= 7 &&
+      ((G.ngoTinh ?? 50) >= 50 || (G.tamCanh ?? 50) >= 50),
+    cooldownSec: 345600,
   },
 
 ];
@@ -1204,8 +1457,10 @@ export function applyCoduyen(G, event) {
       break;
     }
     case 'breakthrough_chance': {
-      G.breakthroughCostReduction = (G.breakthroughCostReduction || 0) + 0.5;
-      detail = `Thiên đạo cảm ngộ — chi phí đột phá -50% lần tới!`;
+      // G._breakthroughCoDuyenBonus được cộng thẳng vào P trong calcBreakthroughChance
+      // +0.15 = +15 điểm % tỷ lệ đột phá lần tới (reset sau khi dùng)
+      G._breakthroughCoDuyenBonus = (G._breakthroughCoDuyenBonus ?? 0) + 0.15;
+      detail = `Thiên đạo cảm ngộ — tỷ lệ đột phá +15% lần tới!`;
       break;
     }
     case 'add_ingredient': {
@@ -1256,19 +1511,51 @@ export function applyCoduyen(G, event) {
     case 'purity_burst': {
       // Tăng tức thì độ tinh thuần hiện tại — giúp LK dead zone có cảm giác tiến triển
       // amount: tỷ lệ tăng (0.05 = +5% về phía ngưỡng đột phá)
-      const purityNeeded = (G.purityThreshold ?? 100) - (G.purity ?? 0);
+      const pt = calcPurityThreshold(G);
+      const purityNeeded = pt - (G.purity ?? 0);
       const add = Math.floor(purityNeeded * (effect.amount || 0.05));
-      G.purity = Math.min(G.purityThreshold ?? 100, (G.purity ?? 0) + add);
-      detail = `Tâm cảnh khai sáng — tinh thuần +${add} (${Math.round((G.purity / (G.purityThreshold ?? 100)) * 100)}%)`;
+      G.purity = Math.min(pt, (G.purity ?? 0) + add);
+      detail = `Tâm cảnh khai sáng — tinh thuần +${add} (${Math.round((G.purity / Math.max(1, pt)) * 100)}%)`;
       break;
     }
     case '_btFailStreak_reset': {
       // Sau chuỗi thất bại đột phá, cơ duyên giúp ngộ đạo — reset streak và bù purity
       const streak = G._btFailStreak ?? 0;
       G._btFailStreak = 0;
-      const bonus = Math.min(30, streak * 8);
-      G.purity = Math.min(G.purityThreshold ?? 100, (G.purity ?? 0) + bonus);
-      detail = `Thất bại ${streak} lần → Ngộ Đạo! Tinh thuần +${bonus}, streak đột phá reset`;
+      G._btFailCooldownUntil = 0;
+      const ptReset = calcPurityThreshold(G);
+      const bonus = Math.min(Math.floor(ptReset * 0.15), streak * 8);
+      G.purity = Math.min(ptReset, (G.purity ?? 0) + bonus);
+      detail = `Thất bại ${streak} lần → Ngộ Đạo! Tinh thuần +${bonus}, streak & cooldown đột phá reset`;
+      break;
+    }
+    // --- SPRINT 3: Age Crisis effect types ---
+    case 'ngoTinh_boost': {
+      const prevNT = G.ngoTinh ?? 50;
+      G.ngoTinh = Math.min(100, prevNT + (effect.value || 3));
+      detail = `Ngộ Tính +${effect.value || 3} (${prevNT} → ${G.ngoTinh}/100)`;
+      break;
+    }
+    case 'tamCanh_boost': {
+      const prevTC = G.tamCanh ?? 50;
+      G.tamCanh = Math.min(100, prevTC + (effect.value || 3));
+      detail = `Tâm Cảnh +${effect.value || 3} (${prevTC} → ${G.tamCanh}/100)`;
+      break;
+    }
+    case 'risky_lifespan': {
+      // Linh dược đánh cược — thành công +thọ, thất bại -thọ và -căn cốt
+      const roll = Math.random();
+      if (roll < (effect.successPct ?? 0.60)) {
+        const result = addLifespanBonus(G, effect.successYears, event.name);
+        detail = `✨ Linh dược hiệu nghiệm! ${result.msg}`;
+      } else {
+        if (!G.gameTime) G.gameTime = {};
+        G.gameTime.lifespanMax = Math.max(10, (G.gameTime.lifespanMax ?? 120) + (effect.failYears ?? -8));
+        if (effect.failCanCotPenalty) {
+          G.canCot = Math.max(1, (G.canCot ?? 50) - effect.failCanCotPenalty);
+        }
+        detail = `💥 Linh dược phản tác dụng! Thọ mệnh ${effect.failYears ?? -8} năm, Căn Cốt -${effect.failCanCotPenalty ?? 0}`;
+      }
       break;
     }
   }

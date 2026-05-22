@@ -595,3 +595,64 @@
   color: #56c46a;
   cursor: default;
 }
+
+/* ============================================================
+   Màn hình kết quả chiến đấu
+   ============================================================ */
+.combat-result-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 24px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.result-icon {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 0 16px currentColor);
+}
+
+.result-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.result-enemy-name {
+  font-size: 15px;
+  color: var(--text-dim);
+}
+
+.result-reward {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.combat-result-screen.result-victory .result-title {
+  color: #f5c518;
+  text-shadow: 0 0 20px rgba(245,197,24,0.5);
+}
+
+.combat-result-screen.result-defeat .result-title {
+  color: #e05c5c;
+  text-shadow: 0 0 20px rgba(224,92,92,0.5);
+}
+
+.combat-result-screen.result-defeat .result-icon {
+  color: #e05c5c;
+}
+
+.combat-result-screen.result-victory .result-icon {
+  color: #f5c518;
+}
+
+.btn-result-continue {
+  margin-top: 8px;
+  min-width: 120px;
+}

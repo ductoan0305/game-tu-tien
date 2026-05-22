@@ -122,7 +122,7 @@ function _buildBody() {
       </div>
     </div>
 
-    <!-- Stats Grid 2×2 -->
+    <!-- Stats Grid 2×2 + Ngộ Tính row -->
     <div class="tl-stats-grid">
       <div class="tl-stat-item">
         <span class="tl-stat-lbl">⚡ Tu tốc</span>
@@ -140,6 +140,14 @@ function _buildBody() {
         <span class="tl-stat-lbl">🛡 Phòng thủ</span>
         <span class="tl-stat-val" id="tlp-def">--</span>
       </div>
+    </div>
+    <!-- Ngộ Tính — chỉ hiển thị ở LK -->
+    <div class="tl-ngotinh-row" id="tlp-ngotinh-row" style="display:none">
+      <span class="tl-ngotinh-lbl">🌟 Ngộ Tính</span>
+      <div class="tl-ngotinh-bar-wrap">
+        <div class="tl-ngotinh-bar-fill" id="tlp-ngotinh-fill" style="width:0%"></div>
+      </div>
+      <span class="tl-ngotinh-val" id="tlp-ngotinh-val">--</span>
     </div>
 
     <!-- Pháp Địa + Công Pháp -->
@@ -217,6 +225,12 @@ function _buildBody() {
       <button class="tl-btn-meditate" id="tlp-btn-meditate">🧘 Nhập Định</button>
       <button class="tl-btn-action"   id="tlp-btn-rest">😴 Nghỉ Ngơi</button>
     </div>
+    <!-- Chiêm Nghiệm Sâu — chỉ LK, 80 thể năng, cooldown 20 phút -->
+    <div id="tlp-chiem-nghiem-wrap" style="display:none;padding:4px 0 2px">
+      <button class="tl-btn-chiem-nghiem" id="tlp-btn-chiem-nghiem" title="Chiêm Nghiệm Sâu — tăng Ngộ Tính chủ động (80 thể năng · 20p cooldown)">
+        🌌 Chiêm Nghiệm Sâu
+      </button>
+    </div>
 
     <!-- Đột Phá — nổi bật riêng -->
     <div class="tl-breakthrough-wrap">
@@ -240,10 +254,11 @@ function _buildBody() {
 function _wireButtons(G, actions) {
   const on = (id, fn) => _el(id)?.addEventListener('click', fn);
 
-  on('tlp-btn-meditate',    () => { actions.meditate();    updateTuLuyenPopup(G); });
-  on('tlp-btn-rest',        () => { actions.rest();        updateTuLuyenPopup(G); });
-  on('tlp-btn-breakthrough',() => { actions.breakthrough(); updateTuLuyenPopup(G); });
-  on('tlp-btn-chronicle',   () => { showChroniclePanel(G); });
+  on('tlp-btn-meditate',      () => { actions.meditate();      updateTuLuyenPopup(G); });
+  on('tlp-btn-rest',          () => { actions.rest();          updateTuLuyenPopup(G); });
+  on('tlp-btn-breakthrough',  () => { actions.breakthrough();  updateTuLuyenPopup(G); });
+  on('tlp-btn-chiem-nghiem',  () => { actions.chiemNghiem?.(); updateTuLuyenPopup(G); });
+  on('tlp-btn-chronicle',     () => { showChroniclePanel(G); });
 }
 
 // ---- Breakthrough button state ----
@@ -551,6 +566,47 @@ export function updateTuLuyenPopup(G) {
     phuc_dia: '🏔 Phúc Địa', dong_phu: '🕳 Động Phủ', bao_dia: '💎 Bảo Địa',
   };
   _set('tlp-phapdia', `${pdMap[pdId] || pdId} · ${cpCount} Công Pháp`);
+
+  // ── Ngộ Tính row + Chiêm Nghiệm button (chỉ LK) ──
+  const isLK     = G.realmIdx === 0;
+  const ntRow    = _el('tlp-ngotinh-row');
+  const cnWrap   = _el('tlp-chiem-nghiem-wrap');
+
+  if (ntRow)  _setStyle(ntRow,  'display', isLK ? '' : 'none');
+  if (cnWrap) _setStyle(cnWrap, 'display', isLK ? '' : 'none');
+
+  if (isLK) {
+    const nt    = G.ngoTinh ?? 50;
+    const ntPct = Math.min(100, (nt / 100) * 100).toFixed(0);
+    // Color: xanh lá → vàng → tím (50→75→90+)
+    const ntColor = nt < 60 ? '#7fb2ff' : nt < 80 ? '#c8a84b' : '#c07af5';
+    const ntFill = _el('tlp-ngotinh-fill');
+    if (ntFill) {
+      _setStyle(ntFill, 'width',      `${ntPct}%`);
+      _setStyle(ntFill, 'background', ntColor);
+    }
+    _set('tlp-ngotinh-val', `${nt.toFixed(1)}/100`);
+
+    // Chiêm Nghiệm button — hiển thị cooldown hoặc sẵn sàng
+    const cnBtn = _el('tlp-btn-chiem-nghiem');
+    if (cnBtn) {
+      const _CHIEM_CD = 1_200_000;
+      const cdLeft = _CHIEM_CD - (Date.now() - (G._chiemNghiemCd || 0));
+      if (cdLeft > 0) {
+        const s = Math.ceil(cdLeft / 1000);
+        const cdStr = s >= 60 ? `${Math.floor(s / 60)}p ${s % 60}s` : `${s}s`;
+        _setText(cnBtn, `🌌 Chiêm Nghiệm (${cdStr})`);
+        cnBtn.disabled = true;
+        cnBtn.className = 'tl-btn-chiem-nghiem tl-btn-cd';
+      } else {
+        _setText(cnBtn, '🌌 Chiêm Nghiệm Sâu');
+        cnBtn.disabled = (G.stamina ?? 0) < 80;
+        cnBtn.className = (G.stamina ?? 0) >= 80
+          ? 'tl-btn-chiem-nghiem ready'
+          : 'tl-btn-chiem-nghiem';
+      }
+    }
+  }
 }
 
 export function isTuLuyenPopupOpen() {

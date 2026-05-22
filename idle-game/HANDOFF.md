@@ -66,6 +66,34 @@
 
 ---
 
+## WORLD MAP REDESIGN (Session L7+ — ưu tiên cao)
+
+> Chi tiết đầy đủ: `docs/WORLD_MAP_DESIGN.md` mục 8.
+
+### Hướng đi đã confirm với chủ game:
+Bỏ SVG polygon flat color. Chuyển sang **"Painted Scroll Map"** — phong cách bản đồ cổ phong Trung Hoa:
+- Nền parchment texture (SVG feTurbulence filter)
+- Terrain illustrations: núi tam giác, rừng cụm tròn, biển teal
+- Con dấu chữ Hán (印章) cho mỗi vùng/tông môn, màu theo phe
+- Cloud border bao quanh bản đồ
+- Dotted paths kết nối locations
+- Không dùng emoji trong SVG — thay bằng SVG path icons
+
+### Thứ tự làm:
+1. **Fix MAP-1** (urgent): Xóa logic "làng lân cận" khỏi `_renderTier2Territory` trong `js/ui/world-map.js`
+2. **Tầng 1** — Rewrite / tách `renderNhanGioiMap` — Nhân Giới Toàn Đồ (5 vùng `NHAN_GIOI_REGIONS`)
+3. **Tầng 2** — Rewrite `renderKhuyetVucMap` / `_buildKhuyetVucHtml` — Khuyết Vực territory
+4. **Tầng 3** — Rewrite `_renderTier2Territory` — Territory interior (bỏ circles, dùng SVG symbols)
+5. **Tầng 4** — `starter-village.js` — thấp ưu tiên
+
+### Files liên quan:
+- `js/ui/world-map.js` — render logic chính (Tier 1/2/3)
+- `js/ui/map-data.js` — data: NHAN_GIOI_REGIONS, KHUYETVUC_TERRITORIES, TERRITORY_INTERIORS
+- `js/ui/starter-village.js` — Tân Thủ Thôn (Tier 4)
+- `docs/WORLD_MAP_DESIGN.md` — design document đầy đủ
+
+---
+
 ## ROADMAP — CÒN LẠI
 
 ### Đã xong L1–L5 (T4 Data Audit hoàn tất)

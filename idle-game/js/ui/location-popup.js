@@ -24,7 +24,7 @@ export function _isLocLocked(G, loc) {
   return false;
 }
 
-function _updateLocInfo(G, loc, actions) {
+export function _updateLocInfo(G, loc, actions) {
   const el = document.getElementById('mst2-loc-info');
   if (!el) return;
 
@@ -577,6 +577,11 @@ const NPC_DIALOGS = {
   lao_ngu_ong: {
     name: 'Lão Ngư Ông', emoji: '🎣',
     greeting: 'Hà hà, tiểu hữu mới đến Lâm Hải Thôn? Vùng biển này gần đây yêu thú nổi loạn lắm. Ngươi có gan thì ta có việc nhờ!',
+    greetingAge: {
+      80: 'Ngươi đã đi xa lắm rồi. (dừng tay, nhìn ra sông một lúc rồi nhìn ngươi) Lưới ta đan đến đây là đủ — cuộc đời ngươi cũng vậy. Dù kết quả thế nào, ngươi không bỏ thuyền. Ta trân trọng điều đó.',
+      70: '(ngừng gỡ lưới, nhìn ngươi) Bảy mươi rồi... Sáng nào ta cũng ra sông — dòng nước không bao giờ chờ. Ngươi biết điều đó rồi. Chỉ cần không bỏ mái chèo.',
+      60: 'Nhìn ngươi lại nhớ lúc mình cũng tuổi đó... Sông không vội mà vẫn đến biển. Ngươi cứ đi — thời gian không phải kẻ thù, chỉ là dòng chảy.',
+    },
     greetingDV: {
       50:  'Ồ, tiểu hữu đã có chút danh tiếng rồi đấy! Ngư dân chúng ta nghe tiếng cũng yên tâm hơn. Có việc cần nhờ ngươi đây.',
       150: 'Hà hà! Ngươi bây giờ nổi danh khắp vùng rồi! Lão phu nghe tin nhiều lần. Cá linh hôm nay tươi ngon — mời ngươi nếm thử trước khi nghe việc.',
@@ -584,8 +589,7 @@ const NPC_DIALOGS = {
       500: 'Bái kiến... ôi không dám! Danh tiếng lừng lẫy của ngươi vang tới tận biển Đông rồi! Lão phu tự hào khi được nói chuyện với ngươi đây!',
     },
     options: [
-      { label: '📜 Nhận Nhiệm Vụ Đầu', action: 'give_first_quest', hint: 'Nhận nhiệm vụ khởi đầu từ Lão Ngư Ông' },
-      { label: '💬 Hỏi về vùng này',   action: 'lore',             hint: 'Tìm hiểu Lâm Hải Thôn' },
+      { label: '💬 Hỏi về vùng này', action: 'lore', hint: 'Tìm hiểu Lâm Hải Thôn' },
     ],
     lore: 'Lâm Hải Thôn nằm bên bờ biển linh, ngư dân thường bắt được linh ngư kỳ lạ. Gần đây yêu thú kéo đến hoành hành, làng mạc không yên. Tiểu hữu nếu có tài hãy ra tay tương trợ.',
     questGive: 'sq_01_first_kill',
@@ -595,6 +599,11 @@ const NPC_DIALOGS = {
   lao_duoc_su: {
     name: 'Lão Dược Sư', emoji: '👴',
     greeting: 'Chào tiểu hữu! Ta là Dược Sư ở đây đã mấy chục năm. Ngươi mới bắt đầu tu tiên à? Để ta chỉ cho ngươi vài điều cơ bản.',
+    greetingAge: {
+      80: '(nhìn ngươi không nói gì lâu) Tám mươi năm tu tiên... Ít ai đến được đây mà không gục ngã. Dù cảnh giới có đến đâu — ngươi đã sống đúng hơn ta.',
+      70: 'Bảy mươi tuổi... (im lặng dài) Ta dừng lại ở LK3 khi còn ba mươi. Ngươi kiên trì đến đây — đừng để ta hối hận thay ngươi ở chặng cuối.',
+      60: '(nhìn ngươi kỹ một lúc) Năm nay ngươi khoảng sáu mươi rồi phải không? Còn thời gian. Đừng lãng phí như ta ngày xưa.',
+    },
     greetingDV: {
       50:  'Tiểu hữu đã có danh tiếng rồi à? Tốt lắm! Người có danh thì dược liệu cũng dễ tìm hơn — mọi người sẵn sàng chia sẻ thông tin hơn.',
       150: 'Ồ! Ngươi bây giờ có tiếng trong vùng rồi! Lão phu có nhiều công thức hay muốn truyền lại — người có danh tiếng xứng đáng được học.',
@@ -602,8 +611,7 @@ const NPC_DIALOGS = {
       500: 'Lừng lẫy thiên hạ! Ngươi đến thật là rạng danh cho cả thôn này! Bất kỳ thứ gì ta có, ngươi cứ tự nhiên lấy dùng.',
     },
     options: [
-      { label: '📜 Nhận Nhiệm Vụ Đầu', action: 'give_first_quest', hint: 'Nhận nhiệm vụ khởi đầu từ Lão Dược Sư' },
-      { label: '💬 Hỏi về thảo dược',  action: 'lore',             hint: 'Nghe lão nhân kể chuyện thảo dược' },
+      { label: '💬 Hỏi về thảo dược', action: 'lore', hint: 'Nghe lão nhân kể chuyện thảo dược' },
     ],
     lore: 'Đan dược là nền tảng tu tiên. Không có đan, tu tốc chậm như rùa. Hãy thu thập linh thảo ở vườn phía sau thôn trước đã.',
     questGive: 'sq_01_first_kill',
@@ -613,6 +621,11 @@ const NPC_DIALOGS = {
   dao_khach_gia: {
     name: 'Đao Khách Già', emoji: '⚔',
     greeting: 'Ta từng xông pha chiến trường suốt ba mươi năm. Ngươi muốn trở thành chiến binh? Trước hết phải nếm mùi máu thực chiến đã.',
+    greetingAge: {
+      80: '(đứng dậy, vỗ vai ngươi mạnh) Tám mươi năm không đầu hàng. Ngươi đã làm được điều ta không dám làm. Kính phục.',
+      70: '(giọng trầm, nhìn ngươi lâu) Bảy mươi... Nhìn ngươi, ta thấy bóng hình của mình nếu ngày đó không bỏ cuộc. Tiếp tục đi — dù kết quả thế nào.',
+      60: '(nhìn thẳng vào mắt ngươi) Ngươi đã sáu mươi. Ta bỏ cuộc ở LK8 năm ba mươi tuổi — vì sợ. Ngươi đừng lặp lại sai lầm của ta.',
+    },
     greetingDV: {
       50:  'Ngươi bắt đầu có tiếng rồi đấy! Chiến binh chân chính phải xây dựng danh tiếng bằng máu và mồ hôi — ngươi đang đi đúng hướng.',
       150: 'Hừ! Lão phu nghe tên ngươi rồi. Không phải ai cũng làm được những gì ngươi đã làm. Ngồi xuống, ta có chuyện muốn nói thẳng.',
@@ -620,11 +633,33 @@ const NPC_DIALOGS = {
       500: '(Đao Khách Già đứng dậy, cúi đầu) Đại danh lừng lẫy — ta chưa bao giờ làm vậy với ai, nhưng ngươi xứng đáng. Kiếm này ta muốn tặng ngươi.',
     },
     options: [
-      { label: '📜 Nhận Nhiệm Vụ Đầu', action: 'give_first_quest', hint: 'Nhận nhiệm vụ chiến đấu đầu tiên' },
-      { label: '💬 Hỏi về vùng này',   action: 'lore',             hint: 'Nghe chuyện Hỏa Diệm Thôn' },
+      { label: '💬 Hỏi về vùng này', action: 'lore', hint: 'Nghe chuyện Hỏa Diệm Thôn' },
     ],
     lore: 'Hỏa Diệm Thôn rèn giũa người mạnh. Dung nham ngoài kia tuy nguy hiểm nhưng cũng là nơi luyện thép tốt nhất. Kiếm thuật không phải một sớm một chiều — phải luyện tập không ngừng.',
     questGive: 'sq_01_first_kill',
+  },
+
+  // ── Thanh Phong Thôn — Bà Nguyên ─────────────────────────────────────────
+  ba_nguyen: {
+    name: 'Bà Nguyên Trồng Trọt', emoji: '🌾',
+    greeting: 'Ồ tiểu hữu, ngươi qua đây à? Ta đang dọn vườn đây. Tuổi già rồi, chậm hơn xưa. Nhưng đất không phụ người — ngươi biết không?',
+    greetingAge: {
+      80: '(ngồi xuống bờ vườn, im lặng một lúc) Ngươi đã sống đến đây. Dù đường còn bao xa — mỗi ngày là một bông hoa đã nở đúng mùa.',
+      70: 'Bảy mươi tuổi — bằng tuổi ta khi bắt đầu vườn này. (nhìn cây cối) Mùa đông không phải thất bại của cây. Chỉ là một mùa khác.',
+      60: '(nhìn ngươi từ vườn rau) Ngươi cũng không còn trẻ nữa rồi. Mùa nào cũng có hoa nở hoa tàn — đừng tiếc khi mùa đổi.',
+    },
+    greetingDV: {
+      50:  'À, ngươi đã có chút tiếng tăm rồi à? Nông dân chúng ta không quan tâm nhiều đến danh tiếng — nhưng biết ngươi là người tốt là đủ rồi.',
+      150: 'Ngươi có tiếng thật rồi đấy. Nhưng nhìn tay ngươi — đã từng làm vườn chưa? Người mạnh không sợ đất bẩn mới đáng nể.',
+      300: 'Ngươi bây giờ nổi danh đến mức ta nghe tận vườn này. Lạ thật. Đất vẫn mọc cỏ như thường — nhưng con người thì thay đổi.',
+      500: 'Cháu... (Bà Nguyên cúi đầu nhẹ) Nổi danh đến đâu cũng nhớ trở về đất mà sống. Cây cao gió lớn — giữ lấy rễ mới lâu dài.',
+    },
+    options: [
+      { label: '💬 Hỏi về trồng trọt', action: 'lore',      hint: 'Nghe bà lão kể chuyện đất và cây' },
+      { label: '🌿 Hỏi về linh thảo',  action: 'lore_herb', hint: 'Bí quyết trồng linh thảo' },
+    ],
+    lore: 'Bảy mươi năm trồng trọt, ta thấy nhiều thứ. Đất tốt hay đất xấu không phải tự nhiên — do người ta vun trồng. Linh thảo cũng vậy, phải kiên nhẫn, phải hiểu từng loại đất mới thu hoạch được.',
+    lore_herb: 'Linh thảo muốn tốt phải hợp đất, hợp nước, hợp linh khí. Vào mùa xuân gieo hạt gần nguồn nước linh, mùa thu thu hoạch khi sương muối chưa xuống. Ta trồng kiểu đó bảy mươi năm không sai bao giờ.',
   },
 
   // ── Vạn Linh Thị ─────────────────────────────────────────────────────────
@@ -755,7 +790,12 @@ const NPC_DIALOGS = {
   // ── Hàn Băng Thôn ────────────────────────────────────────────────────────
   an_tu_bang: {
     name: 'Ẩn Tu Băng', emoji: '🧘',
-    greeting: 'Tiểu hữu có vẻ còn non nớt. Băng Hà Thôn lạnh giá nhưng linh khí dày đặc — đây là nơi tốt để bắt đầu tu luyện. Ta có thể chỉ đường cho ngươi.',
+    greeting: 'Tiểu hữu có vẻ còn non nớt. Hàn Băng Thôn lạnh giá nhưng linh khí dày đặc — đây là nơi tốt để bắt đầu tu luyện. Ngươi muốn hỏi điều gì?',
+    greetingAge: {
+      80: '(mở mắt, gật đầu nhẹ) Tám mươi năm tu tiên. Ngươi đã đi rất xa. Bất kể đường phía trước thế nào — đây là một cuộc đời đáng sống.',
+      70: 'Bảy mươi rồi à. Ta dừng ở LK9 khi còn trẻ hơn ngươi — không phải vì bị ép, mà vì hiểu bản thân. Ngươi đã tự hỏi điều đó chưa?',
+      60: '(không nói gì ngay, nhìn ngươi một lúc) Ngươi đang ở độ tuổi quan trọng. Điều quan trọng hơn đột phá là biết mình thực sự muốn gì.',
+    },
     greetingDV: {
       50:  'Ngươi đã bắt đầu có chút danh phận. Tốt — người tu tiên cần được thế gian biết đến, không phải vì kiêu ngạo mà vì trách nhiệm.',
       150: 'Ta cảm nhận được... ngươi đã trưởng thành nhiều. Danh tiếng ngươi đến tai ta ngay cả trong thiền định. Thế giới tu tiên cần người như ngươi.',
@@ -763,11 +803,13 @@ const NPC_DIALOGS = {
       500: '(Ẩn Tu Băng từ từ mở mắt, ánh mắt ấm áp lạ thường) Danh tiếng của ngươi vang tới cả trong cõi thiền. Ngươi xứng đáng biết điều ta chưa từng nói với ai...',
     },
     options: [
-      { label: '📜 Nhận Nhiệm Vụ Đầu', action: 'give_first_quest', hint: 'Nhận nhiệm vụ từ Ẩn Tu Băng' },
-      { label: '💬 Hỏi về vùng này',   action: 'lore',             hint: 'Tìm hiểu Hàn Băng Thôn' },
+      { label: '💬 Hỏi về vùng này',      action: 'lore',          hint: 'Tìm hiểu Hàn Băng Thôn' },
+      { label: '🧘 Hỏi về thiền định',     action: 'lore_meditate', hint: 'Bí quyết bế quan từ ẩn tu' },
+      { label: '❄ Hỏi về con đường tu',   action: 'lore_path',     hint: 'Nghe ông kể về hành trình tu tiên của mình' },
     ],
-    lore: 'Băng Hà Thôn lạnh giá quanh năm vì linh khí băng tụ lại từ ngàn năm. Tốt cho tu luyện thủy hệ và thiền định. Nhưng yêu thú băng cũng mạnh hơn những nơi khác — hãy cẩn thận.',
-    questGive: 'sq_01_first_kill',
+    lore: 'Hàn Băng Thôn lạnh giá quanh năm vì linh khí băng tụ lại từ ngàn năm. Tốt cho tu luyện thủy hệ và thiền định. Nhưng yêu thú băng cũng mạnh hơn những nơi khác — hãy cẩn thận.',
+    lore_meditate: 'Thiền định không phải ngồi cho yên. Là để tâm trí thật sự buông xuống — không lo sắp tới, không tiếc đã qua. Khi ngươi đạt được trạng thái đó, linh khí tự chảy vào. Không cần gắng sức, chỉ cần buông.',
+    lore_path: 'Ta tu đến Luyện Khí tầng 9. Rồi dừng. Không phải vì không thể — mà vì ta hiểu bản thân mình. Biết mình đến đâu là đủ, đó cũng là một loại trí tuệ. Không phải ai cũng có thể Trúc Cơ — và không phải ai dừng lại đều là thất bại.',
   },
 };
 
@@ -826,6 +868,19 @@ function _showNpcDialog(G, loc, actions) {
   const questGreeting = pendingQuest
     ? greeting + '<br><br><em style="color:#f0d47a">「Ta có việc muốn nhờ ngươi...」</em>'
     : greeting;
+
+  // S8 — Age-reactive remark (LK only, greetingAge map trong NPC_DIALOGS)
+  let ageRemark = '';
+  if (G.realmIdx === 0 && npc?.greetingAge) {
+    const year = Math.floor(G.gameTime?.currentYear ?? 0);
+    const thresholds = Object.keys(npc.greetingAge).map(Number).sort((a,b) => b-a);
+    for (const t of thresholds) {
+      if (year >= t) { ageRemark = npc.greetingAge[t]; break; }
+    }
+  }
+  const dialogHtml = ageRemark
+    ? `"${questGreeting}"<div class="npc-age-remark">「${ageRemark}」</div>`
+    : `"${questGreeting}"`;
 
   // Nút nhận quest từ NPC (chỉ hiện khi NPC có quest)
   const npcQuestBtn = pendingQuest
@@ -912,7 +967,7 @@ function _showNpcDialog(G, loc, actions) {
         </div>
       </div>
       <div class="npc-dialog-text" id="npc-dialog-text">
-        "${questGreeting}"
+        ${dialogHtml}
       </div>
       <div class="npc-dialog-options" id="npc-dialog-opts">
         ${npcQuestBtn}
@@ -1022,6 +1077,12 @@ function _showNpcDialog(G, loc, actions) {
           if (!G.alchemy.ingredients) G.alchemy.ingredients = {};
           G.alchemy.ingredients[gift.itemId] = (G.alchemy.ingredients[gift.itemId] || 0) + (gift.qty ?? 1);
           giftMsg = `${gift.emoji} ${gift.label} ×${gift.qty} (vào kho vật liệu trận)`;
+        } else if (gift.type === 'stat') {
+          // Sprint 6 — direct stat boost (không phải item, là tâm pháp / kiến thức)
+          const _statNames = { ngoTinh:'Ngộ Tính', tamCanh:'Tâm Cảnh', canCot:'Căn Cốt', khiVan:'Khí Vận' };
+          const prev = G[gift.statKey] ?? 50;
+          G[gift.statKey] = Math.min(100, prev + (gift.value ?? 0));
+          giftMsg = `${gift.emoji} ${gift.label} — +${gift.value} ${_statNames[gift.statKey] || gift.statKey} (${prev.toFixed(1)}→${G[gift.statKey].toFixed(1)})`;
         }
         G._npcGiftClaimed[npcId] = true;
         document.getElementById('npc-dialog-text').innerHTML =
@@ -1133,17 +1194,20 @@ export const STARTER_VILLAGES = [
     bonus: 'herbs',
     bonusDesc: 'Thiên về thảo dược — dễ tiếp cận vườn linh thảo trong thôn',
     locations: [
-      { id: 'sv_npc_elder',  name: 'Lão Dược Sư', emoji: '👴', x:200, y:140, type:'npc',
-        desc: 'Lão nhân am hiểu thảo dược. Giao quest đơn giản cho tân thủ.',
+      { id: 'sv_npc_elder',    name: 'Lão Dược Sư', emoji: '👴', x:200, y:140, type:'npc',
+        desc: 'Lão nhân am hiểu thảo dược. Giao quest cho tân thủ.',
         npcId: 'lao_duoc_su' },
-      { id: 'sv_shop',       name: 'Tiệm Tạp Hóa', emoji: '🏪', x:310, y:150, type:'market',
+      { id: 'sv_npc_ba_nguyen', name: 'Bà Nguyên', emoji: '🌾', x:300, y:155, type:'npc',
+        desc: 'Bà lão trồng linh thảo bảy mươi năm. Biết nhiều về dược điền và thổ nhưỡng.',
+        npcId: 'ba_nguyen' },
+      { id: 'sv_shop',         name: 'Tiệm Tạp Hóa', emoji: '🏪', x:390, y:140, type:'market',
         desc: 'Cửa hàng nhỏ bán đồ cơ bản. Giá rẻ hơn phố lớn.' },
-      { id: 'sv_forest',     name: 'Rừng Ven Thôn', emoji: '🌲', x:140, y:250, type:'hunt_zone',
+      { id: 'sv_forest',       name: 'Rừng Ven Thôn', emoji: '🌲', x:140, y:260, type:'hunt_zone',
         desc: 'Rừng nhỏ ven thôn, yêu thú yếu. Phù hợp tân thủ.',
         enemyTier: 1 },
-      { id: 'sv_herb_field', name: 'Thảo Dược Điền', emoji: '🌿', x:320, y:260, type:'gather_zone',
+      { id: 'sv_herb_field',   name: 'Thảo Dược Điền', emoji: '🌿', x:320, y:265, type:'gather_zone',
         desc: 'Vườn thảo dược tự nhiên. Linh Thảo và Ngọc Liên.' },
-      { id: 'sv_exit',       name: 'Cổng Ra', emoji: '🚪', x:230, y:340, type:'exit',
+      { id: 'sv_exit',         name: 'Cổng Ra', emoji: '🚪', x:230, y:345, type:'exit',
         desc: 'Rời thôn, bước vào thế giới rộng lớn. Cần hoàn thành 1 quest trong thôn.' },
     ],
   },

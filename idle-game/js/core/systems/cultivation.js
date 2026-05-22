@@ -3,7 +3,7 @@
 // Các hành động tu luyện cơ bản: bế quan, nghỉ, thám hiểm...
 // ============================================================
 import { ITEMS, SECTS, SPIRIT_ROOTS, REALMS } from '../data.js';
-import { calcMaxQi, calcMaxHp }       from '../state/computed.js';
+import { calcMaxQi, calcMaxHp, calcPurityThreshold } from '../state/computed.js';
 import { fmtNum, bus }                from '../../utils/helpers.js';
 import { rollCoDuyen, rollRivalEncounter } from '../co-duyen.js';
 import { rollLinhThuEncounter }       from '../linh-thu-engine.js';
@@ -285,4 +285,77 @@ export function doMeditation(G) {
     return { ok:true, msg:`🌸 Tham thiền ngộ đạo ✨ KỲ NGỘ! ${coDuyenMed.msg}`, type:coDuyenMed.type, detail:coDuyenMed.detail };
   }
   return { ok:true, msg:`🌸 Tham thiền ngộ đạo — +${fmtNum(q)} linh lực`, type:'spirit', float:`+${fmtNum(q)}⚡` };
+}
+
+// ============================================================
+// Chiêm Nghiệm Sâu — con đường chủ động tăng Ngộ Tính (Sprint 4)
+// Chi phí: 80 thể năng, cooldown 20 phút thực.
+// Khác với thiền định (0~0.1 ngẫu nhiên), đây là hành động có chủ đích
+// mang lại tăng trưởng ngoTinh đáng kể và ổn định hơn.
+// ============================================================
+const _CHIEM_NGHIEM_CD_MS = 1_200_000; // 20 phút thực
+
+export function doChiemNghiem(G) {
+  if (G.realmIdx !== 0) {
+    return { ok:false, msg:'⚠ Chiêm Nghiệm Sâu chỉ phù hợp ở Luyện Khí', type:'danger' };
+  }
+  const now = Date.now();
+  const cdLeft = _CHIEM_NGHIEM_CD_MS - (now - (G._chiemNghiemCd || 0));
+  if (cdLeft > 0) {
+    const s = Math.ceil(cdLeft / 1000);
+    const waitStr = s >= 60 ? `${Math.floor(s / 60)}p ${s % 60}s` : `${s}s`;
+    return { ok:false, msg:`🌌 Chiêm Nghiệm cần ${waitStr} hồi phục`, type:'danger' };
+  }
+  if (!spendStamina(G, 80)) {
+    return { ok:false, msg:'⚠ Thể năng không đủ (cần 80)!', type:'danger' };
+  }
+  G._chiemNghiemCd = now;
+
+  // Ngoại Ngộ Tính gain — scale theo Tâm Cảnh
+  const tamCanh = G.tamCanh ?? 50;
+  let base;
+  if      (tamCanh < 40) base = 0.5 + Math.random() * 0.5;   // 0.5 ~ 1.0
+  else if (tamCanh < 70) base = 1.0 + Math.random() * 0.8;   // 1.0 ~ 1.8
+  else                   base = 1.5 + Math.random() * 1.0;   // 1.5 ~ 2.5
+
+  // Bonus tại linh địa cao cấp: tu sĩ chiêm nghiệm nơi linh khí dày đặc ngộ sâu hơn
+  const pdId    = G.phapDia?.currentId || 'pham_dia';
+  const pdBonus = (pdId === 'dong_phu' || pdId === 'bao_dia')
+    ? 0.3 + Math.random() * 0.2
+    : 0;
+
+  const gain   = Math.round((base + pdBonus) * 10) / 10;
+  const prevNT = +(G.ngoTinh ?? 50).toFixed(1);
+  G.ngoTinh    = Math.min(100, prevNT + gain);
+
+  // 15% cơ hội: tâm cảnh khai sáng — thêm tý thuần độ
+  let purityMsg = '';
+  if (Math.random() < 0.15) {
+    const ptCN = calcPurityThreshold(G);
+    const purityAdd = Math.floor(ptCN * 0.03);
+    if (purityAdd > 0) {
+      G.purity  = Math.min(ptCN, (G.purity ?? 0) + purityAdd);
+      purityMsg = `, thuần độ +${purityAdd}`;
+    }
+  }
+
+  gainExp(G, 8);
+
+  // Có thể kích hoạt cơ duyên qua hành động thiền định
+  const coDuyen = rollCoDuyen(G, 'meditate');
+  if (coDuyen) {
+    return {
+      ok:true,
+      msg:`🌌 Chiêm Nghiệm Sâu — Ngộ Tính +${gain}${purityMsg} ✨ KỲ NGỘ! ${coDuyen.msg}`,
+      type: coDuyen.type,
+      detail: coDuyen.detail,
+    };
+  }
+
+  const pdLine = pdBonus > 0 ? ` (linh địa +${pdBonus.toFixed(1)})` : '';
+  return {
+    ok:true,
+    msg:`🌌 Chiêm Nghiệm Sâu — Ngộ Tính +${gain}${pdLine}${purityMsg} (${prevNT}→${G.ngoTinh.toFixed(1)})`,
+    type:'spirit',
+  };
 }

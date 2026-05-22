@@ -74,7 +74,13 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
       }
     }
     if (!G.dungeon?.active) {
-      setTimeout(() => { switchTabFn('cultivate'); renderCurrentTab(); }, 1200);
+      if (G.combat?._fromTabPopup) {
+        // Combat bắt đầu trong popup → giữ popup mở, show màn hình kết quả
+        G.combat._lastResult = { victory, enemy, rewards };
+        renderCurrentTab();
+      } else {
+        setTimeout(() => { switchTabFn('cultivate'); renderCurrentTab(); }, 1200);
+      }
     } else {
       renderCurrentTab();
     }
@@ -210,13 +216,15 @@ export function wireEventBus(G, { renderCurrentTab, renderAll, clearIntervals, c
     const REALM_DEF = [8,30,100,300,900];
     const REALM_HP  = [120,500,2000,8000,30000];
     const r = kiepTu.realmIdx ?? 0;
+    const _kiepHp = Math.floor(REALM_HP[r] * (kiepTu.hpMult ?? 1.2));
     const enemy = {
       id:kiepTu.id, name:kiepTu.name, emoji:kiepTu.emoji, desc:kiepTu.desc||'',
       realmIdx:r,
-      atk:  Math.floor(REALM_ATK[r]*(kiepTu.atkMult??1.3)),
-      def:  Math.floor(REALM_DEF[r]*(kiepTu.defMult??1.1)),
-      hp:   Math.floor(REALM_HP[r] *(kiepTu.hpMult ??1.2)),
-      maxHp:Math.floor(REALM_HP[r] *(kiepTu.hpMult ??1.2)),
+      atk:      Math.floor(REALM_ATK[r]*(kiepTu.atkMult??1.3)),
+      def:      Math.floor(REALM_DEF[r]*(kiepTu.defMult??1.1)),
+      hp:       _kiepHp,
+      maxHp:    _kiepHp,
+      currentHp:_kiepHp, // ← combat engine dùng currentHp, không phải hp
       exp:  Math.floor(REALM_ATK[r]*2),
       stone:(kiepTu.stoneLoot?.[0]||30)+Math.floor(Math.random()*((kiepTu.stoneLoot?.[1]||100)-(kiepTu.stoneLoot?.[0]||30))),
       tier:r, isKiepTu:true, _kiepTuData:kiepTu,

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>Tầng 2 — Khuyết Vực Territory (Painted Scroll)</title>
+<style>
+  html,body{margin:0;background:#1a100a;font-family:system-ui,sans-serif;color:#d8c8a8}
+  header{padding:14px 18px;background:#0c0805;border-bottom:1px solid #3a2818}
+  header h1{margin:0;font-size:15px;color:#e8c878;font-weight:600;letter-spacing:1px}
+  header p{margin:4px 0 0;font-size:11px;color:#a89878}
+  .wrap{display:flex;height:calc(100vh - 70px)}
+  .map-svg-kv{flex:1;min-width:0;display:flex;align-items:stretch;
+    background:linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
+    border-radius:8px;overflow:hidden;position:relative}
+  .map-kv-svg{width:100%;height:100%;display:block;user-select:none}
+  .side{width:240px;padding:12px;background:rgba(20,12,6,0.92);border-left:1px solid #3a2818;
+    font-size:11px;line-height:1.65;overflow-y:auto}
+  .side h3{margin:0 0 8px;color:#e8c878;font-size:12px}
+  .side .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #3a2818}
+  .side .row span:first-child{color:#a89878}
+  .kv-territory{transition:filter .15s ease}
+  .kv-ter-clickable{cursor:pointer}
+  .kv-ter-clickable:hover{filter:brightness(1.12) saturate(1.1)}
+  .info{margin-top:14px;padding:10px;background:rgba(232,200,120,0.06);border:1px solid #5a3818;border-radius:4px}
+  .info code{color:#e8c878;font-size:10px}
+  .chip{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;letter-spacing:0.5px;
+    background:rgba(232,200,120,0.1);color:#e8c878;margin-right:4px}
+  .chip.chinh{background:rgba(42,88,72,0.6);color:#a8d8c8}
+  .chip.ma{background:rgba(106,40,32,0.6);color:#f8a898}
+  .chip.trung{background:rgba(122,80,32,0.6);color:#f0d878}
+  .chip.hazard{background:rgba(74,64,72,0.6);color:#c8b8c8}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tầng 2 — Khuyết Vực Territory Map (Phase 2 done)</h1>
+  <p>12 lãnh thổ • Trade routes tier2 6 đường • Mountain symbols 3 variants pseudo-random • Sect stamps theo phe • Coast wobble shared</p>
+</header>
+<div class="wrap">
+  <div class="map-svg-kv">
+    <svg id="kv-svg" viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg" class="map-kv-svg"></svg>
+  </div>
+  <div class="side">
+    <h3>Phase 2 Checklist</h3>
+    <div class="row"><span>Parchment 3-layer</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Aged spots</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Coast wobble shared</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>12 territory polygons</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Mountain symbols varied</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Forest clusters</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Sect stamps theo phe</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Hazard labels (no stamp)</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Trade routes tier2 anim</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Rivers warm tone</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Cloud border drift</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Vignette mềm</span><span style="color:#5eead4">✓</span></div>
+
+    <h3 style="margin-top:14px">Faction inks</h3>
+    <div><span class="chip chinh">Chính</span> #1E4878 navy</div>
+    <div style="margin-top:3px"><span class="chip ma">Ma</span> #A82828 crimson</div>
+    <div style="margin-top:3px"><span class="chip trung">Trung</span> #B88028 gold</div>
+    <div style="margin-top:3px"><span class="chip hazard">Hiểm</span> no stamp, italic label</div>
+
+    <div class="info">
+      <strong>Trade routes tier2</strong><br/>
+      <code>tr_vlh_hn</code> Huyết Đạo (danger 4, glow) — chính ↔ ma border<br/>
+      <code>tr_hpd_dpl</code> Độc Vụ Lộ (danger 4, glow)<br/>
+      <code>tr_tl_hpd</code> swamp terrain (dash khác)<br/>
+      <code>tr_tt_lbt</code> mountain (dash dày hơn)
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { TRADE_ROUTES, KHUYETVUC_TERRITORIES } from '../js/ui/map-data.js';
+import {
+  MAP_DEFS, renderTradeRoute,
+  parchmentBackground, cloudBorder, agedSpots, vignette, renderStamp,
+} from '../js/ui/map-defs.js';
+
+const KV_FACTION_DECOR = {
+  chinh_dao: { terrFill: 'rgba(120,170,150,0.50)', terrStroke: '#2A5848', ink: 'chinh',  inkLight: '#0A3828' },
+  ma_dao:    { terrFill: 'rgba(190,120,100,0.50)', terrStroke: '#6A2820', ink: 'ma',     inkLight: '#5A0810' },
+  trung_lap: { terrFill: 'rgba(218,182,108,0.55)', terrStroke: '#7A5020', ink: 'gold',   inkLight: '#604008' },
+  hazard:    { terrFill: 'rgba(140,128,140,0.42)', terrStroke: '#4A4048', ink: 'hazard', inkLight: '#3A2838' },
+};
+
+function pickMt(mx, my) {
+  const h = ((mx * 31 + my * 17) | 0) % 100;
+  if (h < 70) return 'm-sym-mt-peak';
+  if (h < 92) return 'm-sym-mt-twin';
+  return 'm-sym-mt-ridge';
+}
+
+function build() {
+  const W = 700, H = 520;
+
+  const territories = KHUYETVUC_TERRITORIES.map(t => {
+    const decor       = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+    const patId       = `m-pat-${t.terrain === 'desert' ? 'dunes' : (t.terrain || 'land')}`;
+    const isClickable = !!t.nodeId;
+    return (
+      `<g class="kv-territory${isClickable ? ' kv-ter-clickable' : ''}" data-tid="${t.id}"` +
+        ` style="cursor:${isClickable ? 'pointer' : 'default'}" filter="url(#m-filt-coast)">` +
+        `<polygon points="${t.points}" fill="${decor.terrFill}" stroke="${decor.terrStroke}"` +
+          ` stroke-width="1.2" stroke-linejoin="round"/>` +
+        `<polygon points="${t.points}" fill="url(#${patId})" opacity="0.75" pointer-events="none"/>` +
+      `</g>`
+    );
+  }).join('');
+
+  const mountains = KHUYETVUC_TERRITORIES.flatMap(t =>
+    (t.mountains || []).map(([mx, my]) => {
+      const sym = pickMt(mx, my);
+      const w = sym === 'm-sym-mt-ridge' ? 36 : sym === 'm-sym-mt-twin' ? 32 : 24;
+      const h = sym === 'm-sym-mt-ridge' ? 22 : sym === 'm-sym-mt-twin' ? 22 : 20;
+      return `<use href="#${sym}" x="${mx - w/2}" y="${my - h * 0.75}" width="${w}" height="${h}" opacity="0.88" pointer-events="none"/>`;
+    })
+  ).join('');
+
+  const forests = KHUYETVUC_TERRITORIES.flatMap(t =>
+    (t.forests || []).map(([fx, fy]) =>
+      `<use href="#m-sym-forest" x="${fx - 16}" y="${fy - 12}" width="32" height="18" opacity="0.85" pointer-events="none"/>`
+    )
+  ).join('');
+
+  const rivers = `
+    <g class="kv-rivers" pointer-events="none" opacity="0.55">
+      <path d="M255,185 Q235,238 218,295" fill="none" stroke="#3A6890" stroke-width="1.3" stroke-dasharray="4 3"/>
+      <path d="M368,318 Q370,365 395,428" fill="none" stroke="#3A6890" stroke-width="1.1" stroke-dasharray="4 3"/>
+      <path d="M405,155 Q410,188 358,222" fill="none" stroke="#3A6890" stroke-width="1" stroke-dasharray="4 3"/>
+    </g>`;
+
+  const tier2Routes = TRADE_ROUTES.filter(r => r.tier === 'tier2');
+  const routes = `<g class="kv-trade-routes">` +
+    tier2Routes.map(r => renderTradeRoute(r, { animate: true })).join('') +
+  `</g>`;
+
+  const stamps = KHUYETVUC_TERRITORIES
+    .filter(t => t.chName && t.faction !== 'hazard')
+    .map(t => {
+      const decor = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+      const ch    = t.chName.length >= 2 ? t.chName[0] : t.chName;
+      return renderStamp({ x: t.lx, y: t.ly, chName: ch, inkGrad: decor.ink, size: 18, name: t.id });
+    }).join('');
+
+  const labels = KHUYETVUC_TERRITORIES
+    .filter(t => t.chName && t.faction !== 'hazard')
+    .map(t => {
+      const decor = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+      const viName = t.name && t.name.length > 18 ? t.name.slice(0, 16) + '…' : (t.name || '');
+      return (
+        `<g pointer-events="none" opacity="0.88">` +
+          `<text x="${t.lx}" y="${t.ly + 30}" text-anchor="middle" font-size="9.5"` +
+            ` fill="${decor.inkLight}" letter-spacing="1" font-family="'Noto Serif SC','STSong',serif"` +
+            ` font-weight="600" filter="url(#m-filt-label)">${viName}</text>` +
+        `</g>`
+      );
+    }).join('');
+
+  const hazardLabels = KHUYETVUC_TERRITORIES
+    .filter(t => t.faction === 'hazard')
+    .map(t => {
+      const decor = KV_FACTION_DECOR.hazard;
+      const rot   = t.id === 'tay_sa_mac' ? ` transform="rotate(-90,${t.lx},${t.ly})"` : '';
+      return (
+        `<g pointer-events="none" opacity="0.7"${rot}>` +
+          `<text x="${t.lx}" y="${t.ly - 4}" text-anchor="middle" font-size="9"` +
+            ` fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif"` +
+            ` font-weight="600" filter="url(#m-filt-label)">${t.chName}</text>` +
+          `<text x="${t.lx}" y="${t.ly + 8}" text-anchor="middle" font-size="8"` +
+            ` fill="${decor.inkLight}" opacity="0.85">${t.name}</text>` +
+        `</g>`
+      );
+    }).join('');
+
+  const title = `<text x="350" y="510" text-anchor="middle" font-size="9" letter-spacing="5" fill="rgba(58,40,24,0.7)" pointer-events="none" font-family="'STSong',serif" filter="url(#m-filt-ink)">缺 域 · KHUYẾT VỰC</text>`;
+
+  return (
+    MAP_DEFS + parchmentBackground(W,H) + agedSpots(W,H) +
+    territories + mountains + forests + rivers + routes +
+    stamps + labels + hazardLabels +
+    cloudBorder(W,H,true) + vignette(W,H) + title
+  );
+}
+
+document.getElementById('kv-svg').innerHTML = build();
+</script>
+</body>
+</html>

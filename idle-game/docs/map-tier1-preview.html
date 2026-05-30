@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>Tầng 1 — Live preview (Painted Scroll)</title>
+<style>
+  html,body{margin:0;background:#1a100a;font-family:system-ui,sans-serif;color:#d8c8a8}
+  header{padding:14px 18px;background:#0c0805;border-bottom:1px solid #3a2818}
+  header h1{margin:0;font-size:15px;color:#e8c878;font-weight:600;letter-spacing:1px}
+  header p{margin:4px 0 0;font-size:11px;color:#a89878}
+  .wrap{display:flex;height:calc(100vh - 70px)}
+  .map-svg-ng{flex:1;min-width:0;display:flex;align-items:stretch;
+    background:linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
+    overflow:hidden;position:relative}
+  .map-ng-svg{width:100%;height:100%;display:block;user-select:none}
+  .side{width:220px;padding:12px;background:rgba(20,12,6,0.92);border-left:1px solid #3a2818;
+    font-size:11px;line-height:1.65;overflow-y:auto}
+  .side h3{margin:0 0 8px;color:#e8c878;font-size:12px}
+  .side .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #3a2818}
+  .side .row span:first-child{color:#a89878}
+  .ng-region-active>polygon:first-child,.ng-region-active>path:first-child{transition:filter .18s ease}
+  .ng-region-active:hover>polygon:first-child,.ng-region-active:hover>path:first-child{
+    filter:brightness(1.12) saturate(1.15)}
+  .ng-region-active{cursor:pointer}
+  .ng-region-locked{cursor:default;transition:opacity .2s}
+  .ng-region-locked:hover{opacity:.75!important}
+  .info{margin-top:14px;padding:10px;background:rgba(232,200,120,0.06);border:1px solid #5a3818;border-radius:4px}
+  .info code{color:#e8c878;font-size:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tầng 1 — Painted Scroll Map (Phase 0+1 done)</h1>
+  <p>Hover region để test • Stars đã xóa • Parchment warm cream • Cloud drift + trade route caravan animation • Coast wobble qua feDisplacementMap</p>
+</header>
+<div class="wrap">
+  <div class="map-svg-ng">
+    <svg id="ng-svg" viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg" class="map-ng-svg"></svg>
+  </div>
+  <div class="side">
+    <h3>Phase 0+1 Checklist</h3>
+    <div class="row"><span>Parchment 3-layer</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Aged spots</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Coast wobble filter</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Mountain symbols 4 var</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Forest cluster</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Islands in sea</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>5 ink stamps lệch nhẹ</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Trade routes animated</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Cloud border drift</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Compass chữ Hán</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Player marker pulse</span><span style="color:#5eead4">✓</span></div>
+    <div class="row"><span>Vignette mềm</span><span style="color:#5eead4">✓</span></div>
+    <div class="info">
+      <strong>Caravan</strong><br/>
+      Mỗi route active có 1 diamond marker giữa đường + stroke-dashoffset chạy từ 0 → -200 trong 8s. Route dangerLevel ≥4 có glow.
+      <br/><br/>
+      <code>tr_kv_vd</code> — Bắc Hành Sương Đạo, mountain, danger 3<br/>
+      <code>tr_vlh_hn</code> — Huyết Đạo, danger 4 (glow)<br/>
+      <code>tr_cv_kv</code> — Cổ Đạo Phế Tích, inactive (mờ)
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { TRADE_ROUTES, NHAN_GIOI_REGIONS } from '../js/ui/map-data.js';
+import {
+  MAP_DEFS, renderTradeRoute,
+  parchmentBackground, cloudBorder, agedSpots, vignette, renderStamp,
+} from '../js/ui/map-defs.js';
+
+// Inline copy of NG_REGION_DECOR + NG_TERRAIN_HERO + _buildNhanGioiSVG logic
+// (mirror world-map.js để preview không cần import full game)
+
+const NG_REGION_DECOR = {
+  vinh_da:    { terrFill: 'rgba(190,212,228,0.55)', terrStroke: '#5A7A9A', pattern: 'm-pat-ice',    stampChar: '寒', ink: 'chinh',  inkLight: '#3A5878' },
+  co_vuc:     { terrFill: 'rgba(140,110,150,0.42)', terrStroke: '#5A4060', pattern: 'm-pat-ruins',  stampChar: '古', ink: 'co-vuc', inkLight: '#4A2868' },
+  khuyetvuc:  { terrFill: 'rgba(184,208,152,0.60)', terrStroke: '#3A6038', pattern: 'm-pat-land',   stampChar: '缺', ink: 'trung',  inkLight: '#0A4838' },
+  than_chau:  { terrFill: 'rgba(218,180,108,0.55)', terrStroke: '#7A5020', pattern: 'm-pat-land',   stampChar: '聖', ink: 'gold',   inkLight: '#604008' },
+  thien_tinh: { terrFill: 'rgba(123,165,184,0.55)', terrStroke: '#3A6080', pattern: 'm-pat-ocean',  stampChar: '海', ink: 'gold',   inkLight: '#604008' },
+};
+
+const NG_TERRAIN_HERO = [
+  { region:'vinh_da', sym:'m-sym-mt-ridge', x:20, y:30, w:120, h:40 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:190, y:38, w:30, h:28 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:260, y:52, w:34, h:30 },
+  { region:'vinh_da', sym:'m-sym-mt-ridge', x:380, y:32, w:120, h:40 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:550, y:42, w:32, h:28 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:620, y:50, w:28, h:24 },
+  { region:'khuyetvuc', sym:'m-sym-mt-peak',  x:90, y:170, w:32, h:28 },
+  { region:'khuyetvuc', sym:'m-sym-mt-peak',  x:240, y:195, w:34, h:30 },
+  { region:'khuyetvuc', sym:'m-sym-mt-ridge', x:115, y:290, w:80, h:32 },
+  { region:'khuyetvuc', sym:'m-sym-forest',   x:180, y:220, w:42, h:24 },
+  { region:'khuyetvuc', sym:'m-sym-forest',   x:280, y:260, w:40, h:22 },
+  { region:'khuyetvuc', sym:'m-sym-forest',   x:140, y:350, w:38, h:22 },
+  { region:'than_chau', sym:'m-sym-forest',   x:430, y:200, w:42, h:24 },
+  { region:'than_chau', sym:'m-sym-forest',   x:520, y:240, w:38, h:22 },
+  { region:'than_chau', sym:'m-sym-mt-peak',  x:580, y:200, w:30, h:26 },
+  { region:'than_chau', sym:'m-sym-mt-peak',  x:450, y:290, w:32, h:28 },
+  { region:'thien_tinh', sym:'m-sym-island', x:185, y:443, w:28, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:325, y:473, w:28, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:465, y:438, w:30, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:585, y:468, w:28, h:16 },
+];
+
+function build() {
+  const W = 700, H = 520;
+
+  const regions = NHAN_GIOI_REGIONS.map(r => {
+    const decor   = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
+    const isImpl  = r.implemented;
+    const opacity = isImpl ? 1 : 0.55;
+    const sw      = isImpl ? 1.2 : 0.7;
+    return (
+      `<g class="ng-region${isImpl ? ' ng-region-active' : ' ng-region-locked'}"` +
+        ` data-rid="${r.id}" style="cursor:${isImpl ? 'pointer' : 'default'}" opacity="${opacity}"` +
+        ` filter="url(#m-filt-coast)">` +
+        `<polygon points="${r.points}" fill="${decor.terrFill}" stroke="${decor.terrStroke}"` +
+          ` stroke-width="${sw}" stroke-linejoin="round"/>` +
+        `<polygon points="${r.points}" fill="url(#${decor.pattern})" opacity="0.75" pointer-events="none"/>` +
+      `</g>`
+    );
+  }).join('');
+
+  const terrain = NG_TERRAIN_HERO.map(t => {
+    const r = NHAN_GIOI_REGIONS.find(x => x.id === t.region);
+    const op = r && r.implemented ? 0.88 : 0.42;
+    return `<use href="#${t.sym}" x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" opacity="${op}" pointer-events="none"/>`;
+  }).join('');
+
+  const rivers = `
+    <g class="ng-rivers" fill="none" stroke="#3A6890" stroke-width="1.2" opacity="0.55" pointer-events="none">
+      <path d="M255,165 Q230,210 218,280 Q210,340 215,395"/>
+      <path d="M368,158 Q380,240 410,310"/>
+    </g>`;
+
+  const tier1Routes = TRADE_ROUTES.filter(r => r.tier === 'tier1');
+  const routes = `<g class="ng-trade-routes">` +
+    tier1Routes.map(r => renderTradeRoute(r, { animate: true })).join('') +
+    `</g>`;
+
+  const stamps = NHAN_GIOI_REGIONS.map(r => {
+    const decor = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
+    if (!r.implemented) {
+      return `<g pointer-events="none" opacity="0.45">` +
+        renderStamp({ x: r.lx, y: r.ly, chName: decor.stampChar, inkGrad: decor.ink, size: r.id === 'co_vuc' ? 16 : 18, name: r.id }) +
+      `</g>`;
+    }
+    return renderStamp({ x: r.lx, y: r.ly, chName: decor.stampChar, inkGrad: decor.ink, size: 22, name: r.id });
+  }).join('');
+
+  const labels = NHAN_GIOI_REGIONS.map(r => {
+    const decor   = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
+    const isImpl  = r.implemented;
+    const opacity = isImpl ? 0.85 : 0.5;
+    const fs      = r.id === 'co_vuc' ? 9 : 10.5;
+    const offsetY = r.id === 'co_vuc' ? 0 : 32;
+    const rot     = r.id === 'co_vuc' ? ` transform="rotate(-90,${r.lx + 30},${r.ly})"` : '';
+    const x       = r.id === 'co_vuc' ? r.lx + 30 : r.lx;
+    const y       = r.id === 'co_vuc' ? r.ly : r.ly + offsetY;
+    const lockTxt = !isImpl
+      ? `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="8.5" fill="${decor.inkLight}" opacity="0.65">— Chưa khám phá —</text>`
+      : '';
+    return (
+      `<g pointer-events="none" opacity="${opacity}"${rot}>` +
+        `<text x="${x}" y="${y}" text-anchor="middle" font-size="${fs}"` +
+          ` fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif" font-weight="600"` +
+          ` filter="url(#m-filt-label)">${r.name}</text>` +
+        lockTxt +
+      `</g>`
+    );
+  }).join('');
+
+  const marker = `
+    <g pointer-events="none">
+      <circle cx="192" cy="272" r="6" fill="url(#m-grad-marker)" opacity="0.7">
+        <animate attributeName="r" values="6;11;6" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.7;0.15;0.7" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="192" cy="272" r="3" fill="#0A4838" stroke="#F0E0B8" stroke-width="0.8"/>
+    </g>`;
+
+  const compass = `<use href="#m-sym-compass" x="630" y="430" width="60" height="60" opacity="0.85"/>`;
+  const title = `<text x="350" y="510" text-anchor="middle" font-size="9" letter-spacing="5" fill="rgba(58,40,24,0.7)" pointer-events="none" font-family="'STSong',serif" filter="url(#m-filt-ink)">人 界 全 圖 · NHÂN GIỚI TOÀN ĐỒ</text>`;
+
+  return (
+    MAP_DEFS + parchmentBackground(W,H) + agedSpots(W,H) +
+    regions + terrain + rivers + routes + stamps + labels +
+    cloudBorder(W,H,true) + vignette(W,H) + compass + marker + title
+  );
+}
+
+document.getElementById('ng-svg').innerHTML = build();
+</script>
+</body>
+</html>

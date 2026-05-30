@@ -1,9 +1,13 @@
 // ============================================================
 // ui/starter-village.js — Làng khởi đầu Tân Thủ
-// Nền gradient: dùng CSS trên lớp HTML (SVG fill không hỗ trợ linear-gradient).
+// Painted Scroll style (Phase 6): parchment + symbols + cloud border.
+// SVG defs reuse từ MAP_DEFS (map-defs.js).
 // ============================================================
 import { STARTER_VILLAGES, _setupDrag, _handleLocAction } from './location-popup.js';
 import { svgZoneLocLabel, KHUYETVUC_TERRITORIES, FACTION_COLORS } from './map-data.js';
+import {
+  MAP_DEFS, parchmentBackground, cloudBorder, vignette, agedSpots, renderStamp,
+} from './map-defs.js';
 import { getNpcPendingQuest } from '../quest/quest-engine.js';
 // L7 — H3: Secret zone unlock indicator
 import { NPC_REWARDS } from '../core/npc-data.js';
@@ -12,13 +16,88 @@ export function rollStarterVillage() {
   return STARTER_VILLAGES[Math.floor(Math.random() * STARTER_VILLAGES.length)];
 }
 
-function _pathLinks(locs, accent) {
+/**
+ * Per-village decor: ink stamp + hero terrain symbols phù hợp theme.
+ * - inkGrad: m-grad-ink-* key cho stamp
+ * - stampChar: chữ Hán đại diện
+ * - hero: array of <use> symbols cho background terrain
+ */
+const SV_VILLAGE_DECOR = {
+  thanh_phong_thon: {
+    inkGrad: 'trung', stampChar: '青', inkLight: '#0A4838',
+    bgTint: 'rgba(140,180,120,0.40)',
+    hero: [
+      '<use href="#m-sym-forest"   x="20"  y="320" width="50" height="26" opacity="0.78"/>',
+      '<use href="#m-sym-forest"   x="80"  y="335" width="44" height="22" opacity="0.72"/>',
+      '<use href="#m-sym-mt-peak"  x="380" y="58"  width="32" height="28" opacity="0.65"/>',
+      '<use href="#m-sym-mt-peak"  x="410" y="70"  width="28" height="24" opacity="0.60"/>',
+      '<use href="#m-sym-herb"     x="55"  y="358" width="22" height="18" opacity="0.7"/>',
+      '<use href="#m-sym-herb"     x="430" y="358" width="22" height="18" opacity="0.7"/>',
+    ],
+  },
+  hoa_diem_thon: {
+    inkGrad: 'ma', stampChar: '炎', inkLight: '#5A0810',
+    bgTint: 'rgba(200,120,80,0.40)',
+    hero: [
+      '<use href="#m-sym-volcano"  x="40"  y="55"  width="50" height="60" opacity="0.78"/>',
+      '<use href="#m-sym-mt-ridge" x="380" y="55"  width="80" height="38" opacity="0.7"/>',
+      '<use href="#m-sym-mt-peak"  x="20"  y="320" width="30" height="26" opacity="0.6"/>',
+      '<use href="#m-sym-mt-peak"  x="450" y="328" width="30" height="26" opacity="0.6"/>',
+    ],
+  },
+  han_bang_thon: {
+    inkGrad: 'chinh', stampChar: '寒', inkLight: '#3A5878',
+    bgTint: 'rgba(170,195,215,0.40)',
+    hero: [
+      '<use href="#m-sym-mt-ridge" x="20"  y="42"  width="90" height="40" opacity="0.78"/>',
+      '<use href="#m-sym-mt-peak"  x="380" y="50"  width="36" height="32" opacity="0.7"/>',
+      '<use href="#m-sym-mt-peak"  x="420" y="62"  width="30" height="26" opacity="0.65"/>',
+      '<use href="#m-sym-cave"     x="20"  y="325" width="36" height="28" opacity="0.65"/>',
+      '<use href="#m-sym-cave"     x="450" y="335" width="32" height="24" opacity="0.6"/>',
+    ],
+  },
+  lam_hai_thon: {
+    inkGrad: 'gold', stampChar: '泽', inkLight: '#604008',
+    bgTint: 'rgba(130,180,200,0.42)',
+    hero: [
+      '<use href="#m-sym-island"   x="20"  y="335" width="40" height="22" opacity="0.78"/>',
+      '<use href="#m-sym-island"   x="430" y="345" width="44" height="22" opacity="0.78"/>',
+      '<use href="#m-sym-forest"   x="80"  y="60"  width="44" height="22" opacity="0.65"/>',
+      '<use href="#m-sym-forest"   x="380" y="55"  width="44" height="22" opacity="0.65"/>',
+      '<use href="#m-sym-herb"     x="60"  y="360" width="22" height="18" opacity="0.7"/>',
+    ],
+  },
+};
+
+/** Map location.type → SVG symbol id (Painted Scroll). */
+const SV_LOC_TYPE_SYMBOL = {
+  sect_gate:   'm-sym-pagoda',
+  npc:         'm-sym-person',
+  market:      'm-sym-market',
+  hunt_zone:   'm-sym-swords',
+  gather_zone: 'm-sym-herb',
+  exit:        'm-sym-gate',
+};
+
+/** Symbol bounding box theo loại — sect_gate to nhất */
+function _svSymBox(type) {
+  if (type === 'sect_gate')  return { w: 44, h: 44, yOff: 22 };
+  if (type === 'market')     return { w: 36, h: 28, yOff: 14 };
+  if (type === 'exit')       return { w: 32, h: 28, yOff: 14 };
+  if (type === 'npc')        return { w: 22, h: 26, yOff: 13 };
+  if (type === 'hunt_zone')  return { w: 28, h: 28, yOff: 14 };
+  if (type === 'gather_zone')return { w: 26, h: 24, yOff: 12 };
+  return { w: 28, h: 28, yOff: 14 };
+}
+
+/** Dotted bezier links từ village center hub (cx,cy) đến mỗi location */
+function _pathLinks(locs) {
   const cx = 250;
   const cy = 218;
   return locs.map(loc => {
     const mx = (cx + loc.x) / 2 + (loc.y - cy) * 0.06;
     const my = (cy + loc.y) / 2 - (loc.x - cx) * 0.04;
-    return `<path d="M${cx},${cy} Q${mx},${my} ${loc.x},${loc.y}" fill="none" stroke="${accent}" stroke-opacity="0.14" stroke-width="1" stroke-dasharray="3,6"/>`;
+    return `<path d="M${cx},${cy} Q${mx},${my} ${loc.x},${loc.y}" fill="none" stroke="#7A5018" stroke-opacity="0.45" stroke-width="0.9" stroke-dasharray="2.5,3.5"/>`;
   }).join('');
 }
 
@@ -36,129 +115,91 @@ function _lingQiParticles(accent) {
     const yf = y + (i % 2 === 0 ? -10 : 8);
     return `
       <circle cx="${x}" cy="${y}" r="${r}" fill="${accent}" opacity="0">
-        <animate attributeName="opacity" values="0;0.22;0.08;0.18;0;0.15;0" dur="${dur}s" repeatCount="indefinite" begin="${i * 0.35}s"/>
+        <animate attributeName="opacity" values="0;0.32;0.12;0.25;0;0.18;0" dur="${dur}s" repeatCount="indefinite" begin="${i * 0.35}s"/>
         <animate attributeName="cy" values="${y};${yf};${y + 4};${y}" dur="${dur + 3}s" repeatCount="indefinite" begin="${i * 0.2}s"/>
         <animate attributeName="cx" values="${x};${x + (i % 3 - 1) * 6};${x}" dur="${dur + 5}s" repeatCount="indefinite"/>
       </circle>`;
   }).join('');
 }
 
-/** Trang trí theo từng thôn (SVG, trong <defs> đã có gradient riêng) */
+/** Trang trí theo từng thôn — Painted Scroll: hero terrain symbols + base tint */
 function _backdropDecor(vid) {
-  switch (vid) {
-    case 'lam_hai_thon':
-      return `
-        <g class="sv-decor" opacity="0.55" pointer-events="none">
-          <ellipse cx="120" cy="300" rx="90" ry="40" fill="url(#sv-deco-glow-${vid})"/>
-          <ellipse cx="380" cy="295" rx="70" ry="35" fill="url(#sv-deco-glow-${vid})"/>
-          <path d="M0 288 Q125 268 250 282 T500 276 L500 390 L0 390 Z" fill="url(#sv-deco-water-${vid})"/>
-          <path d="M0 305 Q100 295 200 308 T400 302 T500 312" stroke="rgba(130,200,255,0.2)" fill="none" stroke-width="0.9"/>
-          <path d="M0 325 Q150 312 300 326 T500 332" stroke="rgba(90,160,220,0.12)" fill="none" stroke-width="0.7"/>
-        </g>`;
-    case 'thanh_phong_thon':
-      return `
-        <g class="sv-decor" opacity="0.45" pointer-events="none">
-          <ellipse cx="250" cy="95" rx="180" ry="55" fill="url(#sv-deco-glow-${vid})"/>
-          <path d="M40 120 Q250 40 460 120" stroke="rgba(100,200,120,0.15)" fill="none" stroke-width="1.2"/>
-          <circle cx="90" cy="200" r="3" fill="rgba(180,255,200,0.12)"/>
-          <circle cx="410" cy="180" r="2.5" fill="rgba(180,255,200,0.1)"/>
-          <circle cx="300" cy="95" r="2" fill="rgba(200,255,220,0.15)"/>
-        </g>`;
-    case 'hoa_diem_thon':
-      return `
-        <g class="sv-decor" opacity="0.5" pointer-events="none">
-          <ellipse cx="250" cy="360" rx="200" ry="50" fill="url(#sv-deco-ember-${vid})"/>
-          <path d="M80 100 L100 140 M420 110 L400 150 M250 70 L250 100" stroke="rgba(255,140,60,0.2)" stroke-width="1"/>
-        </g>`;
-    case 'han_bang_thon':
-      return `
-        <g class="sv-decor" opacity="0.4" pointer-events="none">
-          <ellipse cx="250" cy="100" rx="190" ry="60" fill="url(#sv-deco-frost-${vid})"/>
-          <path d="M60 130 L80 125 M400 125 L420 130 M200 90 L210 88" stroke="rgba(180,220,255,0.2)" stroke-width="0.8"/>
-        </g>`;
-    default:
-      return '';
-  }
+  const decor = SV_VILLAGE_DECOR[vid] || SV_VILLAGE_DECOR.thanh_phong_thon;
+  const tint = `<rect width="500" height="390" fill="${decor.bgTint}" opacity="0.6" pointer-events="none"/>`;
+  const heroSvg = decor.hero
+    .map(s => s.replace(/<use/, '<use pointer-events="none"'))
+    .join('');
+  return tint + heroSvg;
 }
 
-function _defsBlock(village) {
-  const vid = village.id;
-  const ac = village.color;
-  return `
-    <defs>
-      <radialGradient id="sv-deco-glow-${vid}" cx="50%" cy="50%" r="0.7">
-        <stop offset="0%" stop-color="${ac}" stop-opacity="0.2"/>
-        <stop offset="100%" stop-color="${ac}" stop-opacity="0"/>
-      </radialGradient>
-      <linearGradient id="sv-deco-water-${vid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#2a6a9a" stop-opacity="0.2"/>
-        <stop offset="100%" stop-color="#050a12" stop-opacity="0.75"/>
-      </linearGradient>
-      <radialGradient id="sv-deco-ember-${vid}" cx="50%" cy="0%" r="0.9">
-        <stop offset="0%" stop-color="#ff6a20" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="#200500" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="sv-deco-frost-${vid}" cx="50%" cy="100%" r="0.8">
-        <stop offset="0%" stop-color="#a8d8ff" stop-opacity="0.12"/>
-        <stop offset="100%" stop-color="#000a15" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="sv-mist-${vid}" cx="50%" cy="42%" r="0.55">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.07)"/>
-        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-      </radialGradient>
-      <linearGradient id="sv-node-grad-${vid}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
-        <stop offset="50%" stop-color="rgba(255,255,255,0.04)"/>
-        <stop offset="100%" stop-color="rgba(0,0,0,0.5)"/>
-      </linearGradient>
-      <filter id="sv-node-glow-${vid}" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>`;
-}
-
+/** Build location nodes — symbol-based (no emoji), drop shadow, lock/secret indicators */
 function _buildLocNodes(village, G) {
   const vid = village.id;
-  const ac = village.color;
+  const decor = SV_VILLAGE_DECOR[vid] || SV_VILLAGE_DECOR.thanh_phong_thon;
   return village.locations.map(loc => {
     const isExit = loc.type === 'exit';
     const exitLocked = isExit && !(G.worldMap?.starterQuestDone);
-    const strokeMain = isExit ? (exitLocked ? '#555' : ac) : ac;
-    const opRing = isExit ? (exitLocked ? 0.2 : 0.45) : 0.28;
+    const symId = SV_LOC_TYPE_SYMBOL[loc.type] || 'm-sym-altar';
+    const box = _svSymBox(loc.type);
+    const dim = exitLocked ? 0.42 : 1.0;
 
     // S-D: Indicator "!" khi NPC có quest chờ giao
     const hasQuestIndicator = loc.type === 'npc' && loc.npcId
       ? getNpcPendingQuest(G, loc.npcId) !== null
       : false;
 
-    // L7 — H3: Indicator "🗝" khi NPC đã mở khóa secret zone (tier 2 reward)
+    // L7 — H3: Indicator key khi NPC đã mở khóa secret zone (tier 2 reward)
     const npcReward = loc.type === 'npc' && loc.npcId ? NPC_REWARDS[loc.npcId] : null;
     const secretZoneId = npcReward?.tier2_secret?.zoneId;
     const hasSecretZoneUnlocked = secretZoneId
       ? (G.flags?.unlockedSecretZones?.[secretZoneId] === true)
       : false;
 
-    return `
-      <g class="znode${exitLocked ? ' znode-locked' : ''}" data-lid="${loc.id}"
-         data-locked="${exitLocked ? '1' : '0'}">
-        <circle cx="${loc.x}" cy="${loc.y}" r="34" fill="none" stroke="${ac}" stroke-opacity="0.06" stroke-width="1"/>
-        <circle cx="${loc.x}" cy="${loc.y}" r="29" fill="none" stroke="${strokeMain}" stroke-opacity="${opRing}" stroke-width="${isExit ? 2 : 1.2}"
-          stroke-dasharray="${exitLocked ? '4 3' : '0'}"/>
-        <circle cx="${loc.x}" cy="${loc.y}" r="26" fill="url(#sv-node-grad-${vid})" stroke="${strokeMain}" stroke-opacity="0.65" stroke-width="1.4"
-          filter="url(#sv-node-glow-${vid})"/>
-        <text x="${loc.x}" y="${loc.y + 6}" text-anchor="middle" font-size="17">${loc.emoji}</text>
-        ${svgZoneLocLabel(loc.name, loc.x, loc.y + 42, { fill: isExit && !exitLocked ? '#f0d47a' : '#d8dce4', fontSize: 8.5 })}
-        ${exitLocked ? `<text x="${loc.x}" y="${loc.y + 54}" text-anchor="middle" font-size="7.5" fill="#8899aa">🔒 Quest</text>` : ''}
-        ${hasQuestIndicator ? `
-          <circle cx="${loc.x + 18}" cy="${loc.y - 18}" r="9" fill="#f0d47a" stroke="#1a1506" stroke-width="1.5"/>
-          <text x="${loc.x + 18}" y="${loc.y - 14}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a1506">!</text>
-        ` : ''}
-        ${hasSecretZoneUnlocked ? `
-          <circle cx="${loc.x - 18}" cy="${loc.y - 18}" r="8" fill="#2a1a00" stroke="#d4a843" stroke-width="1.2" opacity="0.9"/>
-          <text x="${loc.x - 18}" y="${loc.y - 13}" text-anchor="middle" font-size="9">🗝</text>
-        ` : ''}
-      </g>`;
+    // Drop shadow ellipse
+    const shadow = `<ellipse cx="${loc.x}" cy="${loc.y + box.yOff - 2}" rx="${box.w/2 - 2}" ry="2.5" fill="#3A2818" opacity="${0.32 * dim}"/>`;
+
+    // Label color: exit highlight gold, locked dim
+    const labelFill = exitLocked ? '#7A6048' : (isExit ? '#A86018' : decor.inkLight);
+    const labelSvg = svgZoneLocLabel(loc.name, loc.x, loc.y + box.yOff + 12, {
+      fill: labelFill,
+      fontSize: 9,
+    });
+
+    // Indicators (giữ logic cũ, dùng warm tone)
+    const questBadge = hasQuestIndicator
+      ? `<g pointer-events="none">` +
+          `<circle cx="${loc.x + 14}" cy="${loc.y - box.yOff + 2}" r="7" fill="#D4A030" stroke="#3A1808" stroke-width="1.2"/>` +
+          `<text x="${loc.x + 14}" y="${loc.y - box.yOff + 5}" text-anchor="middle" font-size="9" font-weight="bold" fill="#3A1808">!</text>` +
+        `</g>`
+      : '';
+
+    const secretBadge = hasSecretZoneUnlocked
+      ? `<g pointer-events="none">` +
+          `<circle cx="${loc.x - 14}" cy="${loc.y - box.yOff + 2}" r="6.5" fill="#3A2818" stroke="#D4A040" stroke-width="1"/>` +
+          // Mini key icon thay emoji
+          `<path d="M${loc.x - 16},${loc.y - box.yOff} L${loc.x - 11},${loc.y - box.yOff} M${loc.x - 11},${loc.y - box.yOff - 1.5} L${loc.x - 11},${loc.y - box.yOff + 1.5}" stroke="#D4A040" stroke-width="0.9" stroke-linecap="round"/>` +
+          `<circle cx="${loc.x - 17}" cy="${loc.y - box.yOff}" r="1.6" fill="none" stroke="#D4A040" stroke-width="0.9"/>` +
+        `</g>`
+      : '';
+
+    const lockIndicator = exitLocked
+      ? `<use href="#m-sym-lock" x="${loc.x + box.w/2 - 6}" y="${loc.y - box.yOff - 4}" width="10" height="12" opacity="0.85" pointer-events="none"/>` +
+        `<text x="${loc.x}" y="${loc.y + box.yOff + 24}" text-anchor="middle" font-size="7.5" fill="#7A6048" opacity="0.8" pointer-events="none">🔒 Cần xong 1 quest</text>`
+      : '';
+
+    return (
+      `<g class="znode${exitLocked ? ' znode-locked' : ''}" data-lid="${loc.id}"` +
+        ` data-locked="${exitLocked ? '1' : '0'}" style="cursor:${exitLocked ? 'not-allowed' : 'pointer'};opacity:${dim}">` +
+        shadow +
+        `<use href="#${symId}" x="${loc.x - box.w/2}" y="${loc.y - box.yOff}" width="${box.w}" height="${box.h}"/>` +
+        // Invisible hit area
+        `<rect x="${loc.x - box.w/2 - 4}" y="${loc.y - box.yOff - 4}" width="${box.w + 8}" height="${box.h + 8}" fill="transparent" pointer-events="all"/>` +
+        labelSvg +
+        lockIndicator +
+        questBadge +
+        secretBadge +
+      `</g>`
+    );
   }).join('');
 }
 
@@ -235,30 +276,35 @@ export function renderStarterVillage(G, actions) {
     : '';
 
   const vid = village.id;
+  const vDecor = SV_VILLAGE_DECOR[vid] || SV_VILLAGE_DECOR.thanh_phong_thon;
   const locSvg = _buildLocNodes(village, G);
-  const svgInner = `
-    ${_defsBlock(village)}
-    <rect width="500" height="390" fill="transparent"/>
-    <ellipse cx="250" cy="185" rx="210" ry="130" fill="url(#sv-mist-${vid})" opacity="0.85" pointer-events="none"/>
-    ${_backdropDecor(vid)}
-    <g class="sv-lingqi" pointer-events="none">${_lingQiParticles(village.color)}</g>
-    <g class="sv-links" pointer-events="none">${_pathLinks(village.locations, village.color)}</g>
-    ${locSvg}`;
+
+  // Village stamp ở góc trên-trái SVG
+  const villageStamp =
+    `<g pointer-events="none">` +
+      renderStamp({ x: 36, y: 30, chName: vDecor.stampChar, inkGrad: vDecor.inkGrad, size: 14, name: vid }) +
+      `<text x="60" y="22" font-size="10.5" fill="${vDecor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif" font-weight="600" filter="url(#m-filt-label)">${village.name}</text>` +
+      `<text x="60" y="38" font-size="8.5" fill="${vDecor.inkLight}" opacity="0.85" letter-spacing="1.5">Tân thủ · An cư</text>` +
+    `</g>`;
+
+  const svgInner =
+    MAP_DEFS +
+    parchmentBackground(500, 390) +
+    agedSpots(500, 390) +
+    _backdropDecor(vid) +
+    `<g class="sv-lingqi" pointer-events="none">${_lingQiParticles(village.color)}</g>` +
+    `<g class="sv-links" pointer-events="none">${_pathLinks(village.locations)}</g>` +
+    locSvg +
+    cloudBorder(500, 390, true, 'sv-cloud') +
+    vignette(500, 390) +
+    villageStamp;
 
   panel.className = 'center-panel map-panel';
   panel.innerHTML = `
     <div class="map-wrap-t2 map-wrap-starter">
-      <div class="map-svg-t2 starter-village-scene" id="map-svg-village" data-sv-bg="${village.bg}" data-sv-accent="${village.color}">
+      <div class="map-svg-t2 starter-village-scene sv-painted" id="map-svg-village" data-sv-accent="${village.color}">
         <div class="starter-village-aura" aria-hidden="true"></div>
-        <div class="starter-village-vignette" aria-hidden="true"></div>
         <div class="starter-village-frame" aria-hidden="true"></div>
-        <div class="starter-village-titlebar">
-          <span class="starter-village-emoji">${village.emoji}</span>
-          <div class="starter-village-titles">
-            <span class="starter-village-name">${village.name}</span>
-            <span class="starter-village-badge">Tân thủ · An cư</span>
-          </div>
-        </div>
         <svg id="village-svg" class="starter-village-svg" viewBox="0 0 500 390" xmlns="http://www.w3.org/2000/svg">
           ${svgInner}
         </svg>
@@ -285,10 +331,10 @@ export function renderStarterVillage(G, actions) {
   if (svgEl) _setupDrag('village-svg');
 
   // Apply CSS variables cho scene và popup accent color
-  const sceneEl = panel.querySelector('.starter-village-scene[data-sv-bg][data-sv-accent]');
-  if (sceneEl?.dataset?.svBg) {
-    sceneEl.style.background = sceneEl.dataset.svBg;
-    if (sceneEl.dataset.svAccent) sceneEl.style.setProperty('--sv-accent', sceneEl.dataset.svAccent);
+  // Painted Scroll: bg parchment trong SVG, scene container chỉ giữ accent var cho frame/aura
+  const sceneEl = panel.querySelector('.starter-village-scene[data-sv-accent]');
+  if (sceneEl?.dataset?.svAccent) {
+    sceneEl.style.setProperty('--sv-accent', sceneEl.dataset.svAccent);
   }
   const sidePopup = document.getElementById('sv-side-popup');
   if (sidePopup?.dataset?.svAccent) {

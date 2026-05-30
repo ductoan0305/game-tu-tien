@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>Tầng 3 — Territory Interior (Painted Scroll)</title>
+<style>
+  html,body{margin:0;background:#1a100a;font-family:system-ui,sans-serif;color:#d8c8a8}
+  header{padding:14px 18px;background:#0c0805;border-bottom:1px solid #3a2818}
+  header h1{margin:0;font-size:15px;color:#e8c878;font-weight:600;letter-spacing:1px}
+  header p{margin:4px 0 0;font-size:11px;color:#a89878}
+  .selector{padding:10px 18px;background:#0c0805;border-bottom:1px solid #3a2818;display:flex;gap:8px;flex-wrap:wrap}
+  .selector button{background:rgba(232,200,120,0.08);border:1px solid #5a3818;color:#d8c8a8;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+  .selector button.active{background:rgba(232,200,120,0.3);color:#fff;border-color:#d4a040}
+  .wrap{padding:14px;display:flex;justify-content:center}
+  .map-svg-t2{width:760px;height:592px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
+    border:1px solid #3a2818;border-radius:8px;overflow:hidden}
+  .map-zone-svg{width:100%;height:100%;display:block}
+  .znode{cursor:pointer;transition:filter .18s ease,transform .18s ease;transform-box:fill-box;transform-origin:center}
+  .znode.znode-locked{cursor:not-allowed}
+  .znode:not(.znode-locked):hover{filter:brightness(1.15) saturate(1.1);transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tầng 3 — Territory Interior Map (Phase 4 done)</h1>
+  <p>Chuyển territory: chọn bên dưới. Symbols thay emoji. Dotted bezier connections từ sect_gate. Secret zones có glow rotating.</p>
+</header>
+<div class="selector" id="sel"></div>
+<div class="wrap">
+  <div class="map-svg-t2">
+    <svg id="zone-svg" viewBox="0 0 500 390" xmlns="http://www.w3.org/2000/svg" class="map-zone-svg"></svg>
+  </div>
+</div>
+
+<script type="module">
+import { TERRITORY_INTERIORS, KHUYETVUC_TERRITORIES, svgZoneLocLabel } from '../js/ui/map-data.js';
+import {
+  MAP_DEFS,
+  parchmentBackground, cloudBorder, agedSpots, vignette, renderStamp,
+} from '../js/ui/map-defs.js';
+
+const KV_FACTION_DECOR = {
+  chinh_dao: { terrFill: 'rgba(120,170,150,0.50)', terrStroke: '#2A5848', ink: 'chinh',  inkLight: '#0A3828' },
+  ma_dao:    { terrFill: 'rgba(190,120,100,0.50)', terrStroke: '#6A2820', ink: 'ma',     inkLight: '#5A0810' },
+  trung_lap: { terrFill: 'rgba(218,182,108,0.55)', terrStroke: '#7A5020', ink: 'gold',   inkLight: '#604008' },
+  hazard:    { terrFill: 'rgba(140,128,140,0.42)', terrStroke: '#4A4048', ink: 'hazard', inkLight: '#3A2838' },
+};
+
+const LOC_TYPE_SYMBOL = {
+  sect_gate:        'm-sym-pagoda',
+  market:           'm-sym-market',
+  ghost_market:     'm-sym-ghost',
+  auction:          'm-sym-auction',
+  freelance_quest:  'm-sym-market',
+  hunt_zone:        'm-sym-swords',
+  boss_zone:        'm-sym-swords',
+  cultivate_spot:   'm-sym-altar',
+  alchemy:          'm-sym-altar',
+  gather_zone:      'm-sym-herb',
+  secret_gather:    'm-sym-herb',
+  mystery_zone:     'm-sym-altar',
+  mystery_cave:     'm-sym-cave',
+  dungeon:          'm-sym-cave',
+  treasure:         'm-sym-treasure',
+  npc:              'm-sym-person',
+};
+
+function symBox(type) {
+  if (type === 'sect_gate')  return { w:44, h:44, yOff:22 };
+  if (type === 'auction')    return { w:32, h:28, yOff:14 };
+  if (type === 'market' || type === 'ghost_market' || type === 'freelance_quest') return { w:36, h:28, yOff:14 };
+  if (type === 'cultivate_spot' || type === 'alchemy' || type === 'mystery_zone') return { w:28, h:32, yOff:16 };
+  if (type === 'cave' || type === 'dungeon' || type === 'mystery_cave' || type === 'boss_zone') return { w:30, h:24, yOff:12 };
+  if (type === 'treasure')   return { w:26, h:20, yOff:10 };
+  if (type === 'npc')        return { w:22, h:26, yOff:13 };
+  return { w:28, h:28, yOff:14 };
+}
+
+function buildTerrain(ter) {
+  const decor = KV_FACTION_DECOR[ter.faction] || KV_FACTION_DECOR.trung_lap;
+  const terrain = ter.terrain || 'land';
+  const patId = `m-pat-${terrain === 'desert' ? 'dunes' : terrain}`;
+  const baseTint = `<rect width="500" height="390" fill="${decor.terrFill}" opacity="0.6" pointer-events="none"/>`;
+  const basePat  = `<rect width="500" height="390" fill="url(#${patId})" opacity="0.6" pointer-events="none"/>`;
+  let hero = '';
+  if (ter.faction === 'ma_dao') {
+    hero = `<use href="#m-sym-volcano" x="20" y="290" width="40" height="50" opacity="0.75"/>` +
+           `<use href="#m-sym-mt-peak" x="68" y="320" width="32" height="28" opacity="0.7"/>` +
+           `<use href="#m-sym-mt-ridge" x="420" y="310" width="68" height="36" opacity="0.7"/>`;
+  } else if (ter.faction === 'chinh_dao' && terrain === 'mountain') {
+    hero = `<use href="#m-sym-mt-ridge" x="10" y="305" width="90" height="42" opacity="0.85"/>` +
+           `<use href="#m-sym-mt-peak" x="105" y="335" width="30" height="24" opacity="0.7"/>` +
+           `<use href="#m-sym-mt-twin" x="395" y="305" width="70" height="42" opacity="0.85"/>`;
+  } else if (ter.faction === 'chinh_dao') {
+    hero = `<use href="#m-sym-forest" x="15" y="330" width="50" height="24" opacity="0.75"/>` +
+           `<use href="#m-sym-forest" x="75" y="345" width="44" height="22" opacity="0.7"/>` +
+           `<use href="#m-sym-forest" x="395" y="335" width="50" height="24" opacity="0.75"/>` +
+           `<use href="#m-sym-forest" x="445" y="350" width="40" height="20" opacity="0.7"/>`;
+  } else {
+    hero = `<use href="#m-sym-forest" x="15" y="335" width="46" height="22" opacity="0.7"/>` +
+           `<use href="#m-sym-mt-peak" x="430" y="320" width="30" height="26" opacity="0.7"/>` +
+           `<use href="#m-sym-mt-peak" x="460" y="335" width="26" height="22" opacity="0.65"/>`;
+  }
+  return baseTint + basePat + hero;
+}
+
+function build(terId) {
+  const ter = KHUYETVUC_TERRITORIES.find(t => t.id === terId);
+  const interior = TERRITORY_INTERIORS[terId];
+  if (!ter || !interior) return '';
+  const decor = KV_FACTION_DECOR[ter.faction] || KV_FACTION_DECOR.trung_lap;
+  const locs = interior.locations;
+
+  const terrainSvg = buildTerrain(ter);
+
+  const sectGate = locs.find(l => l.type === 'sect_gate');
+  let connSvg = '';
+  if (sectGate) {
+    connSvg = '<g class="t3-connections" pointer-events="none" opacity="0.45">' +
+      locs.filter(l => l.id !== sectGate.id).map(l => {
+        const mx = (sectGate.x + l.x) / 2;
+        const my = (sectGate.y + l.y) / 2 + 8;
+        return `<path d="M${sectGate.x},${sectGate.y} Q${mx},${my} ${l.x},${l.y}" fill="none" stroke="#7A5018" stroke-width="0.8" stroke-dasharray="2.5,3.5"/>`;
+      }).join('') + '</g>';
+  }
+
+  const locSvg = locs.map(loc => {
+    const symId = LOC_TYPE_SYMBOL[loc.type] || 'm-sym-altar';
+    const box   = symBox(loc.type);
+    const isSecret = loc.type === 'secret_gather' || loc.type === 'mystery_zone' || loc.type === 'mystery_cave';
+    const glow = isSecret ? `<use href="#m-sym-glow" x="${loc.x - 15}" y="${loc.y - 15}" width="30" height="30"/>` : '';
+    const shadow = `<ellipse cx="${loc.x}" cy="${loc.y + box.yOff - 2}" rx="${box.w/2 - 2}" ry="2.5" fill="#3A2818" opacity="0.32"/>`;
+    const labelY = loc.y + box.yOff + 12;
+    return (
+      `<g class="znode" data-lid="${loc.id}">` +
+        glow + shadow +
+        `<use href="#${symId}" x="${loc.x - box.w/2}" y="${loc.y - box.yOff}" width="${box.w}" height="${box.h}"/>` +
+        svgZoneLocLabel(loc.name, loc.x, labelY, { fill: decor.inkLight, fontSize: 9 }) +
+      `</g>`
+    );
+  }).join('');
+
+  const titleStamp = ter.chName
+    ? `<g pointer-events="none">` +
+        renderStamp({ x: 36, y: 30, chName: ter.chName[0], inkGrad: decor.ink, size: 14, name: ter.id }) +
+        `<text x="60" y="22" font-size="10.5" fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif" font-weight="600" filter="url(#m-filt-label)">${ter.chName}</text>` +
+        `<text x="60" y="38" font-size="9" fill="${decor.inkLight}" opacity="0.85" letter-spacing="1.5">${ter.name}</text>` +
+      `</g>`
+    : '';
+
+  return MAP_DEFS + parchmentBackground(500,390) + agedSpots(500,390) +
+    terrainSvg + connSvg + locSvg +
+    cloudBorder(500,390,true,'t3-cloud') + vignette(500,390) + titleStamp;
+}
+
+function showTerritory(tid) {
+  document.getElementById('zone-svg').innerHTML = build(tid);
+  document.querySelectorAll('#sel button').forEach(b => b.classList.toggle('active', b.dataset.tid === tid));
+}
+
+// Build selector chips
+const terriesWithInterior = KHUYETVUC_TERRITORIES.filter(t => TERRITORY_INTERIORS[t.id]);
+document.getElementById('sel').innerHTML = terriesWithInterior
+  .map(t => `<button data-tid="${t.id}">${t.chName ? t.chName + ' · ' : ''}${t.name}</button>`).join('');
+document.querySelectorAll('#sel button').forEach(b => {
+  b.addEventListener('click', () => showTerritory(b.dataset.tid));
+});
+showTerritory(terriesWithInterior[0].id);
+</script>
+</body>
+</html>

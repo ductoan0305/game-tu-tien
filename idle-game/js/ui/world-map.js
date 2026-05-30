@@ -19,7 +19,12 @@ export { renderStarterVillage, rollStarterVillage };
 import { WORLD_NODES, ZONE_DATA, svgZoneLocLabel, svgWorldNodeName,
          FACTION_COLORS, KHUYETVUC_TERRITORIES,
          TERRITORY_INTERIORS,
-         NHAN_GIOI_REGIONS } from './map-data.js';
+         NHAN_GIOI_REGIONS,
+         TRADE_ROUTES } from './map-data.js';
+import {
+  MAP_DEFS, renderTradeRoute,
+  parchmentBackground, cloudBorder, agedSpots, vignette, renderStamp,
+} from './map-defs.js';
 import { REALM_NAMES } from '../core/constants.js';
 // Re-export WORLD_NODES để backward compat
 export { WORLD_NODES };
@@ -881,192 +886,154 @@ function renderTier1(G, actions) {
 // KHUYẾT VỰC TERRITORY MAP — Hướng A (SVG thuần)
 // ============================================================
 
-/** Ký hiệu núi SVG tại (mx, my) */
-function _svgMountain(mx, my) {
-  return `<g transform="translate(${mx},${my})" pointer-events="none">
-    <polygon points="0,-12 11,5 -11,5" fill="#1a1828" stroke="#5a5068" stroke-width="0.8" stroke-linejoin="round"/>
-    <polygon points="-2.5,-5 2.5,-5 5.5,5 -5.5,5" fill="#120f20"/>
-    <polygon points="-2.5,-8.5 0,-12 2.5,-8.5" fill="rgba(225,235,255,0.42)"/>
-  </g>`;
+/**
+ * Per-faction visual decor cho Painted Scroll Tầng 2.
+ * Tách khỏi FACTION_COLORS để giữ data legacy compat,
+ * đồng thời cho phép terrain fill warm phù hợp parchment.
+ *
+ * - terrFill: màu nền polygon trên parchment (warm tint, opacity 0.5-0.65)
+ * - terrStroke: stroke màu hợp tone
+ * - ink: stamp ink color (key trong m-grad-ink-*)
+ * - inkLight: màu text Việt label (tone đậm vừa đủ contrast với parchment)
+ */
+const KV_FACTION_DECOR = {
+  chinh_dao: { terrFill: 'rgba(120,170,150,0.50)', terrStroke: '#2A5848', ink: 'chinh',  inkLight: '#0A3828' },
+  ma_dao:    { terrFill: 'rgba(190,120,100,0.50)', terrStroke: '#6A2820', ink: 'ma',     inkLight: '#5A0810' },
+  trung_lap: { terrFill: 'rgba(218,182,108,0.55)', terrStroke: '#7A5020', ink: 'gold',   inkLight: '#604008' },
+  hazard:    { terrFill: 'rgba(140,128,140,0.42)', terrStroke: '#4A4048', ink: 'hazard', inkLight: '#3A2838' },
+};
+
+/**
+ * Chọn mountain symbol variant theo index/position hash để có đa dạng.
+ * Tránh tất cả mountain trông giống hệt nhau.
+ */
+function _kvPickMtSymbol(mx, my) {
+  const h = ((mx * 31 + my * 17) | 0) % 100;
+  if (h < 70) return 'm-sym-mt-peak';   // 70% peak (phổ biến)
+  if (h < 92) return 'm-sym-mt-twin';   // 22% twin
+  return 'm-sym-mt-ridge';              // 8% ridge
 }
 
-/** Ký hiệu rừng SVG tại (fx, fy) */
-function _svgForest(fx, fy) {
-  return `<g transform="translate(${fx},${fy})" pointer-events="none">
-    <ellipse cx="0" cy="-5" rx="6" ry="8.5" fill="#122012" stroke="#224422" stroke-width="0.7"/>
-    <ellipse cx="-5" cy="-2" rx="5" ry="7" fill="#0e1a0e" stroke="#1c381c" stroke-width="0.5"/>
-    <ellipse cx="5" cy="-2" rx="5" ry="7" fill="#0e1a0e" stroke="#1c381c" stroke-width="0.5"/>
-    <rect x="-1.5" y="3" width="3" height="5" fill="#2a1a08"/>
-  </g>`;
-}
-
-/** Cluster mây trang trí (góc viền) */
-function _cloudCluster(cx, cy, r) {
-  return [
-    [0, 0, r * 0.50],
-    [-r * 0.38, r * 0.05, r * 0.38],
-    [r * 0.38, r * 0.05, r * 0.38],
-    [-r * 0.16, -r * 0.24, r * 0.30],
-    [r * 0.16, -r * 0.24, r * 0.30],
-  ].map(([dx, dy, cr]) =>
-    `<circle cx="${(cx + dx).toFixed(1)}" cy="${(cy + dy).toFixed(1)}" r="${cr.toFixed(1)}" fill="rgba(195,210,230,0.10)"/>`
-  ).join('');
-}
-
-/** Xây dựng toàn bộ SVG nội dung bản đồ lãnh thổ */
+/** Xây dựng toàn bộ SVG nội dung bản đồ lãnh thổ — Painted Scroll style */
 function _buildKhuyetVucSVG(G) {
-  const defs = `
-    <defs>
-      <!-- Texture patterns -->
-      <pattern id="kvp-mountain" width="20" height="20" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="20" x2="20" y2="0" stroke="rgba(110,95,145,0.22)" stroke-width="1.4"/>
-        <line x1="-5" y1="15" x2="15" y2="-5" stroke="rgba(110,95,145,0.10)" stroke-width="0.7"/>
-      </pattern>
-      <pattern id="kvp-land" width="24" height="24" patternUnits="userSpaceOnUse">
-        <path d="M0,12 L24,12 M12,0 L12,24" stroke="rgba(255,255,255,0.035)" stroke-width="0.5"/>
-      </pattern>
-      <pattern id="kvp-forest" width="18" height="18" patternUnits="userSpaceOnUse">
-        <circle cx="9" cy="9" r="3.5" fill="rgba(30,65,30,0.30)"/>
-      </pattern>
-      <pattern id="kvp-swamp" width="22" height="13" patternUnits="userSpaceOnUse">
-        <path d="M0,6.5 Q5.5,2.5 11,6.5 Q16.5,10.5 22,6.5" fill="none" stroke="rgba(28,65,50,0.32)" stroke-width="1.1"/>
-      </pattern>
-      <pattern id="kvp-desert" width="16" height="16" patternUnits="userSpaceOnUse">
-        <circle cx="4" cy="4" r="1.1" fill="rgba(90,68,18,0.28)"/>
-        <circle cx="12" cy="12" r="0.7" fill="rgba(90,68,18,0.18)"/>
-      </pattern>
+  const W = 700, H = 520;
 
-      <!-- Filters -->
-      <filter id="kvf-chinh" x="-25%" y="-25%" width="150%" height="150%">
-        <feGaussianBlur stdDeviation="2.5" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <filter id="kvf-ma" x="-25%" y="-25%" width="150%" height="150%">
-        <feGaussianBlur stdDeviation="2.5" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <filter id="kvf-badge" x="-40%" y="-40%" width="180%" height="180%">
-        <feGaussianBlur stdDeviation="3.5" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-
-      <!-- Background gradient -->
-      <radialGradient id="kvg-bg" cx="50%" cy="48%" r="55%">
-        <stop offset="0%" stop-color="#0c1422"/>
-        <stop offset="100%" stop-color="#040810"/>
-      </radialGradient>
-
-      <!-- Edge fade for cloud border effect -->
-      <radialGradient id="kvg-edge-fade" cx="50%" cy="50%" r="50%">
-        <stop offset="60%" stop-color="rgba(0,0,0,0)"/>
-        <stop offset="100%" stop-color="rgba(4,8,16,0.88)"/>
-      </radialGradient>
-    </defs>`;
-
-  // Background
-  const bg = `<rect width="700" height="520" fill="url(#kvg-bg)"/>`;
-
-  // Stars (sparse — behind territories)
-  let stars = '<g class="kv-stars">';
-  for (let i = 0; i < 40; i++) {
-    const sx = (((i * 137 + 17) % 700)).toFixed(0);
-    const sy = (((i * 97 + 31) % 520)).toFixed(0);
-    const sr = (i % 5 === 0 ? 0.9 : 0.45).toFixed(2);
-    const so = (0.08 + (i % 7) * 0.04).toFixed(2);
-    stars += `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="rgba(255,255,255,${so})"/>`;
-  }
-  stars += '</g>';
-
-  // Territory polygons
+  // ── 1. Territory polygons (warm faction fill + terrain pattern + coast wobble)
   const territories = KHUYETVUC_TERRITORIES.map(t => {
-    const fc = FACTION_COLORS[t.faction];
-    const patId = `kvp-${t.terrain || 'land'}`;
-    const isClickable = !!t.zoneId;
-    const glowFilter = t.faction === 'chinh_dao' ? 'filter="url(#kvf-chinh)"'
-                     : t.faction === 'ma_dao'    ? 'filter="url(#kvf-ma)"'
-                     : '';
-    return `
-      <g class="kv-territory${isClickable ? ' kv-ter-clickable' : ''}" data-tid="${t.id}"
-         style="cursor:${isClickable ? 'pointer' : 'default'}">
-        <polygon points="${t.points}" fill="${fc.fill}" stroke="${fc.stroke}"
-          stroke-width="1.5" stroke-linejoin="round" ${glowFilter}/>
-        <polygon points="${t.points}" fill="url(#${patId})" opacity="0.75" pointer-events="none"/>
-        <polygon points="${t.points}" fill="transparent" stroke="${fc.stroke}"
-          stroke-width="0" class="kv-ter-hover-poly" pointer-events="none"/>
-      </g>`;
+    const decor       = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+    const patId       = `m-pat-${t.terrain === 'desert' ? 'dunes' : (t.terrain || 'land')}`;
+    const isClickable = !!t.nodeId;
+    return (
+      `<g class="kv-territory${isClickable ? ' kv-ter-clickable' : ''}" data-tid="${t.id}"` +
+        ` style="cursor:${isClickable ? 'pointer' : 'default'}" filter="url(#m-filt-coast)">` +
+        `<polygon points="${t.points}" fill="${decor.terrFill}" stroke="${decor.terrStroke}"` +
+          ` stroke-width="1.2" stroke-linejoin="round"/>` +
+        `<polygon points="${t.points}" fill="url(#${patId})" opacity="0.75" pointer-events="none"/>` +
+      `</g>`
+    );
   }).join('');
 
-  // Mountain symbols
+  // ── 2. Mountain symbols (variant theo hash để không đồng nhất)
   const mountains = KHUYETVUC_TERRITORIES
-    .flatMap(t => (t.mountains || []).map(([mx, my]) => _svgMountain(mx, my)))
-    .join('');
+    .flatMap(t => (t.mountains || []).map(([mx, my]) => {
+      const sym = _kvPickMtSymbol(mx, my);
+      // mt-ridge rộng hơn nên scale to hơn để cân đối
+      const w = sym === 'm-sym-mt-ridge' ? 36 : sym === 'm-sym-mt-twin' ? 32 : 24;
+      const h = sym === 'm-sym-mt-ridge' ? 22 : sym === 'm-sym-mt-twin' ? 22 : 20;
+      return `<use href="#${sym}" x="${mx - w/2}" y="${my - h * 0.75}" width="${w}" height="${h}" opacity="0.88" pointer-events="none"/>`;
+    })).join('');
 
-  // Forest symbols
+  // ── 3. Forest symbols
   const forests = KHUYETVUC_TERRITORIES
-    .flatMap(t => (t.forests || []).map(([fx, fy]) => _svgForest(fx, fy)))
-    .join('');
+    .flatMap(t => (t.forests || []).map(([fx, fy]) =>
+      `<use href="#m-sym-forest" x="${fx - 16}" y="${fy - 12}" width="32" height="18" opacity="0.85" pointer-events="none"/>`
+    )).join('');
 
-  // Sect badges (ô vuông chữ Hán)
-  const badges = KHUYETVUC_TERRITORIES
-    .filter(t => t.chName && t.faction !== 'hazard' && t.id !== 'tay_sa_mac')
+  // ── 4. Rivers (tone warm hơn cho parchment)
+  const rivers = `
+    <g class="kv-rivers" pointer-events="none" opacity="0.55">
+      <path d="M255,185 Q235,238 218,295" fill="none" stroke="#3A6890" stroke-width="1.3" stroke-dasharray="4 3"/>
+      <path d="M368,318 Q370,365 395,428" fill="none" stroke="#3A6890" stroke-width="1.1" stroke-dasharray="4 3"/>
+      <path d="M405,155 Q410,188 358,222" fill="none" stroke="#3A6890" stroke-width="1" stroke-dasharray="4 3"/>
+    </g>`;
+
+  // ── 5. Trade routes (tier2, animated)
+  const tier2Routes = TRADE_ROUTES.filter(r => r.tier === 'tier2');
+  const routes = `<g class="kv-trade-routes">` +
+    tier2Routes.map(r => renderTradeRoute(r, { animate: true })).join('') +
+    `</g>`;
+
+  // ── 6. Sect stamps (ấn mộc với ink bleed theo phe)
+  // Bỏ hazard (Bắc Hiểm Sơn, Tây Sa Mạc) — chỉ stamp cho tông môn thật
+  const stamps = KHUYETVUC_TERRITORIES
+    .filter(t => t.chName && t.faction !== 'hazard')
     .map(t => {
-      const fc  = FACTION_COLORS[t.faction];
-      const ch  = t.chName.length > 4 ? t.chName.slice(0, 4) : t.chName;
-      // Badge width based on char count
-      const bw  = ch.length <= 2 ? 38 : ch.length <= 4 ? 54 : 70;
-      const bh  = 24;
-      // Rút ngắn tên Việt nếu quá dài
-      const viName = t.name ? (t.name.length > 18 ? t.name.slice(0, 16) + '…' : t.name) : '';
-      return `
-        <g class="kv-badge" transform="translate(${t.lx},${t.ly})" pointer-events="none">
-          <rect x="${-bw/2-2}" y="${-bh/2-2}" width="${bw+4}" height="${bh+4}" rx="4"
-            fill="${fc.bg}" opacity="0.55" filter="url(#kvf-badge)"/>
-          <rect x="${-bw/2}" y="${-bh/2}" width="${bw}" height="${bh}" rx="2.5"
-            fill="${fc.bg}" stroke="${fc.stroke}" stroke-width="1.4" opacity="0.92"/>
-          <text x="0" y="5" text-anchor="middle" font-size="11"
-            fill="${fc.light}" letter-spacing="0.8"
-            font-family="'Noto Serif SC','PingFang SC','STSong','Source Han Serif',serif"
-            >${ch}</text>
-          <text x="0" y="${bh/2 + 12}" text-anchor="middle" font-size="8"
-            fill="${fc.light}" opacity="0.72" letter-spacing="0.2"
-            font-family="sans-serif">${viName}</text>
-        </g>`;
+      const decor = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+      const ch    = t.chName.length >= 2 ? t.chName[0] : t.chName;
+      return renderStamp({
+        x: t.lx, y: t.ly,
+        chName: ch,
+        inkGrad: decor.ink,
+        size: 18,
+        name: t.id,
+      });
     }).join('');
 
-  // River decorations (simple curved paths between territories)
-  const rivers = `
-    <g class="kv-rivers" pointer-events="none" opacity="0.35">
-      <path d="M255,185 Q235,238 218,295" fill="none" stroke="#4a8faa" stroke-width="1.5" stroke-dasharray="3 4"/>
-      <path d="M368,318 Q370,365 395,428" fill="none" stroke="#4a8faa" stroke-width="1.2" stroke-dasharray="3 4"/>
-      <path d="M405,155 Q410,188 358,222" fill="none" stroke="#4a8faa" stroke-width="1" stroke-dasharray="3 4"/>
-    </g>`;
+  // ── 7. Vietnamese sect labels (đặt dưới stamps)
+  const labels = KHUYETVUC_TERRITORIES
+    .filter(t => t.chName && t.faction !== 'hazard')
+    .map(t => {
+      const decor = KV_FACTION_DECOR[t.faction] || KV_FACTION_DECOR.trung_lap;
+      const viName = t.name && t.name.length > 18 ? t.name.slice(0, 16) + '…' : (t.name || '');
+      return (
+        `<g pointer-events="none" opacity="0.88">` +
+          `<text x="${t.lx}" y="${t.ly + 30}" text-anchor="middle" font-size="9.5"` +
+            ` fill="${decor.inkLight}" letter-spacing="1" font-family="'Noto Serif SC','STSong',serif"` +
+            ` font-weight="600" filter="url(#m-filt-label)">${viName}</text>` +
+        `</g>`
+      );
+    }).join('');
 
-  // Cloud / mist border overlay
-  const cloudBorder = `
-    <g class="kv-cloud-border" pointer-events="none">
-      <!-- Radial fade at edges -->
-      <rect width="700" height="520" fill="url(#kvg-edge-fade)"/>
-      <!-- Cloud clusters at corners -->
-      <g opacity="0.65">
-        ${_cloudCluster(22, 22, 36)}
-        ${_cloudCluster(678, 22, 36)}
-        ${_cloudCluster(22, 498, 36)}
-        ${_cloudCluster(678, 498, 36)}
-      </g>
-      <!-- Top/bottom edge mist strips -->
-      <rect x="0" y="0" width="700" height="18" fill="rgba(4,8,16,0.55)" rx="0"/>
-      <rect x="0" y="502" width="700" height="18" fill="rgba(4,8,16,0.55)" rx="0"/>
-      <rect x="0" y="0" width="18" height="520" fill="rgba(4,8,16,0.45)" rx="0"/>
-      <rect x="682" y="0" width="18" height="520" fill="rgba(4,8,16,0.45)" rx="0"/>
-    </g>`;
+  // ── 8. Hazard region labels (Bắc Hiểm Sơn, Tây Sa Mạc) — không stamp, chỉ label nhỏ
+  const hazardLabels = KHUYETVUC_TERRITORIES
+    .filter(t => t.faction === 'hazard')
+    .map(t => {
+      const decor = KV_FACTION_DECOR.hazard;
+      const rot   = t.id === 'tay_sa_mac' ? ` transform="rotate(-90,${t.lx},${t.ly})"` : '';
+      return (
+        `<g pointer-events="none" opacity="0.7"${rot}>` +
+          `<text x="${t.lx}" y="${t.ly - 4}" text-anchor="middle" font-size="9"` +
+            ` fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif"` +
+            ` font-weight="600" filter="url(#m-filt-label)">${t.chName}</text>` +
+          `<text x="${t.lx}" y="${t.ly + 8}" text-anchor="middle" font-size="8"` +
+            ` fill="${decor.inkLight}" opacity="0.85">${t.name}</text>` +
+        `</g>`
+      );
+    }).join('');
 
-  // Map title
+  // ── 9. Title (in chìm dưới cùng)
   const title = `
-    <text x="350" y="514" text-anchor="middle" font-size="9.5"
-      fill="rgba(202,160,50,0.42)" letter-spacing="6" pointer-events="none"
-      font-family="serif">✦ 缺 域 · KHUYẾT VỰC ✦</text>`;
+    <text x="350" y="510" text-anchor="middle" font-size="9" letter-spacing="5"
+      fill="rgba(58,40,24,0.7)" pointer-events="none" font-family="'STSong',serif"
+      filter="url(#m-filt-ink)">缺 域 · KHUYẾT VỰC</text>`;
 
-  return `${defs}${bg}${stars}${territories}${mountains}${forests}${rivers}${badges}${cloudBorder}${title}`;
+  // ── Assembly (layer order theo spec analysis §2.8)
+  return (
+    MAP_DEFS +
+    parchmentBackground(W, H) +     // L1: parchment 3-layer
+    agedSpots(W, H) +                // L2: aged ink spots
+    territories +                    // L3: territory polygons
+    mountains +                      // L4-5: hero terrain (mountains via use)
+    forests +                        // L4-5: hero terrain (forests)
+    rivers +                         // L6: rivers
+    routes +                         // L7: trade routes animated
+    stamps +                         // L8: sect stamps
+    labels +                         // L9a: sect names Vietnamese
+    hazardLabels +                   // L9b: hazard region names
+    cloudBorder(W, H, true) +        // L10: cloud swirl border animated
+    vignette(W, H) +                 // L11: vignette mềm
+    title                            // L14: title
+  );
 }
 
 /** HTML panel Khuyết Vực — mode: 'panel' (Tu Luyện) hoặc 'modal' (popup 🗺) */
@@ -1266,136 +1233,177 @@ export function renderKhuyetVucMap(G, actions) {
 // TẦNG 1 — NHÂN GIỚI TOÀN ĐỒ (5 đại vùng popup)
 // ============================================================
 
-/** Build SVG nội dung bản đồ Nhân Giới 5 vùng */
+/**
+ * Per-region visual decor cho Painted Scroll style.
+ * Tách khỏi data layer để dễ tinh chỉnh visual mà không sửa NHAN_GIOI_REGIONS.
+ */
+const NG_REGION_DECOR = {
+  vinh_da:    { terrFill: 'rgba(190,212,228,0.55)', terrStroke: '#5A7A9A', pattern: 'm-pat-ice',    stampChar: '寒', ink: 'chinh',  inkLight: '#3A5878' },
+  co_vuc:     { terrFill: 'rgba(140,110,150,0.42)', terrStroke: '#5A4060', pattern: 'm-pat-ruins',  stampChar: '古', ink: 'co-vuc', inkLight: '#4A2868' },
+  khuyetvuc:  { terrFill: 'rgba(184,208,152,0.60)', terrStroke: '#3A6038', pattern: 'm-pat-land',   stampChar: '缺', ink: 'trung',  inkLight: '#0A4838' },
+  than_chau:  { terrFill: 'rgba(218,180,108,0.55)', terrStroke: '#7A5020', pattern: 'm-pat-land',   stampChar: '聖', ink: 'gold',   inkLight: '#604008' },
+  thien_tinh: { terrFill: 'rgba(123,165,184,0.55)', terrStroke: '#3A6080', pattern: 'm-pat-ocean',  stampChar: '海', ink: 'gold',   inkLight: '#604008' },
+};
+
+/**
+ * Hero terrain decor (mountains, forests, islands) đặt trên mỗi region.
+ * x, y, size, sym = symbol id.
+ */
+const NG_TERRAIN_HERO = [
+  // Vĩnh Dạ Hàn Nguyên — ice peaks rải rác top
+  { region:'vinh_da', sym:'m-sym-mt-ridge', x:20, y:30, w:120, h:40 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:190, y:38, w:30, h:28 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:260, y:52, w:34, h:30 },
+  { region:'vinh_da', sym:'m-sym-mt-ridge', x:380, y:32, w:120, h:40 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:550, y:42, w:32, h:28 },
+  { region:'vinh_da', sym:'m-sym-mt-peak',  x:620, y:50, w:28, h:24 },
+  // Khuyết Vực — mountains + forest mix
+  { region:'khuyetvuc', sym:'m-sym-mt-peak',     x:90, y:170, w:32, h:28 },
+  { region:'khuyetvuc', sym:'m-sym-mt-peak',     x:240, y:195, w:34, h:30 },
+  { region:'khuyetvuc', sym:'m-sym-mt-ridge',    x:115, y:290, w:80, h:32 },
+  { region:'khuyetvuc', sym:'m-sym-forest',      x:180, y:220, w:42, h:24 },
+  { region:'khuyetvuc', sym:'m-sym-forest',      x:280, y:260, w:40, h:22 },
+  { region:'khuyetvuc', sym:'m-sym-forest',      x:140, y:350, w:38, h:22 },
+  // Thần Châu Linh Thổ — rich forest + 1-2 mountain
+  { region:'than_chau', sym:'m-sym-forest',  x:430, y:200, w:42, h:24 },
+  { region:'than_chau', sym:'m-sym-forest',  x:520, y:240, w:38, h:22 },
+  { region:'than_chau', sym:'m-sym-mt-peak', x:580, y:200, w:30, h:26 },
+  { region:'than_chau', sym:'m-sym-mt-peak', x:450, y:290, w:32, h:28 },
+  // Thiên Tinh Hải Vực — islands
+  { region:'thien_tinh', sym:'m-sym-island', x:185, y:443, w:28, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:325, y:473, w:28, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:465, y:438, w:30, h:16 },
+  { region:'thien_tinh', sym:'m-sym-island', x:585, y:468, w:28, h:16 },
+];
+
+/** Build SVG bản đồ Nhân Giới 5 vùng — Painted Scroll style */
 function _buildNhanGioiSVG() {
-  const defs = `
-    <defs>
-      <radialGradient id="ng-bg" cx="50%" cy="46%" r="58%">
-        <stop offset="0%" stop-color="#0b1224"/>
-        <stop offset="100%" stop-color="#030710"/>
-      </radialGradient>
-      <filter id="ng-glow-active" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="4.5" result="b"/>
-        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <radialGradient id="ng-edge-fade" cx="50%" cy="50%" r="52%">
-        <stop offset="52%" stop-color="rgba(0,0,0,0)"/>
-        <stop offset="100%" stop-color="rgba(3,7,18,0.92)"/>
-      </radialGradient>
-      <pattern id="ngp-ice" width="22" height="22" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="11" x2="22" y2="11" stroke="rgba(147,197,253,0.14)" stroke-width="0.7"/>
-        <line x1="11" y1="0" x2="11" y2="22" stroke="rgba(147,197,253,0.09)" stroke-width="0.5"/>
-        <circle cx="11" cy="11" r="1" fill="rgba(191,219,254,0.10)"/>
-      </pattern>
-      <pattern id="ngp-ocean" width="20" height="13" patternUnits="userSpaceOnUse">
-        <path d="M0,6.5 Q5,2.5 10,6.5 Q15,10.5 20,6.5" fill="none" stroke="rgba(56,189,248,0.20)" stroke-width="1"/>
-      </pattern>
-      <pattern id="ngp-land" width="26" height="26" patternUnits="userSpaceOnUse">
-        <path d="M0,13 L26,13 M13,0 L13,26" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
-        <circle cx="13" cy="13" r="1.2" fill="rgba(255,255,255,0.04)"/>
-      </pattern>
-      <pattern id="ngp-ruins" width="18" height="18" patternUnits="userSpaceOnUse">
-        <rect x="3" y="3" width="5" height="5" fill="none" stroke="rgba(168,85,247,0.18)" stroke-width="0.6"/>
-        <rect x="10" y="10" width="5" height="5" fill="none" stroke="rgba(168,85,247,0.10)" stroke-width="0.4"/>
-      </pattern>
-    </defs>`;
+  const W = 700, H = 520;
 
-  const bg = `<rect width="700" height="520" fill="url(#ng-bg)"/>`;
-
-  let stars = '<g class="ng-stars" pointer-events="none">';
-  for (let i = 0; i < 60; i++) {
-    const sx = ((i * 131 + 29) % 700).toFixed(0);
-    const sy = ((i * 97 + 43) % 520).toFixed(0);
-    const sr = (i % 7 === 0 ? 1.0 : 0.5).toFixed(2);
-    const so = (0.06 + (i % 9) * 0.025).toFixed(2);
-    stars += `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="rgba(255,255,255,${so})"/>`;
-  }
-  stars += '</g>';
-
+  // ── 1. Region polygons (giữ nguyên points; coast wobble qua feDisplacementMap
+  // global noise pattern → shared edges displace cùng amount → không gap)
   const regions = NHAN_GIOI_REGIONS.map(r => {
+    const decor   = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
     const isImpl  = r.implemented;
-    const opacity = isImpl ? 1 : 0.42;
-    const sw      = isImpl ? 1.8 : 0.9;
-    const glow    = isImpl ? 'filter="url(#ng-glow-active)"' : '';
+    const opacity = isImpl ? 1 : 0.55;
+    const sw      = isImpl ? 1.2 : 0.7;
     return (
-      `<g class="ng-region${isImpl ? ' ng-region-active' : ' ng-region-locked'}" data-rid="${r.id}"` +
-      ` style="cursor:${isImpl ? 'pointer' : 'default'}" opacity="${opacity}">` +
-      `<polygon points="${r.points}" fill="${r.fill}" stroke="${r.stroke}"` +
-      ` stroke-width="${sw}" stroke-linejoin="round" ${glow}/>` +
-      `<polygon points="${r.points}" fill="url(#${r.patternId})" opacity="0.85" pointer-events="none"/>` +
+      `<g class="ng-region${isImpl ? ' ng-region-active' : ' ng-region-locked'}"` +
+        ` data-rid="${r.id}" style="cursor:${isImpl ? 'pointer' : 'default'}" opacity="${opacity}"` +
+        ` filter="url(#m-filt-coast)">` +
+        // base fill
+        `<polygon points="${r.points}" fill="${decor.terrFill}" stroke="${decor.terrStroke}"` +
+          ` stroke-width="${sw}" stroke-linejoin="round"/>` +
+        // texture overlay nhẹ (cùng filter coast nên match)
+        `<polygon points="${r.points}" fill="url(#${decor.pattern})" opacity="0.75" pointer-events="none"/>` +
       `</g>`
     );
   }).join('');
 
-  const islandCoords = [[325,420],[385,462],[450,418],[515,448],[578,422],[622,458],[488,482],[352,492],[560,490]];
-  const islands = '<g pointer-events="none" opacity="0.28">' +
-    islandCoords.map(([ix, iy]) =>
-      `<ellipse cx="${ix}" cy="${iy}" rx="3" ry="2" fill="rgba(56,189,248,0.55)" stroke="rgba(56,189,248,0.35)" stroke-width="0.5"/>`
-    ).join('') + '</g>';
+  // ── 2. Hero terrain symbols (mountains, forests, islands)
+  const terrain = NG_TERRAIN_HERO.map(t => {
+    const r = NHAN_GIOI_REGIONS.find(x => x.id === t.region);
+    const op = r && r.implemented ? 0.88 : 0.42;
+    return `<use href="#${t.sym}" x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}" opacity="${op}" pointer-events="none"/>`;
+  }).join('');
 
-  const peakXs = [85,160,240,330,420,510,590,650];
-  const icePeaks = '<g pointer-events="none" opacity="0.20">' +
-    peakXs.map((px, i) => {
-      const py = 40 + (i % 3) * 12;
-      return `<polygon points="${px},${py-12} ${px+9},${py+2} ${px-9},${py+2}" fill="rgba(191,219,254,0.35)" stroke="rgba(147,197,253,0.2)" stroke-width="0.5"/>`;
-    }).join('') + '</g>';
+  // ── 3. Rivers inside Khuyết Vực (giữ từ design cũ, đổi màu warm)
+  const rivers = `
+    <g class="ng-rivers" fill="none" stroke="#3A6890" stroke-width="1.2" opacity="0.55" pointer-events="none">
+      <path d="M255,165 Q230,210 218,280 Q210,340 215,395"/>
+      <path d="M368,158 Q380,240 410,310"/>
+    </g>`;
 
+  // ── 4. Trade routes (animated, từ TRADE_ROUTES tier1)
+  const tier1Routes = TRADE_ROUTES.filter(r => r.tier === 'tier1');
+  const routes = `<g class="ng-trade-routes">` +
+    tier1Routes.map(r => renderTradeRoute(r, { animate: true })).join('') +
+    `</g>`;
+
+  // ── 5. Sect/region stamps (ink bleed, lệch nhẹ)
+  const stamps = NHAN_GIOI_REGIONS.map(r => {
+    const decor = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
+    if (!r.implemented) {
+      // Stamp mờ + dấu khóa cho region locked
+      return (
+        `<g pointer-events="none" opacity="0.45">` +
+          renderStamp({
+            x: r.lx, y: r.ly,
+            chName: decor.stampChar,
+            inkGrad: decor.ink,
+            size: r.id === 'co_vuc' ? 16 : 18,
+            name: r.id,
+          }) +
+        `</g>`
+      );
+    }
+    return renderStamp({
+      x: r.lx, y: r.ly,
+      chName: decor.stampChar,
+      inkGrad: decor.ink,
+      size: 22,
+      name: r.id,
+    });
+  }).join('');
+
+  // ── 6. Vietnamese labels (đặt dưới stamps, calligraphic)
   const labels = NHAN_GIOI_REGIONS.map(r => {
+    const decor   = NG_REGION_DECOR[r.id] || NG_REGION_DECOR.khuyetvuc;
     const isImpl  = r.implemented;
-    const opacity = isImpl ? 1 : 0.45;
-    const chFs    = r.id === 'vinh_da' ? 11 : r.id === 'co_vuc' ? 8.5 : 10;
-    const vnFs    = r.id === 'vinh_da' ? 9  : r.id === 'co_vuc' ? 7   : 8.5;
-    const lockY   = r.ly + (r.id === 'co_vuc' ? 22 : 18);
-    const rot     = r.id === 'co_vuc' ? ` transform="rotate(-90,${r.lx},${r.ly})"` : '';
-    const lockTxt = !isImpl ? `<text x="${r.lx}" y="${lockY}" text-anchor="middle" font-size="11" opacity="0.55">🔒</text>` : '';
+    const opacity = isImpl ? 0.85 : 0.5;
+    const fs      = r.id === 'co_vuc' ? 9 : 10.5;
+    const offsetY = r.id === 'co_vuc' ? 0 : 32;
+    const rot     = r.id === 'co_vuc' ? ` transform="rotate(-90,${r.lx + 30},${r.ly})"` : '';
+    const x       = r.id === 'co_vuc' ? r.lx + 30 : r.lx;
+    const y       = r.id === 'co_vuc' ? r.ly : r.ly + offsetY;
+    const lockTxt = !isImpl
+      ? `<text x="${x}" y="${y + 14}" text-anchor="middle" font-size="8.5" fill="${decor.inkLight}" opacity="0.65">— Chưa khám phá —</text>`
+      : '';
     return (
       `<g pointer-events="none" opacity="${opacity}"${rot}>` +
-      `<text x="${r.lx}" y="${r.ly - 7}" text-anchor="middle" font-size="${chFs}"` +
-      ` fill="${r.stroke}" letter-spacing="1.4" font-family="'Noto Serif SC','PingFang SC','STSong',serif">${r.chName}</text>` +
-      `<text x="${r.lx}" y="${r.ly + 7}" text-anchor="middle" font-size="${vnFs}" fill="${r.light}" opacity="0.88">${r.name}</text>` +
-      lockTxt + `</g>`
+        `<text x="${x}" y="${y}" text-anchor="middle" font-size="${fs}"` +
+          ` fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif" font-weight="600"` +
+          ` filter="url(#m-filt-label)">${r.name}</text>` +
+        lockTxt +
+      `</g>`
     );
   }).join('');
 
-  const khuyetGlow =
-    `<polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"` +
-    ` fill="none" stroke="#2dd4bf" stroke-width="2.2" stroke-linejoin="round" pointer-events="none">` +
-    `<animate attributeName="opacity" values="0.35;0.78;0.35" dur="2.8s" repeatCount="indefinite"/>` +
-    `</polygon>`;
+  // ── 7. Player marker (pulse) tại Khuyết Vực
+  const marker = `
+    <g pointer-events="none">
+      <circle cx="192" cy="272" r="6" fill="url(#m-grad-marker)" opacity="0.7">
+        <animate attributeName="r" values="6;11;6" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.7;0.15;0.7" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="192" cy="272" r="3" fill="#0A4838" stroke="#F0E0B8" stroke-width="0.8"/>
+    </g>`;
 
-  const marker =
-    `<g pointer-events="none">` +
-    `<circle cx="192" cy="272" r="5" fill="#2dd4bf" opacity="0.5">` +
-    `<animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/>` +
-    `<animate attributeName="opacity" values="0.5;0.1;0.5" dur="2s" repeatCount="indefinite"/>` +
-    `</circle>` +
-    `<circle cx="192" cy="272" r="3.5" fill="#5eead4"/>` +
-    `</g>`;
+  // ── 8. Compass + title
+  const compass = `<use href="#m-sym-compass" x="630" y="430" width="60" height="60" opacity="0.85"/>`;
 
-  const edgeFade = `<rect width="700" height="520" fill="url(#ng-edge-fade)" pointer-events="none"/>`;
+  const title = `
+    <text x="350" y="510" text-anchor="middle" font-size="9" letter-spacing="5"
+      fill="rgba(58,40,24,0.7)" pointer-events="none" font-family="'STSong',serif"
+      filter="url(#m-filt-ink)">人 界 全 圖 · NHÂN GIỚI TOÀN ĐỒ</text>`;
 
-  const mist =
-    `<g pointer-events="none">` +
-    `<rect x="0" y="0" width="700" height="16" fill="rgba(3,7,18,0.60)"/>` +
-    `<rect x="0" y="504" width="700" height="16" fill="rgba(3,7,18,0.60)"/>` +
-    `<rect x="0" y="0" width="16" height="520" fill="rgba(3,7,18,0.50)"/>` +
-    `<rect x="684" y="0" width="16" height="520" fill="rgba(3,7,18,0.50)"/>` +
-    `</g>`;
-
-  const compass =
-    `<g transform="translate(662,462)" pointer-events="none" opacity="0.20">` +
-    `<circle cx="0" cy="0" r="15" fill="none" stroke="rgba(200,180,110,0.6)" stroke-width="0.7"/>` +
-    `<line x1="0" y1="-11" x2="0" y2="11" stroke="rgba(200,180,110,0.55)" stroke-width="0.8"/>` +
-    `<line x1="-11" y1="0" x2="11" y2="0" stroke="rgba(200,180,110,0.55)" stroke-width="0.8"/>` +
-    `<text x="0" y="-13" text-anchor="middle" font-size="5.5" fill="rgba(220,200,130,0.75)">N</text>` +
-    `</g>`;
-
-  const title =
-    `<text x="350" y="515" text-anchor="middle" font-size="9" letter-spacing="5.5"` +
-    ` fill="rgba(200,162,50,0.35)" pointer-events="none" font-family="serif">` +
-    `✶ 人 界 全 圖 · NHâN GIớI TOÀN ĐỔ ✶</text>`;
-
-  return defs + bg + stars + regions + islands + icePeaks + khuyetGlow + marker + labels + edgeFade + mist + compass + title;
+  // ── Assembly (layer order strict, theo spec analysis §2.8)
+  return (
+    MAP_DEFS +
+    parchmentBackground(W, H) +     // L1: parchment 3-layer
+    agedSpots(W, H) +                // L2: aged ink spots
+    regions +                        // L3: region polygons
+    terrain +                        // L5: hero mountains/forests/islands
+    rivers +                         // L6: rivers
+    routes +                         // L7: trade routes animated
+    stamps +                         // L8: sect stamps
+    labels +                         // L9: region labels Vietnamese
+    cloudBorder(W, H, true) +        // L10: cloud swirl border animated
+    vignette(W, H) +                 // L11: vignette mềm
+    compass +                        // L12: compass rose
+    marker +                         // L13: player marker
+    title                            // L14: title
+  );
 }
 
 /** HTML popup Nhân Giới Toàn Đồ */
@@ -1534,46 +1542,90 @@ export function openWorldMapModal(G, actions) {
 // TẦNG 3 — TERRITORY INTERIOR MAP (mới, dùng TERRITORY_INTERIORS)
 // ============================================================
 
-/** Build SVG terrain décor dựa theo faction của territory */
-function _buildTerritoryTerrainDecor(ter) {
-  const fc = FACTION_COLORS[ter.faction];
-  const terrain = ter.terrain || 'land';
+/**
+ * Map location.type → SVG symbol id.
+ * Hết emoji (vi phạm WORLD_MAP_DESIGN §8.4 đã được khắc phục).
+ */
+const LOC_TYPE_SYMBOL = {
+  sect_gate:        'm-sym-pagoda',
+  market:           'm-sym-market',
+  ghost_market:     'm-sym-ghost',
+  auction:          'm-sym-auction',
+  freelance_quest:  'm-sym-market',
+  hunt_zone:        'm-sym-swords',
+  boss_zone:        'm-sym-swords',
+  cultivate_spot:   'm-sym-altar',
+  alchemy:          'm-sym-altar',
+  gather_zone:      'm-sym-herb',
+  secret_gather:    'm-sym-herb',
+  mystery_zone:     'm-sym-altar',
+  mystery_cave:     'm-sym-cave',
+  dungeon:          'm-sym-cave',
+  treasure:         'm-sym-treasure',
+  npc:              'm-sym-person',
+};
 
+/** Symbol size theo loại — sect_gate to nhất, others vừa */
+function _t3SymBox(type) {
+  if (type === 'sect_gate')  return { w: 44, h: 44, yOff: 22 };
+  if (type === 'auction')    return { w: 32, h: 28, yOff: 14 };
+  if (type === 'market' || type === 'ghost_market' || type === 'freelance_quest')
+                             return { w: 36, h: 28, yOff: 14 };
+  if (type === 'cultivate_spot' || type === 'alchemy' || type === 'mystery_zone')
+                             return { w: 28, h: 32, yOff: 16 };
+  if (type === 'cave' || type === 'dungeon' || type === 'mystery_cave' || type === 'boss_zone')
+                             return { w: 30, h: 24, yOff: 12 };
+  if (type === 'treasure')   return { w: 26, h: 20, yOff: 10 };
+  if (type === 'npc')        return { w: 22, h: 26, yOff: 13 };
+  // hunt_zone (swords), gather_zone (herb), secret_gather (herb)
+  return { w: 28, h: 28, yOff: 14 };
+}
+
+/**
+ * Build SVG terrain décor (Painted Scroll) — hero terrain symbols.
+ * Vị trí cố định theo faction để background phong phú nhưng không che locations.
+ */
+function _buildTerritoryTerrainDecor(ter) {
+  const decor = KV_FACTION_DECOR[ter.faction] || KV_FACTION_DECOR.trung_lap;
+  const terrain = ter.terrain || 'land';
+  const patId = `m-pat-${terrain === 'desert' ? 'dunes' : terrain}`;
+
+  // Base terrain tint full panel (warm faction color)
+  const baseTint = `<rect width="500" height="390" fill="${decor.terrFill}" opacity="0.6" pointer-events="none"/>`;
+  const basePat  = `<rect width="500" height="390" fill="url(#${patId})" opacity="0.6" pointer-events="none"/>`;
+
+  // Hero terrain accent — góc trái dưới + góc phải dưới (không chồng locations 120-300 y)
+  let hero = '';
   if (ter.faction === 'ma_dao') {
-    return (
-      '<g opacity="0.16" pointer-events="none">' +
-      '<path d="M0,390 L80,340 L160,370 L240,330 L320,360 L400,320 L500,355 L500,390Z" fill="' + fc.bg + '" stroke="' + fc.stroke + '30" stroke-width="0.5"/>' +
-      '<circle cx="120" cy="200" r="40" fill="' + fc.bg + '" opacity="0.3"/>' +
-      '<circle cx="350" cy="250" r="55" fill="' + fc.bg + '" opacity="0.25"/>' +
-      '</g>'
+    // Volcano + dark mountains
+    hero = (
+      `<use href="#m-sym-volcano"   x="20"  y="290" width="40" height="50" opacity="0.75" pointer-events="none"/>` +
+      `<use href="#m-sym-mt-peak"   x="68"  y="320" width="32" height="28" opacity="0.7"  pointer-events="none"/>` +
+      `<use href="#m-sym-mt-ridge"  x="420" y="310" width="68" height="36" opacity="0.7"  pointer-events="none"/>`
+    );
+  } else if (ter.faction === 'chinh_dao' && terrain === 'mountain') {
+    hero = (
+      `<use href="#m-sym-mt-ridge"  x="10"  y="305" width="90" height="42" opacity="0.85" pointer-events="none"/>` +
+      `<use href="#m-sym-mt-peak"   x="105" y="335" width="30" height="24" opacity="0.7"  pointer-events="none"/>` +
+      `<use href="#m-sym-mt-twin"   x="395" y="305" width="70" height="42" opacity="0.85" pointer-events="none"/>`
+    );
+  } else if (ter.faction === 'chinh_dao') {
+    hero = (
+      `<use href="#m-sym-forest"    x="15"  y="330" width="50" height="24" opacity="0.75" pointer-events="none"/>` +
+      `<use href="#m-sym-forest"    x="75"  y="345" width="44" height="22" opacity="0.7"  pointer-events="none"/>` +
+      `<use href="#m-sym-forest"    x="395" y="335" width="50" height="24" opacity="0.75" pointer-events="none"/>` +
+      `<use href="#m-sym-forest"    x="445" y="350" width="40" height="20" opacity="0.7"  pointer-events="none"/>`
+    );
+  } else {
+    // Trung lập / hazard
+    hero = (
+      `<use href="#m-sym-forest"    x="15"  y="335" width="46" height="22" opacity="0.7"  pointer-events="none"/>` +
+      `<use href="#m-sym-mt-peak"   x="430" y="320" width="30" height="26" opacity="0.7"  pointer-events="none"/>` +
+      `<use href="#m-sym-mt-peak"   x="460" y="335" width="26" height="22" opacity="0.65" pointer-events="none"/>`
     );
   }
-  if (ter.faction === 'chinh_dao' && terrain === 'mountain') {
-    return (
-      '<g opacity="0.18" pointer-events="none">' +
-      '<path d="M0,390 L70,250 L130,300 L200,190 L270,265 L340,170 L400,240 L460,155 L500,215 L500,390Z" fill="' + fc.bg + '" stroke="' + fc.stroke + '40" stroke-width="0.5"/>' +
-      '<path d="M0,390 L50,330 L110,360 L170,305 L230,345 L290,295 L350,335 L410,285 L470,315 L500,295 L500,390Z" fill="rgba(5,15,30,0.8)" stroke="none"/>' +
-      '</g>'
-    );
-  }
-  if (ter.faction === 'chinh_dao') {
-    return (
-      '<g opacity="0.20" pointer-events="none">' +
-      '<path d="M0,355 Q125,325 250,340 T500,350 L500,390 L0,390Z" fill="' + fc.bg + '" stroke="' + fc.stroke + '30" stroke-width="0.5"/>' +
-      '<ellipse cx="95" cy="310" rx="75" ry="22" fill="' + fc.bg + '" opacity="0.6"/>' +
-      '<ellipse cx="390" cy="290" rx="60" ry="16" fill="' + fc.bg + '" opacity="0.6"/>' +
-      '</g>'
-    );
-  }
-  // Trung lập
-  return (
-    '<g opacity="0.12" pointer-events="none">' +
-    '<rect x="25" y="295" width="22" height="68" fill="' + fc.bg + '" rx="2"/>' +
-    '<rect x="55" y="272" width="28" height="90" fill="' + fc.bg + '" rx="2"/>' +
-    '<rect x="415" y="285" width="22" height="78" fill="' + fc.bg + '" rx="2"/>' +
-    '<rect x="448" y="262" width="32" height="100" fill="' + fc.bg + '" rx="2"/>' +
-    '</g>'
-  );
+
+  return baseTint + basePat + hero;
 }
 
 /** Render Tầng 3 từ territory id + TERRITORY_INTERIORS */
@@ -1607,45 +1659,105 @@ function _renderTier2Territory(G, actions, ter) {
   }
 
   const allLocs = interior.locations;
+  const decor = KV_FACTION_DECOR[ter.faction] || KV_FACTION_DECOR.trung_lap;
 
   // ── Terrain ────────────────────────────────────────────────────────────────
   const terrainSvg = _buildTerritoryTerrainDecor(ter);
 
-  // ── SVG location nodes ─────────────────────────────────────────────────────
+  // ── Connection paths: sect_gate (nếu có) → các locations khác ──────────────
+  const sectGate = allLocs.find(l => l.type === 'sect_gate');
+  let connSvg = '';
+  if (sectGate) {
+    connSvg =
+      '<g class="t3-connections" pointer-events="none" opacity="0.45">' +
+      allLocs
+        .filter(l => l.id !== sectGate.id)
+        .map(l => {
+          // Cong nhẹ theo Bezier để đỡ thẳng cứng
+          const mx = (sectGate.x + l.x) / 2;
+          const my = (sectGate.y + l.y) / 2 + 8;
+          return (
+            `<path d="M${sectGate.x},${sectGate.y} Q${mx},${my} ${l.x},${l.y}" ` +
+            `fill="none" stroke="#7A5018" stroke-width="0.8" stroke-dasharray="2.5,3.5"/>`
+          );
+        }).join('') +
+      '</g>';
+  }
+
+  // ── SVG location nodes (symbol-based, no emoji) ─────────────────────────────
   const locSvg = allLocs.map(loc => {
-    // Normal node — màu stroke theo faction
     const locked = _isLocLocked(G, loc);
-    const nodeStroke = locked ? 'rgba(255,255,255,0.12)' : fc.stroke + 'aa';
-    const nodeGlow   = locked ? '' : 'filter="url(#glow-z)"';
+    const symId  = LOC_TYPE_SYMBOL[loc.type] || 'm-sym-altar';
+    const box    = _t3SymBox(loc.type);
+    const dim    = locked ? 0.40 : 1.0;
+    const isSecret = loc.type === 'secret_gather' || loc.type === 'mystery_zone' || loc.type === 'mystery_cave';
+
+    // Lock label
+    let lockTxt = '';
+    if (locked) {
+      const lockMsg =
+        loc.requireSect   ? 'Nội môn' :
+        loc.requireRealm  ? (REALM_NAMES[loc.requireRealm] || 'Cảnh giới cao') :
+        loc.requireSecret ? 'Bí Cảnh' : 'Khóa';
+      lockTxt =
+        `<use href="#m-sym-lock" x="${loc.x + box.w/2 - 6}" y="${loc.y - box.yOff - 4}" width="10" height="12" opacity="0.85"/>` +
+        `<text x="${loc.x}" y="${loc.y + 38}" text-anchor="middle" font-size="7.5" fill="${decor.inkLight}" opacity="0.7">🔒 ${lockMsg}</text>`;
+    }
+
+    // Secret glow halo (cho secret_gather, mystery_*)
+    const glowSvg = isSecret && !locked
+      ? `<use href="#m-sym-glow" x="${loc.x - 15}" y="${loc.y - 15}" width="30" height="30"/>`
+      : '';
+
+    // Soft drop shadow ellipse dưới chân icon
+    const shadow = `<ellipse cx="${loc.x}" cy="${loc.y + box.yOff - 2}" rx="${box.w/2 - 2}" ry="2.5" fill="#3A2818" opacity="${0.32 * dim}"/>`;
+
+    // Label text dưới icon
+    const labelY = loc.y + box.yOff + 12;
+    const labelSvg = svgZoneLocLabel(loc.name, loc.x, labelY, {
+      fill: locked ? '#7A6048' : decor.inkLight,
+      fontSize: 9,
+    });
+
     return (
-      '<g class="znode' + (locked ? ' znode-locked' : '') + '" data-lid="' + loc.id + '">' +
-      '<circle cx="' + loc.x + '" cy="' + loc.y + '" r="24"' +
-      ' fill="rgba(5,8,15,0.92)" stroke="' + nodeStroke + '" stroke-width="1.5" ' + nodeGlow + '/>' +
-      '<text x="' + loc.x + '" y="' + (loc.y + 6) + '" text-anchor="middle" font-size="16">' + loc.emoji + '</text>' +
-      svgZoneLocLabel(loc.name, loc.x, loc.y + 40, { fill: locked ? '#444' : '#ccc', fontSize: 8.5 }) +
-      (locked && loc.requireSect   ? '<text x="' + loc.x + '" y="' + (loc.y + 54) + '" text-anchor="middle" font-size="7.5" fill="#555">🔒 Nội môn</text>' : '') +
-      (locked && loc.requireRealm  ? '<text x="' + loc.x + '" y="' + (loc.y + 54) + '" text-anchor="middle" font-size="7.5" fill="#555">🔒 ' + REALM_NAMES[loc.requireRealm] + '</text>' : '') +
-      (locked && loc.requireSecret ? '<text x="' + loc.x + '" y="' + (loc.y + 54) + '" text-anchor="middle" font-size="7.5" fill="#6a5000">🔒 Bí Cảnh</text>' : '') +
-      '</g>'
+      `<g class="znode${locked ? ' znode-locked' : ''}" data-lid="${loc.id}" style="cursor:${locked ? 'default' : 'pointer'};opacity:${dim}">` +
+        glowSvg +
+        shadow +
+        `<use href="#${symId}" x="${loc.x - box.w/2}" y="${loc.y - box.yOff}" width="${box.w}" height="${box.h}"/>` +
+        // Invisible hit area
+        `<rect x="${loc.x - box.w/2 - 4}" y="${loc.y - box.yOff - 4}" width="${box.w + 8}" height="${box.h + 8}" fill="transparent" pointer-events="all"/>` +
+        labelSvg +
+        lockTxt +
+      `</g>`
     );
   }).join('');
 
-  // ── Back button label ───────────────────────────────────────────────────────────
+  // ── Title stamp + chữ Hán góc trên ──────────────────────────────────────────
+  const titleStamp = ter.chName
+    ? `<g pointer-events="none">` +
+        renderStamp({ x: 36, y: 30, chName: ter.chName[0], inkGrad: decor.ink, size: 14, name: ter.id }) +
+        `<text x="60" y="22" font-size="10.5" fill="${decor.inkLight}" letter-spacing="2" font-family="'Noto Serif SC','STSong',serif" font-weight="600" filter="url(#m-filt-label)">${ter.chName}</text>` +
+        `<text x="60" y="38" font-size="9" fill="${decor.inkLight}" opacity="0.85" letter-spacing="1.5">${ter.name}</text>` +
+      `</g>`
+    : '';
+
+  // ── Back button label ───────────────────────────────────────────────────────
   const backLabel = _prevView === 'sect_home' ? '← Tông Môn' : '← Khuyết Vực';
 
   // ── Render HTML ─────────────────────────────────────────────────────────────
   panel.innerHTML =
     '<div class="map-wrap-t2">' +
-    '<div class="map-svg-t2" id="map-svg-t2">' +
+    '<div class="map-svg-t2 map-svg-t3-painted" id="map-svg-t2">' +
     '<svg id="zone-svg" viewBox="0 0 500 390" xmlns="http://www.w3.org/2000/svg" class="map-zone-svg">' +
-    '<defs><filter id="glow-z"><feGaussianBlur stdDeviation="3" result="b"/>' +
-    '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
-    '<rect width="500" height="390" fill="' + interior.bg + '" rx="0"/>' +
+    MAP_DEFS +
+    parchmentBackground(500, 390) +
+    agedSpots(500, 390) +
     terrainSvg +
-    // Title
-    '<text x="250" y="22" text-anchor="middle" font-size="11" fill="' + fc.stroke + '77" letter-spacing="3">' +
-    ter.chName + ' · ' + ter.name.toUpperCase() + '</text>' +
+    connSvg +
     locSvg +
+    cloudBorder(500, 390, true, 't3-cloud') +
+    vignette(500, 390) +
+    titleStamp +
     '</svg></div>' +
     // Right panel — faction-aware
     '<div class="map-side-t2" style="border-left:1px solid ' + fc.stroke + '33">' +

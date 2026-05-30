@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<title>Map SVG Upgrade — Before vs After</title>
+<style>
+  body { margin:0; background:#1a1410; color:#d8c8a8; font-family:system-ui,sans-serif; padding:16px; }
+  h1 { margin:0 0 4px; color:#e8c878; font-weight:600; letter-spacing:1px; }
+  .sub { font-size:13px; color:#a89878; margin-bottom:16px; }
+  .row { display:flex; gap:16px; flex-wrap:wrap; }
+  .col { flex:1; min-width:480px; background:#0e0a06; border:1px solid #3a2818; border-radius:6px; overflow:hidden; }
+  .col h2 { margin:0; padding:10px 14px; background:#1a1208; font-size:13px; letter-spacing:1.5px; color:#d8a040; border-bottom:1px solid #3a2818; }
+  .col h2.bad { color:#888; }
+  .col h2.good { color:#e8c878; }
+  .col svg { display:block; width:100%; height:auto; background:#000; }
+  .notes { padding:10px 14px; font-size:11px; line-height:1.55; color:#a89878; border-top:1px solid #3a2818; }
+  .notes b { color:#e8c878; }
+  .legend { display:flex; gap:14px; padding:10px 14px; font-size:11px; color:#a89878; flex-wrap:wrap; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .dot { width:10px; height:10px; border-radius:2px; display:inline-block; }
+  details { margin-top:20px; background:#0e0a06; border:1px solid #3a2818; border-radius:6px; padding:10px 14px; }
+  details summary { cursor:pointer; color:#e8c878; font-weight:600; padding:4px 0; }
+  details pre { background:#000; padding:10px; border-radius:4px; overflow:auto; font-size:11px; color:#d8c8a8; }
+  .demo-section { margin-top:24px; }
+</style>
+</head>
+<body>
+
+<h1>Tu Tiên — Map SVG Upgrade Preview</h1>
+<div class="sub">So sánh SVG hiện tại (style "node sci-fi") vs đề xuất "Painted Scroll Map" cho Tầng 1 — Nhân Giới Toàn Đồ</div>
+
+<!-- ========== TIER 1 COMPARISON ========== -->
+<div class="row">
+
+  <!-- LEFT: Current style -->
+  <div class="col">
+    <h2 class="bad">▼ HIỆN TẠI — Dark Radial + Stars + Cứng</h2>
+    <svg viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="cur-bg" cx="50%" cy="46%" r="58%">
+          <stop offset="0%" stop-color="#0b1224"/>
+          <stop offset="100%" stop-color="#030710"/>
+        </radialGradient>
+        <pattern id="cur-pat" width="26" height="26" patternUnits="userSpaceOnUse">
+          <path d="M0,13 L26,13 M13,0 L13,26" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+          <circle cx="13" cy="13" r="1.2" fill="rgba(255,255,255,0.04)"/>
+        </pattern>
+        <filter id="cur-glow"><feGaussianBlur stdDeviation="4"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="700" height="520" fill="url(#cur-bg)"/>
+      <!-- stars (sai concept) -->
+      <g opacity="0.45">
+        <circle cx="60" cy="40" r="0.6" fill="#fff"/><circle cx="180" cy="80" r="0.4" fill="#fff"/>
+        <circle cx="290" cy="20" r="0.7" fill="#fff"/><circle cx="500" cy="60" r="0.5" fill="#fff"/>
+        <circle cx="640" cy="30" r="0.4" fill="#fff"/><circle cx="120" cy="200" r="0.4" fill="#fff"/>
+        <circle cx="430" cy="240" r="0.5" fill="#fff"/><circle cx="660" cy="180" r="0.4" fill="#fff"/>
+        <circle cx="80" cy="350" r="0.6" fill="#fff"/><circle cx="320" cy="420" r="0.4" fill="#fff"/>
+        <circle cx="540" cy="380" r="0.5" fill="#fff"/><circle cx="620" cy="480" r="0.4" fill="#fff"/>
+      </g>
+      <!-- region polygons với cạnh thẳng cứng -->
+      <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+        fill="rgba(10,68,58,0.84)" stroke="#2dd4bf" stroke-width="1.8" filter="url(#cur-glow)"/>
+      <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+        fill="url(#cur-pat)" opacity="0.85"/>
+      <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+        fill="rgba(82,62,8,0.46)" stroke="#eab308" stroke-width="0.9" opacity="0.45"/>
+      <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+        fill="rgba(15,35,65,0.46)" stroke="#93c5fd" stroke-width="0.9" opacity="0.45"/>
+      <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+        fill="rgba(5,20,55,0.5)" stroke="#38bdf8" stroke-width="0.9" opacity="0.45"/>
+      <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+        fill="rgba(35,10,55,0.5)" stroke="#a855f7" stroke-width="0.9" opacity="0.45"/>
+      <!-- mountains đơn giản 3 polygon -->
+      <g transform="translate(120,40)">
+        <polygon points="0,-12 11,5 -11,5" fill="#1a1828" stroke="#5a5068" stroke-width="0.8"/>
+        <polygon points="-2.5,-5 2.5,-5 5.5,5 -5.5,5" fill="#120f20"/>
+        <polygon points="-2.5,-8.5 0,-12 2.5,-8.5" fill="rgba(225,235,255,0.42)"/>
+      </g>
+      <g transform="translate(220,52)">
+        <polygon points="0,-12 11,5 -11,5" fill="#1a1828" stroke="#5a5068" stroke-width="0.8"/>
+        <polygon points="-2.5,-5 2.5,-5 5.5,5 -5.5,5" fill="#120f20"/>
+        <polygon points="-2.5,-8.5 0,-12 2.5,-8.5" fill="rgba(225,235,255,0.42)"/>
+      </g>
+      <g transform="translate(580,42)">
+        <polygon points="0,-12 11,5 -11,5" fill="#1a1828" stroke="#5a5068" stroke-width="0.8"/>
+        <polygon points="-2.5,-5 2.5,-5 5.5,5 -5.5,5" fill="#120f20"/>
+        <polygon points="-2.5,-8.5 0,-12 2.5,-8.5" fill="rgba(225,235,255,0.42)"/>
+      </g>
+      <!-- labels (chỉ text, không stamp) -->
+      <text x="192" y="265" text-anchor="middle" font-size="10" fill="#2dd4bf" font-family="serif">缺域</text>
+      <text x="192" y="279" text-anchor="middle" font-size="8.5" fill="#5eead4">Khuyết Vực</text>
+      <text x="350" y="69" text-anchor="middle" font-size="9" fill="#93c5fd" opacity="0.45" font-family="serif">永夜寒原</text>
+      <text x="350" y="83" text-anchor="middle" font-size="7" fill="#bfdbfe" opacity="0.45">Vĩnh Dạ Hàn Nguyên</text>
+      <text x="530" y="233" text-anchor="middle" font-size="9" fill="#eab308" opacity="0.45" font-family="serif">神州靈土</text>
+      <text x="530" y="247" text-anchor="middle" font-size="7" fill="#fde047" opacity="0.45">Thần Châu Linh Thổ</text>
+      <text x="40" y="323" text-anchor="middle" font-size="7.5" fill="#a855f7" opacity="0.45" font-family="serif" transform="rotate(-90 40 323)">古域</text>
+      <text x="418" y="438" text-anchor="middle" font-size="9" fill="#38bdf8" opacity="0.45" font-family="serif">天星海域</text>
+      <text x="418" y="452" text-anchor="middle" font-size="7" fill="#7dd3fc" opacity="0.45">Thiên Tinh Hải Vực</text>
+      <!-- glow active marker -->
+      <circle cx="192" cy="272" r="5" fill="#2dd4bf" opacity="0.5"/>
+      <circle cx="192" cy="272" r="3.5" fill="#5eead4"/>
+      <!-- mist edge -->
+      <rect x="0" y="0" width="700" height="16" fill="rgba(3,7,18,0.6)"/>
+      <rect x="0" y="504" width="700" height="16" fill="rgba(3,7,18,0.6)"/>
+      <text x="350" y="515" text-anchor="middle" font-size="9" letter-spacing="5.5" fill="rgba(200,162,50,0.35)" font-family="serif">✶ 人 界 全 圖 ✶</text>
+    </svg>
+    <div class="notes">
+      <b>Vấn đề:</b> nền đen như vũ trụ + 60 sao → không phải bản đồ giấy. Mountains chỉ là 3 polygon, lặp lại giống hệt. Cạnh polygon thẳng cứng. Stamps chưa có (chỉ text). Không có vân mây, không trade routes.
+    </div>
+  </div>
+
+  <!-- RIGHT: Proposed style -->
+  <div class="col">
+    <h2 class="good">▲ ĐỀ XUẤT — Painted Scroll + Hand-drawn Terrain</h2>
+    <svg viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Parchment base -->
+        <linearGradient id="np-parch" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#F2E0B8"/>
+          <stop offset="45%" stop-color="#E6CA94"/>
+          <stop offset="100%" stop-color="#CCAC7A"/>
+        </linearGradient>
+        <filter id="np-grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/>
+          <feColorMatrix values="0 0 0 0 0.55  0 0 0 0 0.42  0 0 0 0 0.25  0 0 0 0.30 0"/>
+          <feComposite in2="SourceGraphic" operator="in"/>
+        </filter>
+        <filter id="np-paper" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="3" seed="3"/>
+          <feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.38  0 0 0 0 0.20  0 0 0 0.18 0"/>
+          <feComposite in2="SourceGraphic" operator="in"/>
+        </filter>
+        <filter id="np-coast"><feTurbulence baseFrequency="0.018" numOctaves="2"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter>
+        <filter id="np-ink"><feMorphology operator="dilate" radius="0.4"/><feGaussianBlur stdDeviation="0.5"/><feComposite in2="SourceGraphic" operator="over"/></filter>
+        <linearGradient id="np-mt-rock" x1="0" y1="0" x2="1" y2="0.7">
+          <stop offset="0%" stop-color="#9A8060"/><stop offset="100%" stop-color="#4A3A24"/>
+        </linearGradient>
+        <linearGradient id="np-mt-snow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D5DAE0"/>
+        </linearGradient>
+        <radialGradient id="np-ink-blue"><stop offset="0%" stop-color="#1E4878"/><stop offset="100%" stop-color="#0A2840"/></radialGradient>
+        <radialGradient id="np-ink-red"><stop offset="0%" stop-color="#A82828"/><stop offset="100%" stop-color="#6B0808"/></radialGradient>
+        <radialGradient id="np-ink-teal"><stop offset="0%" stop-color="#208070"/><stop offset="100%" stop-color="#0A4838"/></radialGradient>
+        <radialGradient id="np-ink-gold"><stop offset="0%" stop-color="#A87018"/><stop offset="100%" stop-color="#604008"/></radialGradient>
+        <radialGradient id="np-ink-violet"><stop offset="0%" stop-color="#583878"/><stop offset="100%" stop-color="#281848"/></radialGradient>
+
+        <!-- Mountain symbol -->
+        <symbol id="np-mt" viewBox="-20 -25 40 35">
+          <polygon points="-18,8 -8,-12 0,-22 8,-12 18,8" fill="#3C2A18" opacity="0.45"/>
+          <polygon points="-14,8 0,-22 14,8" fill="url(#np-mt-rock)"/>
+          <polygon points="-14,8 0,-22 -2,-8 -8,2" fill="rgba(0,0,0,0.32)"/>
+          <path d="M-6,-10 L-3,-14 L0,-22 L3,-14 L6,-10 L3,-8 L0,-12 L-3,-8 Z" fill="url(#np-mt-snow)"/>
+          <path d="M-14,8 Q-8,5 -3,8 Q2,11 8,7 Q12,9 14,8" stroke="rgba(40,28,16,0.6)" fill="none" stroke-width="0.8" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="np-mt-ridge" viewBox="-30 -20 60 30">
+          <polygon points="-26,8 -16,-8 -6,4 4,-12 14,2 24,-6 28,8" fill="url(#np-mt-rock)"/>
+          <polygon points="-16,-8 -14,-5 -18,-5" fill="url(#np-mt-snow)"/>
+          <polygon points="4,-12 6,-9 2,-9" fill="url(#np-mt-snow)"/>
+          <polygon points="24,-6 26,-3 22,-3" fill="url(#np-mt-snow)"/>
+          <path d="M-26,8 Q-10,6 6,8 Q20,9 28,8" stroke="rgba(40,28,16,0.6)" fill="none" stroke-width="0.8"/>
+        </symbol>
+        <symbol id="np-pine" viewBox="-6 -16 12 18">
+          <polygon points="0,-15 5,-4 -5,-4" fill="#2F4A2A"/>
+          <polygon points="0,-11 4,-1 -4,-1" fill="#3A5A35"/>
+          <polygon points="0,-7 4,2 -4,2" fill="#456A40"/>
+          <rect x="-0.7" y="2" width="1.4" height="3" fill="#3A2818"/>
+        </symbol>
+        <symbol id="np-forest" viewBox="-22 -18 44 24">
+          <use href="#np-pine" x="-14" y="2" transform="scale(0.7)"/>
+          <use href="#np-pine" x="-5" y="0" transform="scale(0.85)"/>
+          <use href="#np-pine" x="6"  y="2" transform="scale(0.75)"/>
+          <use href="#np-pine" x="14" y="0" transform="scale(0.8)"/>
+          <use href="#np-pine" x="0"  y="-3" transform="scale(0.9)"/>
+        </symbol>
+        <!-- Cloud swirl 如意 -->
+        <symbol id="np-cloud" viewBox="-32 -10 64 20">
+          <path d="M-30,2 Q-22,-8 -14,-3 Q-8,-10 0,-5 Q8,-11 14,-4 Q20,-9 30,-1" stroke="#A88438" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+          <path d="M-22,-3 Q-19,-1 -22,2 Q-25,5 -22,7" stroke="#A88438" stroke-width="1" fill="none" opacity="0.6"/>
+          <path d="M14,-4 Q17,-2 14,1 Q11,4 14,6" stroke="#A88438" stroke-width="1" fill="none" opacity="0.6"/>
+          <path d="M0,-5 Q3,-3 0,-1" stroke="#A88438" stroke-width="0.9" fill="none" opacity="0.55"/>
+        </symbol>
+        <!-- Compass rose -->
+        <symbol id="np-compass" viewBox="-30 -30 60 60">
+          <circle r="26" fill="rgba(248,228,180,0.35)" stroke="#7A5018" stroke-width="0.9"/>
+          <circle r="20" fill="none" stroke="#7A5018" stroke-width="0.5"/>
+          <polygon points="0,-22 3,-3 0,0 -3,-3" fill="#8A2810"/>
+          <polygon points="0,22 3,3 0,0 -3,3" fill="#3A1808"/>
+          <polygon points="-22,0 -3,-3 0,0 -3,3" fill="#3A1808"/>
+          <polygon points="22,0 3,-3 0,0 3,3" fill="#3A1808"/>
+          <text x="0" y="-13" text-anchor="middle" font-size="6.5" fill="#3A1808" font-family="serif" font-weight="bold">北</text>
+          <text x="0" y="18" text-anchor="middle" font-size="6.5" fill="#3A1808" font-family="serif" font-weight="bold">南</text>
+          <text x="-14" y="2.5" text-anchor="middle" font-size="6.5" fill="#3A1808" font-family="serif" font-weight="bold">西</text>
+          <text x="14" y="2.5" text-anchor="middle" font-size="6.5" fill="#3A1808" font-family="serif" font-weight="bold">東</text>
+        </symbol>
+        <!-- Patterns -->
+        <pattern id="np-pat-ice" width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M15,0 L15,12 M5,15 L25,15 M10,8 L18,22" stroke="rgba(120,150,180,0.32)" stroke-width="0.5" fill="none"/>
+          <circle cx="15" cy="15" r="1" fill="rgba(180,200,220,0.3)"/>
+        </pattern>
+        <pattern id="np-pat-ocean" width="40" height="20" patternUnits="userSpaceOnUse">
+          <path d="M0,10 Q10,5 20,10 Q30,15 40,10" stroke="rgba(74,109,128,0.35)" stroke-width="0.7" fill="none"/>
+          <path d="M0,16 Q10,11 20,16 Q30,21 40,16" stroke="rgba(123,165,184,0.28)" stroke-width="0.5" fill="none"/>
+        </pattern>
+        <pattern id="np-pat-ruins" width="36" height="36" patternUnits="userSpaceOnUse">
+          <rect x="6" y="20" width="2" height="10" fill="rgba(95,70,55,0.4)"/>
+          <rect x="18" y="14" width="2" height="16" fill="rgba(95,70,55,0.4)"/>
+          <rect x="28" y="22" width="2" height="8" fill="rgba(95,70,55,0.4)"/>
+        </pattern>
+      </defs>
+
+      <!-- Layer 1: Parchment base -->
+      <rect width="700" height="520" fill="url(#np-parch)"/>
+      <rect width="700" height="520" filter="url(#np-grain)" opacity="0.8"/>
+      <rect width="700" height="520" filter="url(#np-paper)" opacity="0.5"/>
+
+      <!-- Layer 2: Aged spots -->
+      <g opacity="0.18">
+        <ellipse cx="80" cy="120" rx="35" ry="22" fill="#8A6028"/>
+        <ellipse cx="620" cy="80" rx="40" ry="18" fill="#8A6028"/>
+        <ellipse cx="280" cy="480" rx="50" ry="25" fill="#8A6028"/>
+        <ellipse cx="540" cy="320" rx="28" ry="15" fill="#8A6028"/>
+      </g>
+
+      <!-- Layer 3: Region polygons (smooth, soft fill) -->
+      <g filter="url(#np-coast)">
+        <!-- Vĩnh Dạ (băng) -->
+        <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+          fill="rgba(200,220,235,0.55)" stroke="#5A7A9A" stroke-width="0.8"/>
+        <polygon points="0,0 700,0 700,162 582,142 452,158 310,146 168,160 52,144 0,168"
+          fill="url(#np-pat-ice)" opacity="0.6"/>
+        <!-- Cổ Vực (tím) -->
+        <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+          fill="rgba(140,110,150,0.45)" stroke="#5A4060" stroke-width="0.8"/>
+        <polygon points="0,168 52,144 82,218 65,312 92,392 75,492 0,510"
+          fill="url(#np-pat-ruins)" opacity="0.7"/>
+        <!-- Khuyết Vực (xanh nhạt - đã mở) -->
+        <polygon points="52,144 168,160 310,146 368,158 396,232 374,342 292,402 180,410 92,392 65,312 82,218"
+          fill="rgba(180,210,170,0.55)" stroke="#3A6038" stroke-width="1.2"/>
+        <!-- Thần Châu (vàng đậm) -->
+        <polygon points="310,146 452,158 582,142 700,162 700,332 628,358 538,364 444,334 396,232 368,158"
+          fill="rgba(220,180,100,0.45)" stroke="#7A5020" stroke-width="0.8"/>
+        <!-- Thiên Tinh Hải Vực -->
+        <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+          fill="rgba(120,170,200,0.55)" stroke="#3A6080" stroke-width="0.8"/>
+        <polygon points="75,492 92,392 180,410 292,402 374,342 444,334 538,364 628,358 700,332 700,510 0,510"
+          fill="url(#np-pat-ocean)" opacity="0.65"/>
+      </g>
+
+      <!-- Layer 4: Hero terrain - mountains (3 variants) -->
+      <use href="#np-mt-ridge" x="20" y="30" width="120" height="40"/>
+      <use href="#np-mt" x="190" y="38" width="30" height="28"/>
+      <use href="#np-mt" x="260" y="52" width="34" height="30"/>
+      <use href="#np-mt-ridge" x="380" y="32" width="120" height="40"/>
+      <use href="#np-mt" x="550" y="42" width="32" height="28"/>
+      <use href="#np-mt" x="620" y="50" width="28" height="24"/>
+      <!-- Khuyết Vực terrain -->
+      <use href="#np-mt" x="90" y="170" width="32" height="28"/>
+      <use href="#np-mt" x="240" y="195" width="34" height="30"/>
+      <use href="#np-mt-ridge" x="115" y="290" width="80" height="32"/>
+      <use href="#np-forest" x="180" y="220" width="42" height="24"/>
+      <use href="#np-forest" x="280" y="260" width="40" height="22"/>
+      <use href="#np-forest" x="140" y="350" width="38" height="22"/>
+      <!-- Thần Châu terrain -->
+      <use href="#np-forest" x="430" y="200" width="42" height="24"/>
+      <use href="#np-forest" x="520" y="240" width="38" height="22"/>
+      <use href="#np-mt" x="580" y="200" width="30" height="26"/>
+      <use href="#np-mt" x="450" y="290" width="32" height="28"/>
+      <!-- Cổ Vực ruins handled by pattern -->
+
+      <!-- Layer 5: Islands in sea -->
+      <g>
+        <ellipse cx="200" cy="450" rx="14" ry="6" fill="rgba(120,90,60,0.55)"/>
+        <ellipse cx="200" cy="450" rx="10" ry="4" fill="rgba(180,140,90,0.7)"/>
+        <ellipse cx="340" cy="480" rx="12" ry="5" fill="rgba(120,90,60,0.55)"/>
+        <ellipse cx="340" cy="480" rx="8" ry="3" fill="rgba(180,140,90,0.7)"/>
+        <ellipse cx="480" cy="445" rx="16" ry="6" fill="rgba(120,90,60,0.55)"/>
+        <ellipse cx="480" cy="445" rx="11" ry="4" fill="rgba(180,140,90,0.7)"/>
+        <use href="#np-mt" x="475" y="425" width="14" height="14"/>
+        <ellipse cx="600" cy="475" rx="14" ry="5" fill="rgba(120,90,60,0.55)"/>
+        <ellipse cx="600" cy="475" rx="10" ry="3.5" fill="rgba(180,140,90,0.7)"/>
+      </g>
+
+      <!-- Layer 6: Rivers -->
+      <g fill="none" stroke="#3A6890" stroke-width="1.4" opacity="0.7">
+        <path d="M255,160 Q230,210 218,280 Q210,340 215,395"/>
+        <path d="M368,158 Q380,240 410,310 Q420,360 405,400"/>
+        <path d="M520,165 Q510,220 530,280 Q545,310 555,360"/>
+      </g>
+
+      <!-- Layer 7: Trade routes (dotted gold) -->
+      <g fill="none" stroke="#8A6020" stroke-width="0.9" stroke-dasharray="2.5,4" opacity="0.75">
+        <path d="M192,272 Q260,230 290,200 Q340,170 420,180"/>
+        <path d="M420,180 Q500,200 530,240"/>
+        <path d="M192,272 Q140,330 110,400"/>
+        <path d="M192,272 Q260,360 320,440 Q400,470 480,455"/>
+        <path d="M530,240 Q580,280 620,330"/>
+      </g>
+      <!-- diamond markers -->
+      <g fill="#8A6020" opacity="0.85">
+        <polygon points="290,200 293,197 296,200 293,203"/>
+        <polygon points="500,200 503,197 506,200 503,203"/>
+        <polygon points="320,440 323,437 326,440 323,443"/>
+      </g>
+
+      <!-- Layer 8: Stamps (ấn mộc, lệch nhẹ, ink bleed) -->
+      <!-- Vĩnh Dạ — Chính Đạo bị áp chế, nhưng vẫn dùng ink xanh-băng (theme) -->
+      <g transform="translate(350,76) rotate(-1.5)" filter="url(#np-ink)">
+        <rect x="-19" y="-19" width="38" height="38" rx="2" fill="url(#np-ink-blue)" stroke="#1A2840" stroke-width="0.5"/>
+        <rect x="-16" y="-16" width="32" height="32" fill="none" stroke="rgba(240,220,180,0.85)" stroke-width="0.5"/>
+        <text x="0" y="6" text-anchor="middle" font-size="22" fill="#E8DCB8" font-family="'STSong','SimSun',serif" font-weight="900">寒</text>
+      </g>
+      <!-- Khuyết Vực — Chính Đạo, ink teal -->
+      <g transform="translate(192,272) rotate(2)" filter="url(#np-ink)">
+        <rect x="-22" y="-22" width="44" height="44" rx="2" fill="url(#np-ink-teal)" stroke="#0A3828" stroke-width="0.6"/>
+        <rect x="-19" y="-19" width="38" height="38" fill="none" stroke="rgba(240,220,180,0.85)" stroke-width="0.5"/>
+        <text x="0" y="7" text-anchor="middle" font-size="26" fill="#F0E0B8" font-family="'STSong','SimSun',serif" font-weight="900">缺</text>
+      </g>
+      <!-- Thần Châu — Chính Đạo, ink red royal -->
+      <g transform="translate(530,240) rotate(-2)" filter="url(#np-ink)">
+        <rect x="-20" y="-20" width="40" height="40" rx="2" fill="url(#np-ink-red)" stroke="#5A0810" stroke-width="0.6"/>
+        <rect x="-17" y="-17" width="34" height="34" fill="none" stroke="rgba(240,220,180,0.85)" stroke-width="0.5"/>
+        <text x="0" y="6" text-anchor="middle" font-size="23" fill="#F0E0B8" font-family="'STSong','SimSun',serif" font-weight="900">聖</text>
+      </g>
+      <!-- Thiên Tinh — ink gold (trung lập biển) -->
+      <g transform="translate(418,445) rotate(1.5)" filter="url(#np-ink)">
+        <rect x="-19" y="-19" width="38" height="38" rx="2" fill="url(#np-ink-gold)" stroke="#403008" stroke-width="0.6"/>
+        <rect x="-16" y="-16" width="32" height="32" fill="none" stroke="rgba(240,220,180,0.85)" stroke-width="0.5"/>
+        <text x="0" y="6" text-anchor="middle" font-size="22" fill="#F0E0B8" font-family="'STSong','SimSun',serif" font-weight="900">海</text>
+      </g>
+      <!-- Cổ Vực — ink violet endgame -->
+      <g transform="translate(40,330) rotate(-3)" filter="url(#np-ink)">
+        <rect x="-17" y="-17" width="34" height="34" rx="2" fill="url(#np-ink-violet)" stroke="#180830" stroke-width="0.6"/>
+        <rect x="-14" y="-14" width="28" height="28" fill="none" stroke="rgba(240,220,180,0.85)" stroke-width="0.5"/>
+        <text x="0" y="6" text-anchor="middle" font-size="20" fill="#F0E0B8" font-family="'STSong','SimSun',serif" font-weight="900">古</text>
+      </g>
+
+      <!-- Layer 9: Region labels (calligraphic, dưới stamp) -->
+      <g pointer-events="none" font-family="'Noto Serif SC','STSong',serif">
+        <text x="350" y="118" text-anchor="middle" font-size="11" fill="#1A2840" letter-spacing="3" opacity="0.78">Vĩnh Dạ Hàn Nguyên</text>
+        <text x="192" y="318" text-anchor="middle" font-size="11" fill="#0A3828" letter-spacing="2" opacity="0.85">Khuyết Vực</text>
+        <text x="530" y="285" text-anchor="middle" font-size="11" fill="#5A0810" letter-spacing="2" opacity="0.78">Thần Châu Linh Thổ</text>
+        <text x="418" y="490" text-anchor="middle" font-size="11" fill="#403008" letter-spacing="2" opacity="0.78">Thiên Tinh Hải Vực</text>
+        <text x="40" y="365" text-anchor="middle" font-size="10" fill="#180830" letter-spacing="1" opacity="0.78" transform="rotate(-90 40 365)">Cổ Vực</text>
+      </g>
+
+      <!-- Layer 10: Cloud border (vân mây 4 cạnh) -->
+      <g pointer-events="none">
+        <use href="#np-cloud" x="20"  y="14" width="180" height="32"/>
+        <use href="#np-cloud" x="240" y="14" width="180" height="32"/>
+        <use href="#np-cloud" x="460" y="14" width="220" height="32"/>
+        <use href="#np-cloud" x="20"  y="476" width="180" height="32"/>
+        <use href="#np-cloud" x="240" y="476" width="180" height="32"/>
+        <use href="#np-cloud" x="460" y="476" width="220" height="32"/>
+        <g transform="translate(28,260) rotate(90)">
+          <use href="#np-cloud" x="-90" y="-12" width="180" height="32"/>
+        </g>
+        <g transform="translate(672,260) rotate(-90)">
+          <use href="#np-cloud" x="-90" y="-12" width="180" height="32"/>
+        </g>
+      </g>
+
+      <!-- Layer 11: Vignette worn edge -->
+      <radialGradient id="np-vignette" cx="50%" cy="50%" r="65%">
+        <stop offset="55%" stop-color="rgba(60,40,20,0)"/>
+        <stop offset="100%" stop-color="rgba(60,40,20,0.55)"/>
+      </radialGradient>
+      <rect width="700" height="520" fill="url(#np-vignette)" pointer-events="none"/>
+
+      <!-- Layer 12: Compass rose -->
+      <use href="#np-compass" x="630" y="430" width="60" height="60"/>
+
+      <!-- Layer 13: Player marker pulse (Khuyết Vực) -->
+      <circle cx="192" cy="272" r="5" fill="#1A4838" opacity="0.6">
+        <animate attributeName="r" values="5;9;5" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="192" cy="272" r="2.5" fill="#3A8868"/>
+
+      <!-- Title bottom -->
+      <text x="350" y="510" text-anchor="middle" font-size="9" letter-spacing="5" fill="rgba(80,50,20,0.7)" font-family="'STSong',serif" filter="url(#np-ink)">人 界 全 圖 · NHÂN GIỚI TOÀN ĐỒ</text>
+    </svg>
+    <div class="notes">
+      <b>Nâng cấp:</b>
+      parchment <i>feTurbulence</i> grain + paper texture + aged spots →
+      coastline <i>feDisplacementMap</i> gợn tự nhiên →
+      3 biến thể núi (peak, ridge, twin) + forest cluster 5 cây qua <i>&lt;symbol&gt;</i> →
+      stamps 5 vùng ink bleed, lệch nhẹ → vân mây 如意 ở 4 cạnh →
+      compass chữ Hán 4 hướng → trade routes dotted gold +
+      vignette mờ rìa.
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#0A3828"></span>Khuyết Vực — đang chơi</span>
+      <span><span class="dot" style="background:#1A2840"></span>Băng giá</span>
+      <span><span class="dot" style="background:#5A0810"></span>Linh thổ</span>
+      <span><span class="dot" style="background:#403008"></span>Hải vực</span>
+      <span><span class="dot" style="background:#180830"></span>Cổ Vực</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TIER 3 ICON COMPARISON ========== -->
+<div class="demo-section">
+  <h1 style="font-size:18px">Tầng 3 — Location icons</h1>
+  <div class="sub">Hiện tại Tầng 3 vi phạm rule "không emoji". Đây là demo set icon SVG thay thế.</div>
+  <div class="row">
+
+    <div class="col">
+      <h2 class="bad">▼ HIỆN TẠI — emoji + circle r=24</h2>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="700" height="200" fill="#0a1426"/>
+        <g font-size="28">
+          <g><circle cx="80" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="80" y="110" text-anchor="middle">🏯</text><text x="80" y="148" text-anchor="middle" font-size="10" fill="#ccc">Sect Gate</text></g>
+          <g><circle cx="180" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="180" y="110" text-anchor="middle">🏮</text><text x="180" y="148" text-anchor="middle" font-size="10" fill="#ccc">Market</text></g>
+          <g><circle cx="280" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="280" y="110" text-anchor="middle">⚔</text><text x="280" y="148" text-anchor="middle" font-size="10" fill="#ccc">Hunt</text></g>
+          <g><circle cx="380" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="380" y="110" text-anchor="middle">🗻</text><text x="380" y="148" text-anchor="middle" font-size="10" fill="#ccc">Cultivate</text></g>
+          <g><circle cx="480" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="480" y="110" text-anchor="middle">🌿</text><text x="480" y="148" text-anchor="middle" font-size="10" fill="#ccc">Gather</text></g>
+          <g><circle cx="580" cy="100" r="24" fill="rgba(5,8,15,0.92)" stroke="#2dd4bfaa" stroke-width="1.5"/><text x="580" y="110" text-anchor="middle">☠</text><text x="580" y="148" text-anchor="middle" font-size="10" fill="#ccc">Dungeon</text></g>
+        </g>
+      </svg>
+      <div class="notes">Emoji literal → render khác nhau giữa Windows / Mac / mobile. Vi phạm spec.</div>
+    </div>
+
+    <div class="col">
+      <h2 class="good">▲ ĐỀ XUẤT — &lt;symbol&gt; SVG icon</h2>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="t3-parch" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#F0DDB0"/><stop offset="100%" stop-color="#D4B886"/>
+          </linearGradient>
+          <filter id="t3-grain"><feTurbulence baseFrequency="0.9" numOctaves="2" seed="5"/><feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.38  0 0 0 0 0.22  0 0 0 0.25 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+
+          <symbol id="ic-pagoda" viewBox="-18 -28 36 36">
+            <path d="M-18,-6 Q-14,-8 -10,-7 L10,-7 Q14,-8 18,-6 L14,-4 L-14,-4 Z" fill="#6E3018"/>
+            <rect x="-10" y="-4" width="20" height="6" fill="#A87038" stroke="#3A1808" stroke-width="0.6"/>
+            <path d="M-14,-14 Q-10,-16 -7,-15 L7,-15 Q10,-16 14,-14 L11,-12 L-11,-12 Z" fill="#6E3018"/>
+            <rect x="-8" y="-12" width="16" height="6" fill="#A87038" stroke="#3A1808" stroke-width="0.6"/>
+            <path d="M-10,-22 Q-7,-24 -5,-23 L5,-23 Q7,-24 10,-22 L8,-20 L-8,-20 Z" fill="#6E3018"/>
+            <rect x="-6" y="-20" width="12" height="6" fill="#A87038" stroke="#3A1808" stroke-width="0.6"/>
+            <rect x="-0.4" y="-28" width="0.8" height="5" fill="#3A1808"/>
+            <circle cx="0" cy="-28" r="1.2" fill="#D4A030"/>
+          </symbol>
+          <symbol id="ic-market" viewBox="-14 -18 28 22">
+            <rect x="-12" y="-4" width="24" height="6" fill="#8A5028" stroke="#3A1808" stroke-width="0.5"/>
+            <path d="M-14,-4 L-10,-12 L10,-12 L14,-4 Z" fill="#A8302A" stroke="#3A1808" stroke-width="0.6"/>
+            <ellipse cx="-8" cy="-1" rx="1.5" ry="2.2" fill="#E84020"/>
+            <ellipse cx="8" cy="-1" rx="1.5" ry="2.2" fill="#E84020"/>
+          </symbol>
+          <symbol id="ic-hunt" viewBox="-14 -16 28 20">
+            <polygon points="0,-14 5,-2 -5,-2" fill="#2F4A2A"/>
+            <polygon points="0,-10 5,2 -5,2" fill="#456A40"/>
+            <rect x="-0.8" y="2" width="1.6" height="2.5" fill="#3A2818"/>
+            <path d="M-12,-8 L-4,0 M-12,0 L-4,-8" stroke="#7A4818" stroke-width="1.4" stroke-linecap="round"/>
+          </symbol>
+          <symbol id="ic-altar" viewBox="-10 -22 20 26">
+            <rect x="-8" y="0" width="16" height="3" fill="#5A4828"/>
+            <rect x="-5" y="-14" width="2" height="14" fill="#8A7048"/>
+            <rect x="3" y="-14" width="2" height="14" fill="#8A7048"/>
+            <rect x="-7" y="-16" width="14" height="2.5" fill="#5A4828"/>
+            <ellipse cx="0" cy="-9" rx="1.5" ry="5" fill="rgba(80,160,140,0.6)"/>
+            <ellipse cx="0" cy="-9" rx="0.7" ry="3" fill="rgba(180,240,220,0.8)"/>
+          </symbol>
+          <symbol id="ic-herb" viewBox="-10 -14 20 18">
+            <path d="M0,3 Q-6,-2 -8,-10" stroke="#3A5A28" stroke-width="1.2" fill="none"/>
+            <path d="M0,3 Q6,-2 8,-10" stroke="#3A5A28" stroke-width="1.2" fill="none"/>
+            <path d="M0,3 L0,-12" stroke="#3A5A28" stroke-width="1.2"/>
+            <ellipse cx="-7" cy="-9" rx="2" ry="3" fill="#5A8A38" transform="rotate(-30 -7 -9)"/>
+            <ellipse cx="7" cy="-9" rx="2" ry="3" fill="#5A8A38" transform="rotate(30 7 -9)"/>
+            <ellipse cx="0" cy="-11" rx="2" ry="3" fill="#5A8A38"/>
+            <circle cx="0" cy="-11" r="1" fill="#D04848"/>
+          </symbol>
+          <symbol id="ic-cave" viewBox="-12 -16 24 20">
+            <path d="M-10,4 Q-12,-6 -7,-12 Q0,-16 7,-12 Q12,-6 10,4 Z" fill="#1A0A05"/>
+            <path d="M-7,4 Q-9,-3 -5,-8 Q0,-11 5,-8 Q9,-3 7,4 Z" fill="#08040A"/>
+            <polygon points="-3,-8 -2.5,-5 -3.5,-5" fill="#2A1810"/>
+            <polygon points="2,-8 2.5,-5 1.5,-5" fill="#2A1810"/>
+          </symbol>
+
+          <filter id="t3-soft"><feGaussianBlur stdDeviation="1.4"/></filter>
+        </defs>
+
+        <rect width="700" height="200" fill="url(#t3-parch)"/>
+        <rect width="700" height="200" filter="url(#t3-grain)" opacity="0.7"/>
+
+        <!-- dotted paths connecting -->
+        <g fill="none" stroke="#7A5018" stroke-width="0.9" stroke-dasharray="3,4" opacity="0.7">
+          <path d="M80,100 Q130,80 180,100"/>
+          <path d="M180,100 Q230,120 280,100"/>
+          <path d="M280,100 Q330,80 380,100"/>
+          <path d="M380,100 Q430,120 480,100"/>
+          <path d="M480,100 Q530,80 580,100"/>
+        </g>
+
+        <!-- shadow under each (filter blur) -->
+        <g opacity="0.35" filter="url(#t3-soft)" fill="#3A2818">
+          <ellipse cx="80"  cy="115" rx="14" ry="3"/>
+          <ellipse cx="180" cy="115" rx="14" ry="3"/>
+          <ellipse cx="280" cy="115" rx="14" ry="3"/>
+          <ellipse cx="380" cy="115" rx="14" ry="3"/>
+          <ellipse cx="480" cy="115" rx="14" ry="3"/>
+          <ellipse cx="580" cy="115" rx="14" ry="3"/>
+        </g>
+
+        <use href="#ic-pagoda" x="60"  y="74" width="40" height="40"/>
+        <use href="#ic-market" x="158" y="86" width="44" height="28"/>
+        <use href="#ic-hunt"   x="260" y="86" width="40" height="28"/>
+        <use href="#ic-altar"  x="365" y="78" width="30" height="36"/>
+        <use href="#ic-herb"   x="465" y="86" width="30" height="28"/>
+        <use href="#ic-cave"   x="565" y="86" width="30" height="28"/>
+
+        <g font-family="'STSong',serif" font-size="10" fill="#3A2818" text-anchor="middle">
+          <text x="80"  y="140">Sơn Môn</text>
+          <text x="180" y="140">Phường Thị</text>
+          <text x="280" y="140">Rừng Săn</text>
+          <text x="380" y="140">Đan Đài</text>
+          <text x="480" y="140">Dược Điền</text>
+          <text x="580" y="140">Cổng Địa Phủ</text>
+        </g>
+        <g font-family="'STSong',serif" font-size="8.5" fill="#7A5018" text-anchor="middle" opacity="0.7">
+          <text x="80"  y="152">山門</text>
+          <text x="180" y="152">坊市</text>
+          <text x="280" y="152">獵場</text>
+          <text x="380" y="152">丹台</text>
+          <text x="480" y="152">藥田</text>
+          <text x="580" y="152">地府門</text>
+        </g>
+      </svg>
+      <div class="notes">
+        <b>Icon SVG</b> nhất quán mọi platform. Có shadow + dotted path nối location. Nền parchment. Label kèm chữ Hán nhỏ phía dưới — phù hợp tone cổ phong.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== TECHNIQUE CHEATSHEET ========== -->
+<details>
+  <summary>Kỹ thuật SVG dùng trong demo (đầy đủ)</summary>
+  <ul style="font-size:12px;line-height:1.7">
+    <li><b>feTurbulence + feColorMatrix</b> → parchment grain (lớp <code>np-grain</code> baseFrequency 0.9 fine, lớp <code>np-paper</code> baseFrequency 0.013 large pattern).</li>
+    <li><b>feDisplacementMap</b> → coastline wobble (lớp <code>np-coast</code>, áp lên polygon).</li>
+    <li><b>feMorphology + feGaussianBlur + feComposite</b> → ink bleed cho stamps (<code>np-ink</code>).</li>
+    <li><b>linearGradient / radialGradient</b> → mountain rock, snow, stamp ink (5 màu ink).</li>
+    <li><b>&lt;symbol&gt; + &lt;use&gt;</b> → 1 lần define, dùng nhiều lần. Mountain 2 variant, forest cluster, cloud swirl, compass, 6 building icons.</li>
+    <li><b>pattern</b> → ice cracks, ocean waves, ruins columns. Pattern fill nhẹ overlay lên polygon.</li>
+    <li><b>animate / animateTransform</b> → player marker pulse (giữ subtle).</li>
+    <li><b>Layer order strict</b> → parchment → aged spots → polygons → patterns → terrain symbols → islands → rivers → trade routes → stamps → labels → cloud border → vignette → compass → marker.</li>
+  </ul>
+</details>
+
+</body>
+</html>

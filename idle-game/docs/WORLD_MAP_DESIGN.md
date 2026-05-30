@@ -349,8 +349,13 @@ Xem `js/ui/starter-village.js`. Hiện tại render riêng với SVG + gradient.
 
 | Tầng | Mô tả | Trạng thái |
 |------|-------|-----------|
-| Fix MAP-1 (làng lân cận) | Xóa khỏi `_renderTier2Territory` | 🔲 Chưa làm |
-| Tầng 1 — Nhân Giới Toàn Đồ | Painted Scroll, parchment, 5 vùng, stamps | 🔲 Chưa làm |
-| Tầng 2 — Khuyết Vực Territory | Painted Scroll, terrain icons, stamps | 🔲 Chưa làm |
-| Tầng 3 — Territory Interior | SVG symbols, dotted paths, no circles | 🔲 Chưa làm |
-| Tầng 4 — Tân Thủ Thôn | Parchment village map | 🔲 Chưa làm (thấp ưu tiên) |
+| Phase 0 — Defs library | `js/ui/map-defs.js` (filters, gradients, 20+ symbols, patterns, helpers) | ✅ Done |
+| Phase 1 — Tầng 1 Nhân Giới Toàn Đồ | Painted Scroll, parchment, 5 stamps, trade routes animated | ✅ Done |
+| Phase 2 — Tầng 2 Khuyết Vực Territory | Painted Scroll, terrain symbols varied, 10 stamps, trade routes tier2 | ✅ Done |
+| Phase 3 — Fix MAP-1 (làng lân cận) | Xác minh: đã được xóa trước đó | ✅ Done |
+| Phase 4 — Tầng 3 Territory Interior | SVG symbols (no emoji), dotted bezier paths, secret glow | ✅ Done |
+| Phase 5 — Polish + animations | Caravan particle (animateMotion), route tooltips, danger pulse, current territory pulse | ✅ Done |
+| Phase 6 — Tân Thủ Thôn (Tầng 4) | Painted Scroll cho 4 làng, hero terrain theo theme, village stamps | ✅ Done |
+
+**Chi tiết implement:** xem `docs/MAP_SVG_UPGRADE_ANALYSIS.md`
+**Preview files:** `docs/map-tier1-preview.html`, `map-tier2-preview.html`, `map-tier3-preview.html`, `map-village-preview.html`, `map-svg-demo.html`

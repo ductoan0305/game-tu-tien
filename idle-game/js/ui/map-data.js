@@ -652,6 +652,110 @@ export const TERRITORY_INTERIORS = {
   },
 };
 
+// ============================================================
+// TRADE ROUTES — Đường giao thương (Painted Scroll dotted paths)
+// Tương lai sẽ thành mechanic: caravan di chuyển, rủi ro cướp,
+// tốc độ giao hàng, profit per route.
+// Hiện tại: chỉ render dotted path animated trên map.
+// ============================================================
+
+/**
+ * @typedef {Object} TradeRoute
+ * @property {string} id
+ * @property {'tier1'|'tier2'} tier — Tầng hiển thị
+ * @property {string} fromId
+ * @property {string} toId
+ * @property {Array<[number,number]>} waypoints — control points cho bezier smoothing
+ * @property {number} dangerLevel — 0-5, ảnh hưởng caravan future mechanic
+ * @property {'land'|'sea'|'mountain'|'underground'} terrain
+ * @property {boolean} active — đang giao thương? (false = đường cổ bỏ hoang, mờ)
+ * @property {string} [name]
+ */
+
+export const TRADE_ROUTES = [
+  // ─── TẦNG 1 — Giữa 5 đại vùng ──────────────────────────────
+  {
+    id: 'tr_kv_tc',  tier: 'tier1',
+    fromId: 'khuyetvuc', toId: 'than_chau',
+    waypoints: [[192,272],[300,210],[420,200],[530,240]],
+    dangerLevel: 1, terrain: 'land', active: true,
+    name: 'Đông Hành Đại Đạo',
+  },
+  {
+    id: 'tr_kv_vd',  tier: 'tier1',
+    fromId: 'khuyetvuc', toId: 'vinh_da',
+    waypoints: [[192,272],[230,200],[280,140],[350,90]],
+    dangerLevel: 3, terrain: 'mountain', active: true,
+    name: 'Bắc Hành Sương Đạo',
+  },
+  {
+    id: 'tr_kv_tt',  tier: 'tier1',
+    fromId: 'khuyetvuc', toId: 'thien_tinh',
+    waypoints: [[192,272],[260,360],[340,420],[418,445]],
+    dangerLevel: 2, terrain: 'sea', active: true,
+    name: 'Nam Hải Thương Lộ',
+  },
+  {
+    id: 'tr_tc_tt',  tier: 'tier1',
+    fromId: 'than_chau', toId: 'thien_tinh',
+    waypoints: [[530,240],[560,310],[580,380],[480,445]],
+    dangerLevel: 1, terrain: 'sea', active: true,
+  },
+  {
+    id: 'tr_cv_kv',  tier: 'tier1',
+    fromId: 'co_vuc', toId: 'khuyetvuc',
+    waypoints: [[40,330],[80,300],[130,290],[192,272]],
+    dangerLevel: 5, terrain: 'underground', active: false,
+    name: 'Cổ Đạo Phế Tích',
+  },
+
+  // ─── TẦNG 2 — Giữa các territory trong Khuyết Vực ─────────
+  {
+    id: 'tr_tt_bv', tier: 'tier2',
+    fromId: 'thai_thanh', toId: 'bach_van',
+    waypoints: [[148,210],[220,180],[298,155]],
+    dangerLevel: 0, terrain: 'land', active: true,
+  },
+  {
+    id: 'tr_bv_vlh', tier: 'tier2',
+    fromId: 'bach_van', toId: 'van_linh_hoi',
+    waypoints: [[298,155],[380,200],[462,268]],
+    dangerLevel: 1, terrain: 'land', active: true,
+  },
+  {
+    id: 'tr_vlh_hn', tier: 'tier2',
+    fromId: 'van_linh_hoi', toId: 'huyet_nguyet',
+    waypoints: [[462,268],[510,220],[562,185]],
+    dangerLevel: 4, terrain: 'land', active: true,
+    name: 'Huyết Đạo',
+  },
+  {
+    id: 'tr_vlh_tl', tier: 'tier2',
+    fromId: 'van_linh_hoi', toId: 'tuyet_linh',
+    waypoints: [[462,268],[360,280],[262,288]],
+    dangerLevel: 1, terrain: 'land', active: true,
+  },
+  {
+    id: 'tr_tl_hpd', tier: 'tier2',
+    fromId: 'tuyet_linh', toId: 'huyen_phu_duong',
+    waypoints: [[262,288],[260,340],[262,398]],
+    dangerLevel: 2, terrain: 'swamp', active: true,
+  },
+  {
+    id: 'tr_hpd_dpl', tier: 'tier2',
+    fromId: 'huyen_phu_duong', toId: 'doc_phong_linh',
+    waypoints: [[262,398],[420,380],[572,352]],
+    dangerLevel: 4, terrain: 'land', active: true,
+    name: 'Độc Vụ Lộ',
+  },
+  {
+    id: 'tr_tt_lbt', tier: 'tier2',
+    fromId: 'thai_thanh', toId: 'luyen_bao_tong',
+    waypoints: [[148,210],[120,310],[102,455]],
+    dangerLevel: 2, terrain: 'mountain', active: true,
+  },
+];
+
 /** Tên vùng trên bản đồ thế giới (tier 1) — có thể xuống 2 dòng */
 export function svgWorldNodeName(name, x, yBase, opts = {}) {
   const fill = opts.fill || '#bbb';

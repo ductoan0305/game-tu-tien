@@ -498,6 +498,25 @@
   overflow: hidden;
   box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.45);
 }
+
+/* Painted Scroll variant — warm dark frame, parchment inside SVG */
+.map-wrap-starter .starter-village-scene.sv-painted {
+  background: linear-gradient(135deg, #2a1a0c 0%, #1a100a 50%, #2a1a0c 100%);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.55);
+}
+.sv-painted .starter-village-aura {
+  opacity: 0.08; /* mờ hơn vì parchment đã sáng */
+  mix-blend-mode: multiply;
+}
+.sv-painted .starter-village-frame {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--sv-accent, var(--gold)) 22%, transparent),
+    inset 0 0 22px color-mix(in srgb, var(--sv-accent, var(--gold)) 6%, transparent),
+    0 0 0 1px rgba(60, 40, 20, 0.5);
+}
+.sv-painted .znode { transition: filter 0.18s ease, transform 0.18s ease; transform-box: fill-box; transform-origin: center; }
+.sv-painted .znode:not(.znode-locked):hover { filter: brightness(1.12) saturate(1.1); transform: translateY(-1px); }
+.sv-painted .sv-lingqi { mix-blend-mode: multiply; }
 .starter-village-aura {
   position: absolute;
   inset: -15%;
@@ -666,6 +685,13 @@
   display: flex; align-items: center; justify-content: center;
 }
 .map-svg-t2 svg { display:block; overflow:visible; }
+
+/* Tầng 3 Painted Scroll — warm dark frame quanh SVG */
+.map-svg-t3-painted {
+  background: linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
+}
+.map-svg-t3-painted .znode { transition: filter 0.18s ease, transform 0.18s ease; transform-box: fill-box; transform-origin: center; }
+.map-svg-t3-painted .znode:not(.znode-locked):hover { filter: brightness(1.15) saturate(1.1); transform: translateY(-1px); }
 .map-zone-svg {
   width: 100%;
   height: 100%;
@@ -1389,7 +1415,8 @@
 .map-svg-kv {
   flex: 1;
   min-width: 0;
-  background: #040810;
+  /* Warm dark frame để khớp parchment khi letterbox (Painted Scroll) */
+  background: linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
   border-radius: 8px;
   overflow: hidden;
   position: relative;
@@ -1539,7 +1566,24 @@
 
 /* Territory states */
 .kv-territory.kv-ter-locked { opacity: 0.45; cursor: default !important; }
-.kv-territory.kv-ter-current polygon:first-child { stroke-width: 2.5 !important; filter: brightness(1.2); }
+.kv-territory.kv-ter-current > polygon:first-child {
+  stroke-width: 2.5 !important;
+  animation: kv-current-pulse 2.6s ease-in-out infinite;
+}
+@keyframes kv-current-pulse {
+  0%, 100% { filter: brightness(1.10) saturate(1.10); stroke-opacity: 1; }
+  50%      { filter: brightness(1.28) saturate(1.25); stroke-opacity: 0.78; }
+}
+
+/* Trade route hover — subtle highlight (Painted Scroll polish) */
+.m-trade-route { cursor: help; }
+.m-trade-route:hover > path { stroke-width: 1.6 !important; opacity: 1 !important; }
+.m-trade-route[data-danger="4"] > path,
+.m-trade-route[data-danger="5"] > path { animation: m-route-warn 4s ease-in-out infinite; }
+@keyframes m-route-warn {
+  0%, 100% { stroke: #7A5018; }
+  50%      { stroke: #A82828; }
+}
 
 /* Region title inline */
 .kv-region-title { font-size: 13px; font-weight: bold; color: var(--color-gold,#f0d47a); text-align:center; padding: 2px 0 4px; }
@@ -1564,7 +1608,8 @@
   min-width: 0;
   display: flex;
   align-items: stretch;
-  background: #030710;
+  /* Warm dark frame để khớp parchment khi letterbox */
+  background: linear-gradient(135deg,#2a1a0c 0%,#1a100a 50%,#2a1a0c 100%);
   overflow: hidden;
   position: relative;
 }
@@ -1576,12 +1621,14 @@
   user-select: none;
 }
 
-/* Active region hover */
-.ng-region-active polygon:first-child {
-  transition: filter 0.15s ease;
+/* Active region hover (selector hỗ trợ cả <path> Painted Scroll mới + <polygon> cũ) */
+.ng-region-active > path:first-child,
+.ng-region-active > polygon:first-child {
+  transition: filter 0.18s ease;
 }
-.ng-region-active:hover polygon:first-child {
-  filter: brightness(1.18);
+.ng-region-active:hover > path:first-child,
+.ng-region-active:hover > polygon:first-child {
+  filter: brightness(1.12) saturate(1.15);
 }
 
 /* Locked regions — subtle pulse to show they exist */
@@ -1589,8 +1636,13 @@
   transition: opacity 0.2s;
 }
 .ng-region-locked:hover {
-  opacity: 0.55 !important;
+  opacity: 0.75 !important;
 }
+
+/* Stamps hover effect */
+.m-stamp { transition: filter 0.18s ease; }
+.ng-region-active:hover ~ .m-stamp[data-stamp="khuyetvuc"],
+.m-stamp:hover { filter: url(#m-filt-ink) brightness(1.18); }
 
 /* Side panel */
 .map-side-ng {
@@ -1730,7 +1782,7 @@
   .ng-legend { display: none; }
 }
 
-/* ── Territory info popup (PopupManager) ────────────�
+/* ── Territory info popup (PopupManager) ────────────�
 /* ── Village nodes (Tầng 3) ──────────────────────── */
 .znode-village {
   cursor: pointer;
